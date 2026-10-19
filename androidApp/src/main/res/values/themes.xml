@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Tema de la ventana de Android (modo claro).
+        Solo controla el fondo mientras arranca la app; los colores reales
+        de la UI están en shared/.../core/ui/theme/AppColors.kt.
+    -->
+    <style name="Theme.Gasoline" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

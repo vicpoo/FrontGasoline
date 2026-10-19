@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bienvenida -->
+    <string name="welcome_title">Control total de tus vehículos, en un solo lugar.</string>
+    <string name="welcome_subtitle">¿No tienes una cuenta? Contacta al administrador de tu empresa para que te dé de alta.</string>
+    <string name="action_access">Acceder</string>
+
+    <!-- Login -->
+    <string name="login_title">Inicio de sesión</string>
+    <string name="login_user_label">Email</string>
+    <string name="login_password_label">Contraseña</string>
+    <string name="login_action">Iniciar sesión</string>
+
+    <!-- Licencia -->
+    <string name="license_title">Bienvenido</string>
+    <string name="license_subtitle">Solo un paso más: sube una foto o PDF de tu licencia de conducir.</string>
+    <string name="license_action_upload">Subir documento</string>
+
+    <!-- Navegación principal -->
+    <string name="nav_vehicles">Vehículos</string>
+    <string name="nav_account">Perfil</string>
+    <string name="nav_history">Historial</string>
+
+    <!-- Solicitud de reserva -->
+    <string name="reservation_request_button">Enviar solicitud</string>
+    <string name="reservation_reason_label">Motivo de la solicitud</string>
+    <string name="reservation_reason_hint">Motivo</string>
+    <string name="reservation_send">Enviar</string>
+    <string name="reservation_error_title">¡Error al enviar!</string>
+    <string name="reservation_error_message">No pudimos enviar tu solicitud para el %1$s. Por favor revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="reservation_success_title">¡Solicitud enviada!</string>
+    <string name="reservation_success_message">Tu solicitud para el %1$s ha sido enviada exitosamente al administrador.</string>
+
+    <!-- Historial de viajes -->
+    <string name="trip_history_title">Historial</string>
+    <string name="trip_history_empty">Aún no hay viajes registrados.</string>
+    <string name="trip_history_offline">Sin conexión: estás viendo el último historial guardado.</string>
+    <string name="trip_km_value">%1$s km</string>
+    <string name="trip_records_value">%1$d registros</string>
+    <string name="trip_not_found">No se encontró el viaje.</string>
+    <string name="trip_detail_start">Inicio del viaje</string>
+    <string name="trip_detail_end">Final del viaje</string>
+    <string name="trip_detail_distance">Distancia total : %1$s km</string>
+    <string name="trip_detail_final_mileage">Kilometraje final : %1$s km</string>
+    <string name="trip_detail_loads">Cargas totales :</string>
+    <string name="trip_detail_no_loads">Este viaje no tiene cargas de combustible.</string>
+    <string name="trip_detail_amount">Monto : $%1$s</string>
+    <string name="trip_detail_liters">Litros : %1$sL</string>
+    <string name="trip_detail_view_receipt">Ver recibo</string>
+
+    <!-- Perfil -->
+    <string name="profile_update_license">Actualizar licencia de conducir</string>
+    <string name="profile_photo_sheet_title">Foto de perfil</string>
+    <string name="profile_option_gallery">Galería</string>
+    <string name="profile_option_camera">Cámara</string>
+    <string name="profile_photo_error_title">¡Error al subir la foto!</string>
+    <string name="license_update_title">Actualizar licencia</string>
+    <string name="license_update_subtitle">Sube una foto o PDF de tu licencia de conducir vigente.</string>
+
+    <!-- Editar nombre -->
+    <string name="edit_name_title">Nombre</string>
+    <string name="edit_name_label">Nombre completo</string>
+    <string name="edit_name_hint">Ej. Juan Pérez López</string>
+    <string name="edit_name_error_title">¡Error al guardar!</string>
+    <string name="edit_name_error_message">No pudimos guardar el nombre. Por favor revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="edit_name_success_title">¡Nombre guardado!</string>
+    <string name="edit_name_success_message">El nombre se ha guardado exitosamente.</string>
+    <string name="action_understood">Entendido</string>
+
+    <!-- Acciones comunes -->
+    <string name="action_retry">Reintentar</string>
+    <string name="action_logout">Salir</string>
+    <string name="action_add_vehicle">Agregar vehículo</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_yes">Sí</string>
+    <string name="action_no">No</string>
+    <string name="action_back">Atrás</string>
+    <string name="action_next">Siguiente</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_change">Cambiar</string>
+
+    <!-- Vehículos: lista -->
+    <string name="vehicle_list_title">Vehículos</string>
+    <string name="vehicle_list_search">Buscar por marca, modelo o placas</string>
+    <string name="vehicle_list_empty">Aún no hay vehículos registrados.</string>
+    <string name="vehicle_list_no_results">No se encontraron vehículos con esa búsqueda.</string>
+    <string name="vehicle_list_offline">Sin conexión: estás viendo la última información guardada.</string>
+    <string name="vehicle_list_pending">Cambios pendientes de sincronizar: %1$d</string>
+    <string name="vehicle_plates_value">Placas: %1$s</string>
+    <string name="vehicle_pending_sync">Pendiente</string>
+    <string name="vehicle_sync_error">Error al sincronizar</string>
+
+    <!-- Vehículos: estados -->
+    <string name="vehicle_status_available">Disponible</string>
+    <string name="vehicle_status_in_use">Ocupado</string>
+    <string name="vehicle_status_maintenance">Mantenimiento</string>
+    <string name="vehicle_status_unknown">Sin estado</string>
+
+    <!-- Vehículos: campos -->
+    <string name="vehicle_field_brand">Marca</string>
+    <string name="vehicle_field_model">Modelo</string>
+    <string name="vehicle_field_plates">Placas</string>
+    <string name="vehicle_field_year">Año</string>
+    <string name="vehicle_field_color">Color</string>
+    <string name="vehicle_field_mileage">Kilometraje</string>
+    <string name="vehicle_field_mileage_initial">Kilometraje inicial</string>
+    <string name="vehicle_field_tank">Capacidad del tanque</string>
+    <string name="vehicle_field_status">Estado</string>
+    <string name="vehicle_field_photo">Foto del vehículo</string>
+    <string name="vehicle_km_value">%1$s km</string>
+    <string name="vehicle_liters_value">%1$s litros</string>
+    <string name="vehicle_km_suffix">km</string>
+    <string name="vehicle_liters_suffix">L</string>
+
+    <!-- Vehículos: ejemplos (placeholders de Figma) -->
+    <string name="vehicle_hint_brand">Ej. Toyota</string>
+    <string name="vehicle_hint_model">Ej. Corolla</string>
+    <string name="vehicle_hint_plates">Ej. ABC-123</string>
+    <string name="vehicle_hint_year">Ej. 2005</string>
+    <string name="vehicle_hint_color">Ej. Gris metálico</string>
+    <string name="vehicle_hint_mileage">Ej. 15000</string>
+    <string name="vehicle_hint_tank">Ej. 50</string>
+
+    <!-- Vehículos: detalle -->
+    <string name="vehicle_not_found">No se encontró el vehículo.</string>
+    <string name="vehicle_delete_confirm">¿Está seguro de eliminar este vehículo?</string>
+
+    <!-- Vehículos: formulario por pasos -->
+    <string name="vehicle_form_add_title">Agregar vehículo</string>
+    <string name="vehicle_form_edit_title">Editar vehículo</string>
+    <string name="vehicle_form_step_label">Paso %1$d de %2$d</string>
+    <string name="vehicle_step_basics_title">¿Qué vehículo vas a registrar?</string>
+    <string name="vehicle_step_basics_subtitle">Empecemos por la marca y el modelo.</string>
+    <string name="vehicle_step_identification_title">¿Cómo lo identificamos?</string>
+    <string name="vehicle_step_identification_subtitle">Estos datos aparecen en la tarjeta del vehículo.</string>
+    <string name="vehicle_step_specs_title">Datos técnicos</string>
+    <string name="vehicle_step_specs_subtitle">Los usamos para calcular kilómetros recorridos y combustible.</string>
+    <string name="vehicle_step_photo_title">Agrega una foto</string>
+    <string name="vehicle_step_photo_subtitle">Una buena foto ayuda a reconocer el vehículo rápidamente.</string>
+    <string name="vehicle_form_photo_empty">Toca para elegir una foto</string>
+    <string name="vehicle_form_photo_change">Cambiar foto</string>
+    <string name="vehicle_form_no_photo">Sin foto</string>
+    <string name="vehicle_step_review_title">Revisa la información</string>
+    <string name="vehicle_step_review_subtitle">Confirma que todo esté correcto. Toca "Cambiar" para corregir una sección.</string>
+    <string name="vehicle_section_basics">Vehículo</string>
+    <string name="vehicle_section_identification">Identificación</string>
+    <string name="vehicle_section_specs">Datos técnicos</string>
+    <string name="vehicle_form_offline_note">Si no tienes conexión, se guardará en el teléfono y se enviará automáticamente después.</string>
+
+    <!-- Accesibilidad -->
+    <string name="cd_back">Regresar</string>
+    <string name="cd_show_password">Mostrar contraseña</string>
+    <string name="cd_hide_password">Ocultar contraseña</string>
+    <string name="cd_clear_search">Borrar búsqueda</string>
+    <string name="cd_remove_photo">Quitar foto</string>
+    <string name="cd_change_photo">Cambiar foto de perfil</string>
+    <string name="cd_edit_name">Editar nombre</string>
+    <string name="cd_close">Cerrar</string>
+
+    <!-- Errores -->
+    <string name="error_no_connection">Sin conexión con el servidor. Revisa tu internet e inténtalo de nuevo.</string>
+    <string name="error_unauthorized">Email o contraseña incorrectos.</string>
+    <string name="error_forbidden">No tienes permiso para realizar esta acción.</string>
+    <string name="error_not_found">No se encontró la información solicitada.</string>
+    <string name="error_no_company">Tu usuario no está ligado a una empresa, por eso no puede realizar esta acción desde la app.</string>
+    <string name="error_server">Ocurrió un error en el servidor. Inténtalo más tarde.</string>
+    <string name="error_unknown">Ocurrió un error inesperado.</string>
+    <string name="error_required">Este campo es obligatorio.</string>
+    <string name="error_invalid_format">El formato no es válido.</string>
+    <string name="error_out_of_range">El valor está fuera del rango permitido.</string>
+    <string name="error_invalid_file_type">Tipo de archivo no permitido.</string>
+    <string name="error_file_too_large">El archivo no debe pesar más de 5 MB.</string>
+</resources>

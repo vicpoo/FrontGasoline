@@ -1,0 +1,7 @@
+TEAM_ID=
+
+PRODUCT_NAME=GasolineProject
+PRODUCT_BUNDLE_IDENTIFIER=org.vicpoo.gasolineproject.GasolineProject$(TEAM_ID)
+
+CURRENT_PROJECT_VERSION=1
+MARKETING_VERSION=1.0
