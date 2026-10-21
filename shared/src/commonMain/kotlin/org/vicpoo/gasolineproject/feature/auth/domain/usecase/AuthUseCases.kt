@@ -1,12 +1,17 @@
 package org.vicpoo.gasolineproject.feature.auth.domain.usecase
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.ValidationReason
+import org.vicpoo.gasolineproject.core.platform.ImageCompressor
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.core.session.Session
 import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.session.SessionWriter
+import org.vicpoo.gasolineproject.core.session.mustUploadLicense
 import org.vicpoo.gasolineproject.feature.auth.domain.repository.AuthRepository
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -19,10 +24,15 @@ class LoginUseCase(private val repository: AuthRepository) {
 }
 
 /** Sube la licencia de conducir validando tipo y tamaño (mismas reglas que la API: jpg/png/webp/pdf, 5 MB). */
-class UploadLicenseUseCase(private val repository: AuthRepository) {
+class UploadLicenseUseCase(
+    private val repository: AuthRepository,
+    private val imageCompressor: ImageCompressor,
+) {
 
-    suspend operator fun invoke(file: PickedFile): AppResult<Unit> {
-        if (file.mimeType !in ALLOWED_TYPES) {
+    suspend operator fun invoke(original: PickedFile): AppResult<Unit> {
+        // Las fotos del teléfono suelen pesar más de 5 MB: se reducen antes de validar (los PDF no se tocan)
+        val file = if (original.mimeType.startsWith("image/")) imageCompressor.compress(original) else original
+        if (file.mimeType.lowercase() !in ALLOWED_TYPES) {
             return AppResult.Failure(AppError.Validation(ValidationReason.INVALID_FILE_TYPE))
         }
         if (file.sizeBytes > MAX_SIZE_BYTES) {
@@ -48,6 +58,16 @@ class LogoutUseCase(private val repository: AuthRepository) {
     suspend operator fun invoke() = repository.logout()
 }
 
+/** true mientras haya sesión; cambia a false al cerrar sesión o si el token venció (401). */
+class ObserveIsLoggedInUseCase(private val sessionReader: SessionReader) {
+    operator fun invoke(): Flow<Boolean> = sessionReader.session.map { it != null }.distinctUntilChanged()
+}
+
+/** true si el usuario maneja (viaje.registrar) y aún no sube su licencia (cambia si le dan el privilegio). */
+class ObserveMustUploadLicenseUseCase(private val sessionReader: SessionReader) {
+    operator fun invoke(): Flow<Boolean> = sessionReader.session.map { it?.mustUploadLicense == true }.distinctUntilChanged()
+}
+
 /** En qué estado está el usuario al abrir la app. */
 enum class AuthStatus { LoggedOut, NeedsLicense, LoggedIn }
 
@@ -61,7 +81,8 @@ class GetAuthStatusUseCase(
             sessionWriter.clear()
             return AuthStatus.LoggedOut
         }
-        return if (session.requiresLicense) AuthStatus.NeedsLicense else AuthStatus.LoggedIn
+        // Solo a quien maneja (viaje.registrar) se le pide la licencia
+        return if (session.mustUploadLicense) AuthStatus.NeedsLicense else AuthStatus.LoggedIn
     }
 }
 

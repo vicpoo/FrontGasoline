@@ -28,12 +28,12 @@ fun App() {
     AppTheme {
         ProvideWindowWidth {
             val startViewModel = koinViewModel<StartViewModel>()
-            val startRoute by startViewModel.startRoute.collectAsStateWithLifecycle()
+            val startStatus by startViewModel.startStatus.collectAsStateWithLifecycle()
             val isLoggedIn by startViewModel.isLoggedIn.collectAsStateWithLifecycle()
 
-            when (val route = startRoute) {
+            when (val status = startStatus) {
                 null -> LoadingView()
-                else -> AppNavHost(startRoute = route, isLoggedIn = isLoggedIn)
+                else -> AppNavHost(startStatus = status, isLoggedIn = isLoggedIn)
             }
         }
     }

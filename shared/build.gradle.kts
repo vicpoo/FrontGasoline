@@ -40,9 +40,14 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.compose.uiTooling)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.core.ktx) // LocationManagerCompat, FileProvider, NotificationCompat
+            implementation(libs.androidx.exifinterface) // orientación de las fotos de la cámara
             implementation(libs.koin.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
+
+            // Mapa del viaje en curso (MapLibre). Solo Android por ahora: en iOS se usa RouteMap
+            implementation(libs.maplibre.compose)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -73,6 +78,7 @@ kotlin {
             // Kotlinx
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.datetime)
 
             // Sesión persistente
             implementation(libs.datastore.preferences.core)

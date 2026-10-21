@@ -26,6 +26,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.presentation.detail.VehicleDe
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.detail.VehicleDetailViewModel
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.form.VehicleFormArgs
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.form.VehicleFormViewModel
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehicleListArgs
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehicleListViewModel
 
 val vehiclesModule = module {
@@ -55,7 +56,15 @@ val vehiclesModule = module {
     factoryOf(::DeleteVehicleUseCase)
 
     // Presentation
-    viewModelOf(::VehicleListViewModel)
+    viewModel { params ->
+        VehicleListViewModel(
+            args = params.get<VehicleListArgs>(),
+            observeVehicles = get(),
+            observePendingSync = get(),
+            refreshVehicles = get(),
+            permissionChecker = get(),
+        )
+    }
     viewModel { params ->
         VehicleDetailViewModel(
             args = params.get<VehicleDetailArgs>(),

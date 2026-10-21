@@ -10,6 +10,7 @@ import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.core.session.Session
 import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.session.SessionWriter
+import org.vicpoo.gasolineproject.core.session.drives
 import org.vicpoo.gasolineproject.feature.profile.data.remote.ProfileApi
 import org.vicpoo.gasolineproject.feature.profile.data.remote.UpdateEmpleadoRequestDto
 import org.vicpoo.gasolineproject.feature.profile.domain.Profile
@@ -71,4 +72,6 @@ private fun Session.toProfile() = Profile(
     photoUrl = photoUrl,
     roles = roles,
     hasEmployee = employeeId != null,
+    drives = drives,
+    hasLicense = employeeId != null && !requiresLicense,
 )

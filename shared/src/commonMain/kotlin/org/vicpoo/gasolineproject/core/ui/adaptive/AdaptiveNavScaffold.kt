@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -21,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /** Destino de la navegación principal. */
@@ -32,7 +34,7 @@ data class NavDestination(
 
 /**
  * Navegación principal adaptativa:
- * - Teléfono (Compact): barra inferior.
+ * - Teléfono (Compact): barra inferior solo con íconos (Figma).
  * - Tablet (Medium / Expanded): riel lateral.
  * Los destinos que recibe ya vienen filtrados por privilegios (RBAC).
  */
@@ -41,10 +43,12 @@ fun AdaptiveNavScaffold(
     destinations: List<NavDestination>,
     selectedKey: String,
     onSelect: (String) -> Unit,
+    /** false en pantallas de detalle / formularios (se ven a pantalla completa). */
+    visible: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val colors = AppTheme.colors
-    val showNavigation = destinations.size > 1
+    val showNavigation = visible && destinations.size > 1
 
     if (LocalWindowWidth.current == WindowWidth.Compact) {
         Column(Modifier.fillMaxSize()) {
@@ -65,8 +69,9 @@ fun AdaptiveNavScaffold(
                         NavigationBarItem(
                             selected = destination.key == selectedKey,
                             onClick = { onSelect(destination.key) },
-                            icon = { Icon(destination.icon, contentDescription = null) },
-                            label = { Text(destination.label, style = AppTheme.typography.caption) },
+                            // Solo ícono (Figma); el nombre queda para accesibilidad
+                            icon = { Icon(destination.icon, contentDescription = destination.label, modifier = Modifier.size(26.dp)) },
+                            alwaysShowLabel = false,
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = colors.primary,
                                 selectedTextColor = colors.primary,
@@ -87,8 +92,8 @@ fun AdaptiveNavScaffold(
                         NavigationRailItem(
                             selected = destination.key == selectedKey,
                             onClick = { onSelect(destination.key) },
-                            icon = { Icon(destination.icon, contentDescription = null) },
-                            label = { Text(destination.label, style = AppTheme.typography.caption) },
+                            icon = { Icon(destination.icon, contentDescription = destination.label, modifier = Modifier.size(26.dp)) },
+                            alwaysShowLabel = false,
                             colors = NavigationRailItemDefaults.colors(
                                 selectedIconColor = colors.primary,
                                 selectedTextColor = colors.primary,

@@ -16,6 +16,8 @@ data class Trip(
     val status: TripStatus,
     val fuelLoads: List<FuelLoad>,
     val route: List<GeoPoint>,
+    /** Tiempo en pausa: la duración del viaje lo descuenta. */
+    val pausedSeconds: Long = 0,
 )
 
 data class FuelLoad(

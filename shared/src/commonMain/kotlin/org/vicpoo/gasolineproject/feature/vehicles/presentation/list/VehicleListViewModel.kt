@@ -30,12 +30,22 @@ data class VehicleListUiState(
     val error: AppError? = null,
 )
 
+/**
+ * Para qué se abre la lista:
+ * - CATALOG: pestaña Inicio (casa) — ver carros y solicitarlos; sin agregar / editar / eliminar.
+ * - FLEET: pestaña Gestión (libreta con lápiz) — administrar la flota; sin "Solicitar".
+ */
+enum class VehiclesMode { CATALOG, FLEET }
+
+data class VehicleListArgs(val mode: VehiclesMode)
+
 sealed interface VehicleListEvent {
     data class QueryChanged(val value: String) : VehicleListEvent
     data object Refresh : VehicleListEvent
 }
 
 class VehicleListViewModel(
+    private val args: VehicleListArgs,
     observeVehicles: ObserveVehiclesUseCase,
     observePendingSync: ObservePendingVehicleSyncUseCase,
     private val refreshVehicles: RefreshVehiclesUseCase,
@@ -66,7 +76,7 @@ class VehicleListViewModel(
             isRefreshing = status.isRefreshing && status.loadedOnce,
             isOffline = status.isOffline,
             pendingSyncCount = pending,
-            canAdd = canAdd,
+            canAdd = canAdd && args.mode == VehiclesMode.FLEET,
             error = status.error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VehicleListUiState())

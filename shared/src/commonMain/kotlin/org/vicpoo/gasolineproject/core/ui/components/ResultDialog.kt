@@ -50,15 +50,13 @@ fun ResultDialog(
                 modifier = Modifier.padding(dimens.spaceL),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(AppIcons.Badge, contentDescription = null, tint = colors.title, modifier = Modifier.size(56.dp))
-                    Icon(
-                        imageVector = if (type == ResultType.Success) AppIcons.Check else AppIcons.Close,
-                        contentDescription = null,
-                        tint = colors.title,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
+                // Insignia con palomita o con X (íconos del diseño)
+                Icon(
+                    imageVector = if (type == ResultType.Success) AppIcons.BadgeCheck else AppIcons.BadgeX,
+                    contentDescription = null,
+                    tint = colors.title,
+                    modifier = Modifier.size(56.dp),
+                )
                 Spacer(Modifier.height(dimens.spaceM))
                 Text(title, style = AppTheme.typography.body, color = colors.title, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(dimens.spaceXs))

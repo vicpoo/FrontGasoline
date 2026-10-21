@@ -14,6 +14,9 @@ data class Profile(
     val roles: List<String>,
     /** false = usuario sin empleado (ej. Administrador): no puede editar nombre, foto ni licencia. */
     val hasEmployee: Boolean,
+    /** Tiene viaje.registrar: solo a él se le muestra y se le pide la licencia. */
+    val drives: Boolean = false,
+    val hasLicense: Boolean = false,
 )
 
 interface ProfileRepository {

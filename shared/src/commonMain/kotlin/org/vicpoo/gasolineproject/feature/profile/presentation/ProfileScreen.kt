@@ -1,6 +1,7 @@
 package org.vicpoo.gasolineproject.feature.profile.presentation
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,11 +30,15 @@ import gasolineproject.shared.generated.resources.profile_option_camera
 import gasolineproject.shared.generated.resources.profile_option_gallery
 import gasolineproject.shared.generated.resources.profile_photo_error_title
 import gasolineproject.shared.generated.resources.profile_photo_sheet_title
+import gasolineproject.shared.generated.resources.profile_license_ok
+import gasolineproject.shared.generated.resources.profile_license_pending
+import gasolineproject.shared.generated.resources.profile_license_title
 import gasolineproject.shared.generated.resources.profile_update_license
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.core.platform.rememberCameraCapture
 import org.vicpoo.gasolineproject.core.platform.rememberDocumentPicker
+import org.vicpoo.gasolineproject.core.ui.components.AppCard
 import org.vicpoo.gasolineproject.core.ui.components.AppScreen
 import org.vicpoo.gasolineproject.core.ui.components.AppTextButton
 import org.vicpoo.gasolineproject.core.ui.components.EditableAvatar
@@ -82,7 +87,10 @@ fun ProfileRoute(
     )
 }
 
-/** Figma: foto con cámara, nombre, "Actualizar licencia de conducir". */
+/**
+ * Perfil (persona): cambiar la foto y el nombre del empleado.
+ * La licencia SOLO aparece si el usuario maneja (viaje.registrar); a los demás no se les pide.
+ */
 @Composable
 fun ProfileScreen(
     state: ProfileUiState,
@@ -131,13 +139,33 @@ fun ProfileScreen(
             SecondaryText(it, textAlign = TextAlign.Center)
         }
 
-        if (canEdit) {
+        // Licencia: solo para quien maneja (viaje.registrar)
+        if (canEdit && profile?.drives == true) {
             Spacer(Modifier.height(dimens.spaceXl))
-            PrimaryButton(
-                text = stringResource(Res.string.profile_update_license),
-                onClick = onUpdateLicense,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            AppCard(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (profile.hasLicense) AppIcons.BadgeCheck else AppIcons.BadgeX,
+                            contentDescription = null,
+                            tint = if (profile.hasLicense) AppTheme.colors.confirm else AppTheme.colors.danger,
+                            modifier = Modifier.size(24.dp),
+                        )
+                        Spacer(Modifier.width(dimens.spaceS))
+                        SubtitleText(stringResource(Res.string.profile_license_title))
+                    }
+                    Spacer(Modifier.height(dimens.spaceXs))
+                    SecondaryText(
+                        stringResource(if (profile.hasLicense) Res.string.profile_license_ok else Res.string.profile_license_pending),
+                    )
+                    Spacer(Modifier.height(dimens.spaceM))
+                    PrimaryButton(
+                        text = stringResource(Res.string.profile_update_license),
+                        onClick = onUpdateLicense,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.weight(1f))

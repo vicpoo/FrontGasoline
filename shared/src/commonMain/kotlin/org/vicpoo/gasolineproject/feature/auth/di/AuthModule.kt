@@ -11,6 +11,8 @@ import org.vicpoo.gasolineproject.feature.auth.domain.repository.AuthRepository
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.GetAuthStatusUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.LoginUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.LogoutUseCase
+import org.vicpoo.gasolineproject.feature.auth.domain.usecase.ObserveIsLoggedInUseCase
+import org.vicpoo.gasolineproject.feature.auth.domain.usecase.ObserveMustUploadLicenseUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.RefreshPrivilegesUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.UploadLicenseUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.validation.LoginValidator
@@ -36,6 +38,8 @@ val authModule = module {
     factoryOf(::RefreshPrivilegesUseCase)
     factoryOf(::LogoutUseCase)
     factoryOf(::GetAuthStatusUseCase)
+    factoryOf(::ObserveIsLoggedInUseCase)
+    factoryOf(::ObserveMustUploadLicenseUseCase)
 
     // Presentation
     viewModelOf(::LoginViewModel)

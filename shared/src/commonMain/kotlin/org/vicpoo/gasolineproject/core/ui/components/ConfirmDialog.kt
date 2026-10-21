@@ -14,13 +14,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /**
  * Diálogo de confirmación (Figma: "¿Está seguro de eliminar este vehículo?").
  * Según la guía: "Sí" = botón de confirmación (azul), "No" = botón de cancelar (rojo).
+ * El fondo se opaca (ScrimDialog) para que la alerta sobresalga.
  */
 @Composable
 fun ConfirmDialog(
@@ -32,12 +31,9 @@ fun ConfirmDialog(
     isLoading: Boolean = false,
 ) {
     val dimens = AppTheme.dimens
-    Dialog(
-        onDismissRequest = { if (!isLoading) onDismiss() },
-        properties = DialogProperties(dismissOnBackPress = !isLoading, dismissOnClickOutside = !isLoading),
-    ) {
+    ScrimDialog(onDismissRequest = onDismiss, dismissible = !isLoading) {
         Surface(
-            modifier = Modifier.widthIn(max = 400.dp),
+            modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth(),
             shape = RoundedCornerShape(dimens.radiusM * 2),
             color = AppTheme.colors.background,
         ) {

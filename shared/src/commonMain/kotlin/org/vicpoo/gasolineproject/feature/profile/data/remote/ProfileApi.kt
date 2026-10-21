@@ -11,8 +11,8 @@ import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.network.ApiRoutes
 import org.vicpoo.gasolineproject.core.network.singleFileMultipart
 import org.vicpoo.gasolineproject.core.platform.PickedFile
-import org.vicpoo.gasolineproject.feature.auth.data.remote.dto.EmpleadoDto
-import org.vicpoo.gasolineproject.feature.auth.data.remote.dto.PerfilUsuarioDto
+import org.vicpoo.gasolineproject.core.network.dto.EmpleadoDto
+import org.vicpoo.gasolineproject.core.network.dto.PerfilUsuarioDto
 
 /** UpdateEmpleadoRequest de APIGasoline (PUT /api/empleados/{id}). */
 @Serializable

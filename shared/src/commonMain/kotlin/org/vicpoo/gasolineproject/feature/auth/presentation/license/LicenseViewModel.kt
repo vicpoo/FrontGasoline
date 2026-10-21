@@ -26,8 +26,15 @@ class LicenseViewModel(
 
     fun onEvent(event: LicenseEvent) {
         when (event) {
-            is LicenseEvent.FilePicked -> event.file?.let(::upload) // null = el usuario canceló
+            is LicenseEvent.FilePicked -> {
+                _state.update { it.copy(showSourceOptions = false) }
+                event.file?.let(::upload) // null = el usuario canceló
+            }
             LicenseEvent.Retry -> _state.value.pendingFile?.let(::upload)
+            LicenseEvent.UploadClicked -> if (!_state.value.isUploading) {
+                _state.update { it.copy(showSourceOptions = true, error = null) }
+            }
+            LicenseEvent.SourceOptionsDismissed -> _state.update { it.copy(showSourceOptions = false) }
         }
     }
 

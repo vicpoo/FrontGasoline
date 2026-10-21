@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.detail
 
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,18 +81,19 @@ import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.toImageModel
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.PendingSyncChip
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.SyncErrorChip
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.formatDecimal
+import org.vicpoo.gasolineproject.core.ui.components.PendingSyncChip
+import org.vicpoo.gasolineproject.core.ui.components.SyncErrorChip
+import org.vicpoo.gasolineproject.core.common.formatDecimal
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.label
 
 @Composable
 fun VehicleDetailRoute(
     vehicleId: String,
+    mode: VehiclesMode,
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
-    viewModel: VehicleDetailViewModel = koinViewModel(key = "vehicle-detail-$vehicleId") {
-        parametersOf(VehicleDetailArgs(vehicleId))
+    viewModel: VehicleDetailViewModel = koinViewModel(key = "vehicle-detail-$mode-$vehicleId") {
+        parametersOf(VehicleDetailArgs(vehicleId, mode))
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()

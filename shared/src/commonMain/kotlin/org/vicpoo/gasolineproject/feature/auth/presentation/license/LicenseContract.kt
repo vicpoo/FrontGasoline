@@ -9,11 +9,15 @@ data class LicenseUiState(
     val error: AppError? = null,
     /** Archivo pendiente para reintentar si falló la subida. */
     val pendingFile: PickedFile? = null,
+    /** Hoja "Tomar foto / Elegir archivo". */
+    val showSourceOptions: Boolean = false,
 )
 
 sealed interface LicenseEvent {
     data class FilePicked(val file: PickedFile?) : LicenseEvent
     data object Retry : LicenseEvent
+    data object UploadClicked : LicenseEvent
+    data object SourceOptionsDismissed : LicenseEvent
 }
 
 sealed interface LicenseEffect {

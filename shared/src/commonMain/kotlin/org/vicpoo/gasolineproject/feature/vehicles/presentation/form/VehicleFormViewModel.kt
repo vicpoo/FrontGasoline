@@ -23,7 +23,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.SaveVehicleUse
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleField
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleFormInput
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleFormValidator
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.formatDecimal
+import org.vicpoo.gasolineproject.core.common.formatDecimal
 
 /** vehicleId == null -> Agregar · vehicleId != null -> Editar */
 data class VehicleFormArgs(val vehicleId: String?)

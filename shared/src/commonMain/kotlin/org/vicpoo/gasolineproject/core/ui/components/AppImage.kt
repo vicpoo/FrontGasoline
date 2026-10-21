@@ -11,7 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.remember
+import coil3.compose.LocalPlatformContext
 import coil3.compose.SubcomposeAsyncImage
+import coil3.request.ImageRequest
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
@@ -19,6 +22,10 @@ import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
  * Imagen remota/local con placeholder.
  * model puede ser una URL (http...), una ruta "file://..." o un ByteArray.
  * Si es null o falla, muestra el ícono de respaldo sobre fondo gris.
+ *
+ * Las fotos de MinIO llegan como URL prefirmada (con ?X-Amz-...): la firma cambia en cada
+ * consulta y vence en 1 hora. Por eso el caché de imágenes usa la URL SIN la firma: la foto se
+ * descarga una vez y se sigue viendo aunque la URL guardada ya haya vencido (offline-first).
  */
 @Composable
 fun AppImage(
@@ -32,8 +39,21 @@ fun AppImage(
         ImagePlaceholder(modifier, fallbackIcon)
         return
     }
+    val context = LocalPlatformContext.current
+    val request = remember(model, context) {
+        if (model is String && model.startsWith("http")) {
+            val stableKey = model.substringBefore('?')
+            ImageRequest.Builder(context)
+                .data(model)
+                .memoryCacheKey(stableKey)
+                .diskCacheKey(stableKey)
+                .build()
+        } else {
+            model
+        }
+    }
     SubcomposeAsyncImage(
-        model = model,
+        model = request,
         contentDescription = contentDescription,
         modifier = modifier,
         contentScale = contentScale,

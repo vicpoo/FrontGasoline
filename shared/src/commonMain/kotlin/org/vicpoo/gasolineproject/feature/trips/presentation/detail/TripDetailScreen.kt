@@ -51,7 +51,7 @@ import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.trips.domain.FuelLoad
 import org.vicpoo.gasolineproject.feature.trips.domain.Trip
 import org.vicpoo.gasolineproject.feature.trips.presentation.common.OperatorHeader
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.formatDecimal
+import org.vicpoo.gasolineproject.core.common.formatDecimal
 
 @Composable
 fun TripDetailRoute(

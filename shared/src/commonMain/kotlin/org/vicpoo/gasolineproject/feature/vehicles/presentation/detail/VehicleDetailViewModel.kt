@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.detail
 
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMode
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
@@ -17,14 +18,18 @@ import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.ValidationReason
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.rbac.Privileges
-import org.vicpoo.gasolineproject.feature.reservations.RequestVehicleUseCase
+import org.vicpoo.gasolineproject.feature.reservations.domain.RequestVehicleUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleStatus
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.DeleteVehicleUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.ObserveVehicleUseCase
 
 /** Argumentos de la pantalla (se pasan con Koin parametersOf). */
-data class VehicleDetailArgs(val vehicleId: String)
+data class VehicleDetailArgs(
+    val vehicleId: String,
+    /** CATALOG: solo ver y solicitar. FLEET: editar / eliminar. */
+    val mode: VehiclesMode,
+)
 
 data class VehicleDetailUiState(
     val vehicle: Vehicle? = null,
@@ -88,9 +93,9 @@ class VehicleDetailViewModel(
         ui.copy(
             vehicle = vehicle,
             isLoading = false,
-            canEdit = perms.edit,
-            canDelete = perms.delete,
-            canRequest = perms.request && vehicle?.status == VehicleStatus.AVAILABLE,
+            canEdit = perms.edit && args.mode == VehiclesMode.FLEET,
+            canDelete = perms.delete && args.mode == VehiclesMode.FLEET,
+            canRequest = perms.request && args.mode == VehiclesMode.CATALOG && vehicle?.status == VehicleStatus.AVAILABLE,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), VehicleDetailUiState())
 

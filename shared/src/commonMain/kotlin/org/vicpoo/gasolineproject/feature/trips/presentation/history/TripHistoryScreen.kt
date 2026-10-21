@@ -47,7 +47,7 @@ import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.trips.domain.Trip
 import org.vicpoo.gasolineproject.feature.trips.presentation.common.OperatorHeader
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.formatDecimal
+import org.vicpoo.gasolineproject.core.common.formatDecimal
 
 @Composable
 fun TripHistoryRoute(
@@ -130,7 +130,9 @@ private fun TripCard(trip: Trip, onClick: () -> Unit) {
                     style = small,
                     color = colors.text,
                 )
-                Text(AppDates.formatDuration(AppDates.minutesBetween(trip.startedAt, trip.endedAt)), style = small, color = colors.text)
+                // Duración real: sin el tiempo en pausa
+                val minutes = AppDates.minutesBetween(trip.startedAt, trip.endedAt)?.let { (it - trip.pausedSeconds / 60).coerceAtLeast(0) }
+                Text(AppDates.formatDuration(minutes), style = small, color = colors.text)
                 Text(stringResource(Res.string.trip_records_value, trip.fuelLoads.size), style = small, color = colors.text)
             }
             RouteMap(

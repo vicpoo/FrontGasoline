@@ -76,5 +76,9 @@ fun createHttpClient(
         this.tokenProvider = tokenProvider
         this.unauthorizedHandler = unauthorizedHandler
     }
-    defaultRequest { url(ApiConfig.BASE_URL) }
+    defaultRequest {
+        url(ApiConfig.BASE_URL)
+        // La API guarda el origen en la auditoría (movil | web)
+        headers.append(ApiConfig.ORIGIN_HEADER, ApiConfig.ORIGIN_MOBILE)
+    }
 }

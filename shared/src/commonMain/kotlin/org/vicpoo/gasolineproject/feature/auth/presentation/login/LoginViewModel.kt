@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.session.mustUploadLicense
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.LoginUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.validation.LoginValidator
 
@@ -49,7 +50,8 @@ class LoginViewModel(
                 is AppResult.Success -> {
                     _state.update { it.copy(isLoading = false) }
                     _effects.send(
-                        if (result.data.requiresLicense) LoginEffect.GoToUploadLicense else LoginEffect.GoToHome,
+                        // La licencia solo se pide a quien maneja (viaje.registrar)
+                        if (result.data.mustUploadLicense) LoginEffect.GoToUploadLicense else LoginEffect.GoToHome,
                     )
                 }
                 is AppResult.Failure -> _state.update { it.copy(isLoading = false, error = result.error) }

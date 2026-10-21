@@ -16,43 +16,9 @@ import androidx.compose.ui.unit.dp
  */
 object AppIcons {
 
-    val ChevronLeft: ImageVector by lazy {
-        lineIcon("ChevronLeft") {
-            strokePath {
-                moveTo(15f, 18f)
-                lineTo(9f, 12f)
-                lineTo(15f, 6f)
-            }
-        }
-    }
+    val ChevronLeft: ImageVector get() = DesignIcons.ArrowLeft
 
-    val FileDocument: ImageVector by lazy {
-        lineIcon("FileDocument") {
-            strokePath {
-                moveTo(7f, 3f)
-                lineTo(14f, 3f)
-                lineTo(19f, 8f)
-                lineTo(19f, 19f)
-                quadTo(19f, 21f, 17f, 21f)
-                lineTo(7f, 21f)
-                quadTo(5f, 21f, 5f, 19f)
-                lineTo(5f, 5f)
-                quadTo(5f, 3f, 7f, 3f)
-                close()
-            }
-            strokePath {
-                moveTo(14f, 3f)
-                lineTo(14f, 8f)
-                lineTo(19f, 8f)
-            }
-            strokePath {
-                moveTo(9f, 13f)
-                lineTo(15f, 13f)
-                moveTo(9f, 17f)
-                lineTo(13f, 17f)
-            }
-        }
-    }
+    val FileDocument: ImageVector get() = DesignIcons.DocumentAttachment
 
     val Eye: ImageVector by lazy {
         lineIcon("Eye") {
@@ -76,114 +42,17 @@ object AppIcons {
         }
     }
 
-    val Search: ImageVector by lazy {
-        lineIcon("Search") {
-            strokePath {
-                moveTo(18f, 11f)
-                arcTo(7f, 7f, 0f, true, true, 4f, 11f)
-                arcTo(7f, 7f, 0f, true, true, 18f, 11f)
-                close()
-            }
-            strokePath {
-                moveTo(16.5f, 16.5f)
-                lineTo(21f, 21f)
-            }
-        }
-    }
+    val Search: ImageVector get() = DesignIcons.Search
 
-    val Plus: ImageVector by lazy {
-        lineIcon("Plus") {
-            strokePath {
-                moveTo(12f, 5f)
-                lineTo(12f, 19f)
-                moveTo(5f, 12f)
-                lineTo(19f, 12f)
-            }
-        }
-    }
+    val Plus: ImageVector get() = DesignIcons.Plus
 
-    val Close: ImageVector by lazy {
-        lineIcon("Close") {
-            strokePath {
-                moveTo(6f, 6f)
-                lineTo(18f, 18f)
-                moveTo(18f, 6f)
-                lineTo(6f, 18f)
-            }
-        }
-    }
+    val Close: ImageVector get() = DesignIcons.X
 
-    val Car: ImageVector by lazy {
-        lineIcon("Car") {
-            strokePath {
-                moveTo(3f, 16f)
-                lineTo(3f, 12f)
-                lineTo(5f, 7f)
-                quadTo(5.5f, 6f, 6.5f, 6f)
-                lineTo(17.5f, 6f)
-                quadTo(18.5f, 6f, 19f, 7f)
-                lineTo(21f, 12f)
-                lineTo(21f, 16f)
-                quadTo(21f, 17f, 20f, 17f)
-                lineTo(4f, 17f)
-                quadTo(3f, 17f, 3f, 16f)
-                close()
-            }
-            strokePath {
-                moveTo(3f, 12f)
-                lineTo(21f, 12f)
-            }
-            strokePath {
-                moveTo(9f, 17f)
-                arcTo(2f, 2f, 0f, true, true, 5f, 17f)
-                moveTo(19f, 17f)
-                arcTo(2f, 2f, 0f, true, true, 15f, 17f)
-            }
-        }
-    }
+    val Car: ImageVector get() = DesignIcons.CarFront
 
-    val User: ImageVector by lazy {
-        lineIcon("User") {
-            strokePath {
-                moveTo(16f, 8f)
-                arcTo(4f, 4f, 0f, true, true, 8f, 8f)
-                arcTo(4f, 4f, 0f, true, true, 16f, 8f)
-                close()
-            }
-            strokePath {
-                moveTo(4f, 21f)
-                quadTo(4f, 15f, 12f, 15f)
-                quadTo(20f, 15f, 20f, 21f)
-            }
-        }
-    }
+    val User: ImageVector get() = DesignIcons.User
 
-    val Camera: ImageVector by lazy {
-        lineIcon("Camera") {
-            strokePath {
-                moveTo(4f, 7f)
-                lineTo(7.5f, 7f)
-                lineTo(9f, 4.5f)
-                lineTo(15f, 4.5f)
-                lineTo(16.5f, 7f)
-                lineTo(20f, 7f)
-                quadTo(21f, 7f, 21f, 8f)
-                lineTo(21f, 18f)
-                quadTo(21f, 19f, 20f, 19f)
-                lineTo(4f, 19f)
-                quadTo(3f, 19f, 3f, 18f)
-                lineTo(3f, 8f)
-                quadTo(3f, 7f, 4f, 7f)
-                close()
-            }
-            strokePath {
-                moveTo(15.5f, 13f)
-                arcTo(3.5f, 3.5f, 0f, true, true, 8.5f, 13f)
-                arcTo(3.5f, 3.5f, 0f, true, true, 15.5f, 13f)
-                close()
-            }
-        }
-    }
+    val Camera: ImageVector get() = DesignIcons.Camera
 
     val CloudOff: ImageVector by lazy {
         lineIcon("CloudOff") {
@@ -287,59 +156,187 @@ object AppIcons {
     }
 
     /** Historial: hoja con reloj (Figma: pestaña de historial de viajes). */
-    val History: ImageVector by lazy {
-        lineIcon("History") {
-            strokePath {
-                moveTo(12f, 21f)
-                lineTo(6f, 21f)
-                quadTo(4f, 21f, 4f, 19f)
-                lineTo(4f, 5f)
-                quadTo(4f, 3f, 6f, 3f)
-                lineTo(16f, 3f)
-                quadTo(18f, 3f, 18f, 5f)
-                lineTo(18f, 11f)
-            }
-            strokePath {
-                moveTo(8f, 8f)
-                lineTo(14f, 8f)
-                moveTo(8f, 12f)
-                lineTo(12f, 12f)
-            }
-            strokePath {
-                moveTo(22f, 17f)
-                arcTo(4f, 4f, 0f, true, true, 14f, 17f)
-                arcTo(4f, 4f, 0f, true, true, 22f, 17f)
+    val History: ImageVector get() = DesignIcons.TransactionHistory
+
+    val Bell: ImageVector get() = DesignIcons.Notification
+
+    // ---------------- Viajes ----------------
+
+    /** Triángulo relleno (botón "comienzo" / "Comenzar viaje"). */
+    val Play: ImageVector get() = DesignIcons.Play
+
+    /** Dos barras rellenas (pausar viaje). */
+    val Pause: ImageVector by lazy {
+        lineIcon("Pause") {
+            fillPath {
+                moveTo(7f, 5f)
+                lineTo(10f, 5f)
+                lineTo(10f, 19f)
+                lineTo(7f, 19f)
                 close()
-            }
-            strokePath {
-                moveTo(18f, 15f)
-                lineTo(18f, 17f)
-                lineTo(19.5f, 18f)
+                moveTo(14f, 5f)
+                lineTo(17f, 5f)
+                lineTo(17f, 19f)
+                lineTo(14f, 19f)
+                close()
             }
         }
     }
 
-    val Bell: ImageVector by lazy {
-        lineIcon("Bell") {
-            strokePath {
-                moveTo(6f, 17f)
-                lineTo(6f, 11f)
-                quadTo(6f, 5f, 12f, 5f)
-                quadTo(18f, 5f, 18f, 11f)
-                lineTo(18f, 17f)
-                lineTo(20f, 19f)
-                lineTo(4f, 19f)
-                lineTo(6f, 17f)
+    /** Cuadro relleno (finalizar viaje). */
+    val Stop: ImageVector by lazy {
+        lineIcon("Stop") {
+            fillPath {
+                moveTo(8f, 6f)
+                lineTo(16f, 6f)
+                quadTo(18f, 6f, 18f, 8f)
+                lineTo(18f, 16f)
+                quadTo(18f, 18f, 16f, 18f)
+                lineTo(8f, 18f)
+                quadTo(6f, 18f, 6f, 16f)
+                lineTo(6f, 8f)
+                quadTo(6f, 6f, 8f, 6f)
                 close()
-            }
-            strokePath {
-                moveTo(10f, 21f)
-                lineTo(14f, 21f)
-                moveTo(12f, 3f)
-                lineTo(12f, 5f)
             }
         }
     }
+
+    val Trash: ImageVector by lazy {
+        lineIcon("Trash") {
+            strokePath {
+                moveTo(4f, 7f)
+                lineTo(20f, 7f)
+                moveTo(10f, 11f)
+                lineTo(10f, 17f)
+                moveTo(14f, 11f)
+                lineTo(14f, 17f)
+            }
+            strokePath {
+                moveTo(5f, 7f)
+                lineTo(6f, 19f)
+                quadTo(6f, 21f, 8f, 21f)
+                lineTo(16f, 21f)
+                quadTo(18f, 21f, 18f, 19f)
+                lineTo(19f, 7f)
+            }
+            strokePath {
+                moveTo(9f, 7f)
+                lineTo(9f, 4f)
+                lineTo(15f, 4f)
+                lineTo(15f, 7f)
+            }
+        }
+    }
+
+    /** Mira de GPS (señal activa). */
+    val Gps: ImageVector by lazy {
+        lineIcon("Gps") {
+            strokePath {
+                moveTo(19f, 12f)
+                arcTo(7f, 7f, 0f, true, true, 5f, 12f)
+                arcTo(7f, 7f, 0f, true, true, 19f, 12f)
+                close()
+            }
+            strokePath {
+                moveTo(12f, 2f)
+                lineTo(12f, 5f)
+                moveTo(12f, 19f)
+                lineTo(12f, 22f)
+                moveTo(2f, 12f)
+                lineTo(5f, 12f)
+                moveTo(19f, 12f)
+                lineTo(22f, 12f)
+            }
+            fillPath {
+                moveTo(14.5f, 12f)
+                arcTo(2.5f, 2.5f, 0f, true, true, 9.5f, 12f)
+                arcTo(2.5f, 2.5f, 0f, true, true, 14.5f, 12f)
+                close()
+            }
+        }
+    }
+
+    val ChevronDown: ImageVector by lazy {
+        lineIcon("ChevronDown") {
+            strokePath {
+                moveTo(6f, 9f)
+                lineTo(12f, 15f)
+                lineTo(18f, 9f)
+            }
+        }
+    }
+
+    val Upload: ImageVector by lazy {
+        lineIcon("Upload") {
+            strokePath {
+                moveTo(12f, 16f)
+                lineTo(12f, 4f)
+                moveTo(7f, 9f)
+                lineTo(12f, 4f)
+                lineTo(17f, 9f)
+            }
+            strokePath {
+                moveTo(4f, 15f)
+                lineTo(4f, 18f)
+                quadTo(4f, 20f, 6f, 20f)
+                lineTo(18f, 20f)
+                quadTo(20f, 20f, 20f, 18f)
+                lineTo(20f, 15f)
+            }
+        }
+    }
+
+    /** Ruta entre dos puntos (pestaña "Registrar"). */
+    val Route: ImageVector by lazy {
+        lineIcon("Route") {
+            strokePath {
+                moveTo(8f, 6f)
+                arcTo(2f, 2f, 0f, true, true, 4f, 6f)
+                arcTo(2f, 2f, 0f, true, true, 8f, 6f)
+                close()
+                moveTo(20f, 18f)
+                arcTo(2f, 2f, 0f, true, true, 16f, 18f)
+                arcTo(2f, 2f, 0f, true, true, 20f, 18f)
+                close()
+            }
+            strokePath {
+                moveTo(8f, 6f)
+                lineTo(15f, 6f)
+                quadTo(18f, 6f, 18f, 9f)
+                quadTo(18f, 12f, 15f, 12f)
+                lineTo(9f, 12f)
+                quadTo(6f, 12f, 6f, 15f)
+                quadTo(6f, 18f, 9f, 18f)
+                lineTo(16f, 18f)
+            }
+        }
+    }
+
+    /** Bomba de gasolina (recargas). */
+    val Fuel: ImageVector get() = DesignIcons.PetrolPump
+
+    // ---------------- Diseño (SVG de Figma, ver DesignIcons) ----------------
+
+    /** Pestaña Inicio: carros para solicitar. */
+    val Home: ImageVector get() = DesignIcons.Home
+
+    /** Pestaña Solicitudes de la empresa (llave). */
+    val Requests: ImageVector get() = DesignIcons.Access
+
+    /** Pestaña Gestión de carros (libreta con lápiz). */
+    val Fleet: ImageVector get() = DesignIcons.NotebookPen
+
+    /** Diálogo de éxito / error (Figma). */
+    val BadgeCheck: ImageVector get() = DesignIcons.BadgeCheck
+    val BadgeX: ImageVector get() = DesignIcons.BadgeX
+
+    val Pdf: ImageVector get() = DesignIcons.Pdf
+    val Xls: ImageVector get() = DesignIcons.Xls
+    val Chart: ImageVector get() = DesignIcons.Chart
+    val FileDollar: ImageVector get() = DesignIcons.FileDollar
+    val FileEdit: ImageVector get() = DesignIcons.FileEdit
+    val FileX: ImageVector get() = DesignIcons.FileX
+    val BackgroundEraser: ImageVector get() = DesignIcons.BackgroundEraser
 }
 
 /** Crea un ícono de 24x24 con el contenido indicado. */
@@ -363,6 +360,15 @@ private fun ImageVector.Builder.strokePath(pathBuilder: PathBuilder.() -> Unit) 
         strokeLineWidth = 2f,
         strokeLineCap = StrokeCap.Round,
         strokeLineJoin = StrokeJoin.Round,
+        pathBuilder = pathBuilder,
+    )
+}
+
+/** Agrega una figura rellena (el color también sale del tint). */
+private fun ImageVector.Builder.fillPath(pathBuilder: PathBuilder.() -> Unit) {
+    path(
+        fill = SolidColor(Color.Black),
+        stroke = null,
         pathBuilder = pathBuilder,
     )
 }

@@ -42,6 +42,7 @@ import gasolineproject.shared.generated.resources.vehicle_list_title
 import gasolineproject.shared.generated.resources.vehicle_plates_value
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
 import org.vicpoo.gasolineproject.core.ui.components.AppFab
 import org.vicpoo.gasolineproject.core.ui.components.AppImage
@@ -55,15 +56,18 @@ import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.toImageModel
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.PendingSyncChip
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.SyncErrorChip
+import org.vicpoo.gasolineproject.core.ui.components.PendingSyncChip
+import org.vicpoo.gasolineproject.core.ui.components.SyncErrorChip
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.VehicleStatusChip
 
 @Composable
 fun VehicleListRoute(
+    mode: VehiclesMode,
     onVehicleClick: (String) -> Unit,
     onAddVehicle: () -> Unit,
-    viewModel: VehicleListViewModel = koinViewModel(),
+    /** Botón de la esquina superior derecha (en Inicio: la campana de "Mis solicitudes"). */
+    topEndAction: (@Composable () -> Unit)? = null,
+    viewModel: VehicleListViewModel = koinViewModel(key = "vehicle-list-$mode") { parametersOf(VehicleListArgs(mode)) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     VehicleListScreen(
@@ -71,6 +75,7 @@ fun VehicleListRoute(
         onEvent = viewModel::onEvent,
         onVehicleClick = onVehicleClick,
         onAddVehicle = onAddVehicle,
+        topEndAction = topEndAction,
     )
 }
 
@@ -82,6 +87,7 @@ fun VehicleListScreen(
     onEvent: (VehicleListEvent) -> Unit,
     onVehicleClick: (String) -> Unit,
     onAddVehicle: () -> Unit,
+    topEndAction: (@Composable () -> Unit)? = null,
 ) {
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
@@ -105,7 +111,10 @@ fun VehicleListScreen(
                     .padding(horizontal = dimens.screenPadding),
             ) {
                 Spacer(Modifier.height(dimens.spaceM))
-                TitleText(stringResource(Res.string.vehicle_list_title))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    TitleText(stringResource(Res.string.vehicle_list_title), modifier = Modifier.weight(1f))
+                    topEndAction?.invoke()
+                }
                 Spacer(Modifier.height(dimens.spaceS))
                 AppSearchField(
                     value = state.query,

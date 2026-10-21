@@ -39,6 +39,7 @@ data class TripEntity(
     val fuelLoads: List<FuelLoadEntity> = emptyList(),
     /** Ruta como pares [lat, lng]. */
     val route: List<List<Double>> = emptyList(),
+    val pausedSeconds: Long = 0,
 )
 
 @Serializable
@@ -52,8 +53,9 @@ data class FuelLoadEntity(
 /**
  * Historial de viajes offline-first:
  * - La UI lee del caché (JSON en el teléfono).
- * - refresh() descarga viajes, cargas y rutas, y reemplaza el caché.
+ * - refresh() descarga viajes (ya traen quién manejó), las cargas de cada viaje y las rutas.
  * - RBAC: con viaje.ver_todos se ven los viajes de toda la empresa; si no, solo los propios.
+ *   Las cargas se piden por viaje (?viajeId=) porque así las permite la API a quien solo ve sus viajes.
  */
 class TripsRepositoryImpl(
     private val api: TripsApi,
@@ -79,19 +81,22 @@ class TripsRepositoryImpl(
             is AppResult.Success -> result.data
         }
 
-        // Cargas de la empresa (una sola petición) agrupadas por viaje
-        val loadsByTrip = safeApiCall { api.getFuelLoads(companyId) }.getOrNull().orEmpty()
-            .groupBy { it.viajeId }
+        val cached = cache.current().trips.associateBy { it.id }
 
-        // Nombres y fotos de los operadores (solo si ve los viajes de otros)
-        val employees = if (seeAll && companyId != null) {
-            safeApiCall { api.getEmployees(companyId) }.getOrNull().orEmpty().associateBy { it.empleadoId }
-        } else {
-            emptyMap()
+        // Cargas de cada viaje (en paralelo). Si una falla se queda la guardada.
+        val loadsByTrip = coroutineScope {
+            trips.map { trip ->
+                async {
+                    val loads = safeApiCall { api.getFuelLoads(trip.viajeId) }.getOrNull()?.map {
+                        FuelLoadEntity(it.cargaCombustibleId, it.litros, it.monto, it.fotoComprobanteUrl)
+                    }
+                    trip.viajeId to (loads ?: cached[trip.viajeId]?.fuelLoads.orEmpty())
+                }
+            }.awaitAll().toMap()
         }
 
         // Rutas: se reutiliza la guardada; solo se descargan las que faltan (en paralelo)
-        val cachedRoutes = cache.current().trips.associate { it.id to it.route }
+        val cachedRoutes = cached.mapValues { it.value.route }
         val routes = coroutineScope {
             trips.map { trip ->
                 async {
@@ -109,21 +114,21 @@ class TripsRepositoryImpl(
         val entities = trips
             .sortedByDescending { AppDates.sortKey(it.fechaInicio) }
             .map { trip ->
-                val employee = employees[trip.empleadoOperadorId]
+                val operator = trip.operador
                 val isMine = trip.empleadoOperadorId == session.employeeId
                 TripEntity(
                     id = trip.viajeId,
-                    operatorName = employee?.nombreCompleto ?: if (isMine) session.name ?: session.email else "",
-                    operatorPhotoUrl = employee?.fotoPerfilUrl ?: if (isMine) session.photoUrl else null,
+                    operatorName = operator?.nombreCompleto
+                        ?: if (isMine) session.name ?: session.email else cached[trip.viajeId]?.operatorName.orEmpty(),
+                    operatorPhotoUrl = operator?.fotoPerfilUrl ?: if (isMine) session.photoUrl else cached[trip.viajeId]?.operatorPhotoUrl,
                     startedAt = trip.fechaInicio,
                     endedAt = trip.fechaFin,
                     distanceKm = trip.distanciaRecorrida,
                     finalMileageKm = trip.kilometrajeFinal,
                     status = trip.estado,
-                    fuelLoads = loadsByTrip[trip.viajeId].orEmpty().map {
-                        FuelLoadEntity(it.cargaCombustibleId, it.litros, it.monto, it.fotoComprobanteUrl)
-                    },
+                    fuelLoads = loadsByTrip[trip.viajeId].orEmpty(),
                     route = routes[trip.viajeId].orEmpty(),
+                    pausedSeconds = trip.segundosEnPausa,
                 )
             }
 
@@ -145,4 +150,5 @@ private fun TripEntity.toDomain() = Trip(
     status = TripStatus.fromApi(status),
     fuelLoads = fuelLoads.map { FuelLoad(it.id, it.liters, it.amount, it.receiptUrl) },
     route = route.mapNotNull { pair -> if (pair.size >= 2) GeoPoint(pair[0], pair[1]) else null },
+    pausedSeconds = pausedSeconds,
 )

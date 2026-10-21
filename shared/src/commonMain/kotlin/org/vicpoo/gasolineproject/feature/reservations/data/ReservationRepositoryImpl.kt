@@ -1,0 +1,255 @@
+package org.vicpoo.gasolineproject.feature.reservations.data
+
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import org.vicpoo.gasolineproject.core.common.AppError
+import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.data.JsonFileCache
+import org.vicpoo.gasolineproject.core.network.safeApiCall
+import org.vicpoo.gasolineproject.core.session.SessionReader
+import org.vicpoo.gasolineproject.feature.reservations.data.local.CompanyReservationsSnapshot
+import org.vicpoo.gasolineproject.feature.reservations.data.local.MyReservationsSnapshot
+import org.vicpoo.gasolineproject.feature.reservations.data.local.ReservationRequestEntity
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.ApproveReservationRequestDto
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.CreateReservationRequestDto
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.RejectReservationRequestDto
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.ReservationApi
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.ReservationCarDto
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.ReservationDetailDto
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.ReservationRequestDto
+import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationDetail
+import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRepository
+import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRequest
+import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationStatus
+
+/**
+ * Solicitudes de reserva:
+ * - Enviar una solicitud con su motivo (requiere red).
+ * - "Mis solicitudes" (campana) y "Solicitudes de la empresa" (llave) offline-first: se guardan
+ *   en el teléfono con el solicitante y el carro (la API ya los manda en cada solicitud).
+ * - Detalle, aceptar y rechazar requieren conexión; al decidir se vuelve a leer la lista porque
+ *   aceptar rechaza solas las demás pendientes del mismo carro.
+ */
+class ReservationRepositoryImpl(
+    private val api: ReservationApi,
+    private val sessionReader: SessionReader,
+    private val cache: JsonFileCache<MyReservationsSnapshot>,
+    private val companyCache: JsonFileCache<CompanyReservationsSnapshot>,
+) : ReservationRepository {
+
+    override suspend fun requestVehicle(vehicleServerId: String, reason: String): AppResult<Unit> {
+        val session = sessionReader.current() ?: return AppResult.Failure(AppError.Unauthorized)
+        val employeeId = session.employeeId ?: return AppResult.Failure(AppError.NoCompany)
+        val companyId = session.companyId ?: return AppResult.Failure(AppError.NoCompany)
+        return safeApiCall {
+            api.create(
+                CreateReservationRequestDto(
+                    empresaId = companyId,
+                    carroId = vehicleServerId,
+                    empleadoSolicitanteId = employeeId,
+                    motivo = reason,
+                ),
+            )
+        }
+    }
+
+    // ---------------- Mis solicitudes (campana) ----------------
+
+    override fun observeMine(): Flow<List<ReservationRequest>> =
+        cache.data.map { snapshot ->
+            snapshot.requests
+                .map { it.toDomain() }
+                .sortedByDescending { it.requestedAt.orEmpty() }
+        }
+
+    override suspend fun refreshMine(): AppResult<Unit> {
+        val employeeId = sessionReader.current()?.employeeId
+            ?: return AppResult.Failure(AppError.NoCompany)
+
+        val requests = when (val result = safeApiCall { api.getByEmployee(employeeId) }) {
+            is AppResult.Failure -> return result
+            is AppResult.Success -> result.data
+        }
+
+        val current = cache.current()
+        val previous = current.requests.associateBy { it.id }
+        val cars = loadMissingCars(requests)
+        val entities = requests.map { dto -> dto.toEntity(cars[dto.carroId], previous[dto.solicitudReservaId]) }
+        cache.save(current.copy(requests = entities))
+        return AppResult.Success(Unit)
+    }
+
+    override fun observeUnseenUpdates(): Flow<Int> =
+        cache.data.map { it.unseenUpdates }.distinctUntilChanged()
+
+    override suspend fun refreshUnseenUpdates(): AppResult<Unit> {
+        val employeeId = sessionReader.current()?.employeeId ?: return AppResult.Success(Unit)
+        val unread = when (val result = safeApiCall { api.getUnreadReservationResults(employeeId) }) {
+            is AppResult.Failure -> return result
+            is AppResult.Success -> result.data
+        }
+        val current = cache.current()
+        cache.save(current.copy(unseenUpdates = unread.count { !it.leida }))
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun markUpdatesSeen(): AppResult<Unit> {
+        val employeeId = sessionReader.current()?.employeeId ?: return AppResult.Success(Unit)
+        val unread = when (val result = safeApiCall { api.getUnreadReservationResults(employeeId) }) {
+            is AppResult.Failure -> return result
+            is AppResult.Success -> result.data
+        }
+        // Una por una: así solo se marcan las respuestas a solicitudes (no otras notificaciones)
+        coroutineScope {
+            unread.filter { !it.leida }
+                .map { async { safeApiCall { api.markNotificationRead(it.notificacionId) } } }
+                .awaitAll()
+        }
+        cache.save(cache.current().copy(unseenUpdates = 0))
+        return AppResult.Success(Unit)
+    }
+
+    // ---------------- Solicitudes de la empresa (pestaña llave) ----------------
+
+    override fun observeCompany(): Flow<List<ReservationRequest>> =
+        companyCache.data.map { snapshot ->
+            snapshot.requests
+                .map { it.toDomain() }
+                .sortedByDescending { it.requestedAt.orEmpty() }
+        }
+
+    override fun observeCompanyRequest(reservationId: String): Flow<ReservationRequest?> =
+        companyCache.data.map { snapshot -> snapshot.requests.firstOrNull { it.id == reservationId }?.toDomain() }
+
+    override suspend fun refreshCompany(): AppResult<Unit> {
+        val requests = when (val result = safeApiCall { api.getCompany() }) {
+            is AppResult.Failure -> return result
+            is AppResult.Success -> result.data
+        }
+        val previous = companyCache.current().requests.associateBy { it.id }
+        val cars = loadMissingCars(requests)
+        val entities = requests.map { dto -> dto.toEntity(cars[dto.carroId], previous[dto.solicitudReservaId]) }
+        companyCache.save(CompanyReservationsSnapshot(entities))
+        return AppResult.Success(Unit)
+    }
+
+    override suspend fun getDetail(reservationId: String): AppResult<ReservationDetail> =
+        when (val result = safeApiCall { api.getDetail(reservationId) }) {
+            is AppResult.Failure -> result
+            is AppResult.Success -> AppResult.Success(result.data.toDomain())
+        }
+
+    override suspend fun approve(reservationId: String): AppResult<Unit> {
+        val employeeId = sessionReader.current()?.employeeId ?: return AppResult.Failure(AppError.NoCompany)
+        val result = safeApiCall { api.approve(reservationId, ApproveReservationRequestDto(empleadoConfirmadorId = employeeId)) }
+        // Aceptar rechaza solas las demás pendientes del mismo carro: se vuelve a leer toda la lista
+        if (result is AppResult.Success) refreshCompany()
+        return result
+    }
+
+    override suspend fun reject(reservationId: String, reason: String): AppResult<Unit> {
+        val employeeId = sessionReader.current()?.employeeId ?: return AppResult.Failure(AppError.NoCompany)
+        val result = safeApiCall {
+            api.reject(reservationId, RejectReservationRequestDto(empleadoConfirmadorId = employeeId, motivo = reason))
+        }
+        if (result is AppResult.Success) refreshCompany()
+        return result
+    }
+
+    override suspend fun clear() {
+        cache.clear()
+        companyCache.clear()
+    }
+
+    /**
+     * La API ya manda el carro en cada solicitud. Solo si alguna viene sin él (API vieja) se pide
+     * aparte, una vez por carro y en paralelo; si falla queda null y se usa lo guardado.
+     */
+    private suspend fun loadMissingCars(requests: List<ReservationRequestDto>): Map<String, ReservationCarDto?> = coroutineScope {
+        requests.filter { it.carro == null }.map { it.carroId }.distinct()
+            .map { id -> async { id to (safeApiCall { api.getVehicle(id) } as? AppResult.Success)?.data } }
+            .awaitAll()
+            .toMap()
+    }
+}
+
+// ---------- Mapeos ----------
+
+private fun ReservationRequestDto.toEntity(fallbackCar: ReservationCarDto?, previous: ReservationRequestEntity?): ReservationRequestEntity {
+    val car = carro ?: fallbackCar
+    return ReservationRequestEntity(
+        id = solicitudReservaId,
+        vehicleId = carroId,
+        vehicleTitle = car?.let { "${it.marca} ${it.modelo}".trim() } ?: previous?.vehicleTitle,
+        plates = car?.placas ?: previous?.plates,
+        photoUrl = car?.fotoVehiculoUrl ?: previous?.photoUrl,
+        status = estado,
+        requestedAt = fechaSolicitud,
+        resolvedAt = fechaResolucion,
+        resolutionReason = motivoResolucion,
+        requestReason = motivoSolicitud,
+        requesterId = empleadoSolicitanteId,
+        requesterName = solicitante?.nombreCompleto ?: previous?.requesterName,
+        requesterPhotoUrl = solicitante?.fotoPerfilUrl ?: previous?.requesterPhotoUrl,
+    )
+}
+
+private fun statusFromApi(status: String): ReservationStatus = when (status.lowercase()) {
+    "pendiente" -> ReservationStatus.PENDING
+    "aprobada" -> ReservationStatus.APPROVED
+    "rechazada" -> ReservationStatus.REJECTED
+    "cancelada" -> ReservationStatus.CANCELLED
+    "finalizada" -> ReservationStatus.FINISHED
+    else -> ReservationStatus.UNKNOWN
+}
+
+private fun ReservationRequestEntity.toDomain() = ReservationRequest(
+    id = id,
+    vehicleId = vehicleId,
+    vehicleTitle = vehicleTitle,
+    plates = plates,
+    photoUrl = photoUrl,
+    status = statusFromApi(status),
+    requestedAt = requestedAt,
+    resolvedAt = resolvedAt,
+    resolutionReason = resolutionReason,
+    requestReason = requestReason,
+    requesterId = requesterId,
+    requesterName = requesterName,
+    requesterPhotoUrl = requesterPhotoUrl,
+)
+
+private fun ReservationDetailDto.toDomain(): ReservationDetail {
+    val car = carro
+    val requester = solicitante
+    return ReservationDetail(
+        request = ReservationRequest(
+            id = solicitudReservaId,
+            vehicleId = carroId,
+            vehicleTitle = car?.let { "${it.marca} ${it.modelo}".trim() },
+            plates = car?.placas,
+            photoUrl = car?.fotoVehiculoUrl,
+            status = statusFromApi(estado),
+            requestedAt = fechaSolicitud,
+            resolvedAt = fechaResolucion,
+            resolutionReason = motivoResolucion,
+            requestReason = motivoSolicitud,
+            requesterId = empleadoSolicitanteId,
+            requesterName = requester?.nombreCompleto,
+            requesterPhotoUrl = requester?.fotoPerfilUrl,
+        ),
+        requesterHasLicense = requester?.tieneLicencia == true,
+        requesterLicenseUrl = requester?.fotoLicenciaUrl,
+        requesterLicenseUploadedAt = requester?.fechaCargaLicencia,
+        vehicleYear = car?.anio,
+        vehicleColor = car?.color,
+        vehicleMileageKm = car?.kilometrajeActual,
+        vehicleState = car?.estado,
+        confirmerName = confirmador?.nombreCompleto,
+        confirmerPhotoUrl = confirmador?.fotoPerfilUrl,
+    )
+}

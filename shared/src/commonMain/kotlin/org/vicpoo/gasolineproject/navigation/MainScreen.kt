@@ -2,96 +2,89 @@ package org.vicpoo.gasolineproject.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.nav_account
-import gasolineproject.shared.generated.resources.nav_history
-import gasolineproject.shared.generated.resources.nav_vehicles
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
-import org.vicpoo.gasolineproject.core.rbac.Privileges
 import org.vicpoo.gasolineproject.core.ui.adaptive.AdaptiveNavScaffold
-import org.vicpoo.gasolineproject.core.ui.adaptive.NavDestination
-import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.RefreshPrivilegesUseCase
-import org.vicpoo.gasolineproject.feature.profile.presentation.ProfileRoute
-import org.vicpoo.gasolineproject.feature.trips.presentation.history.TripHistoryRoute
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehicleListRoute
-
-private const val TAB_VEHICLES = "vehicles"
-private const val TAB_HISTORY = "history"
-private const val TAB_PROFILE = "profile"
+import org.vicpoo.gasolineproject.core.ui.components.LoadingView
+import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.profileGraph
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.companyReservationsGraph
+import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.tripRecordingGraph
+import org.vicpoo.gasolineproject.feature.trips.presentation.navigation.tripHistoryGraph
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.catalogGraph
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.vehiclesGraph
+import org.vicpoo.gasolineproject.core.ui.adaptive.NavDestination as TabItem
 
 /**
- * Al entrar a la pantalla principal pregunta a la API si cambiaron los privilegios
- * (GET /api/auth/privilegios con If-None-Match). Sin red se usan los guardados.
- */
-class MainViewModel(
-    permissionChecker: PermissionChecker,
-    private val refreshPrivileges: RefreshPrivilegesUseCase,
-) : ViewModel() {
-
-    val privileges: StateFlow<Set<String>> = permissionChecker.observePrivileges()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
-
-    init {
-        viewModelScope.launch { refreshPrivileges() }
-    }
-}
-
-/**
- * Pantalla principal con navegación adaptativa.
- * RBAC: cada pestaña aparece solo si el usuario tiene su privilegio.
- * Aquí se irán agregando Reservas, Viajes, Cargas y Reportes.
+ * Pantalla principal con NAVEGACIÓN ANIDADA:
+ * - Tiene su propio NavHost (independiente del raíz) con un subgrafo por pestaña.
+ * - Cada pestaña conserva su historial al cambiar de pestaña (saveState / restoreState).
+ * - La barra (o el riel en tablet) solo se ve en la pantalla inicial de cada subgrafo;
+ *   los detalles y formularios se abren a pantalla completa.
  */
 @Composable
 fun MainScreen(
-    onVehicleClick: (String) -> Unit,
-    onAddVehicle: () -> Unit,
-    onTripClick: (String) -> Unit,
-    onEditName: () -> Unit,
-    onUpdateLicense: () -> Unit,
     onLoggedOut: () -> Unit,
     viewModel: MainViewModel = koinViewModel(),
+    navController: NavHostController = rememberNavController(),
 ) {
     val privileges by viewModel.privileges.collectAsStateWithLifecycle()
-
-    val destinations = buildList {
-        if (Privileges.CARRO_VER in privileges) {
-            add(NavDestination(TAB_VEHICLES, stringResource(Res.string.nav_vehicles), AppIcons.Car))
-        }
-        if (Privileges.VIAJE_VER_PROPIOS in privileges || Privileges.VIAJE_VER_TODOS in privileges) {
-            add(NavDestination(TAB_HISTORY, stringResource(Res.string.nav_history), AppIcons.History))
-        }
-        add(NavDestination(TAB_PROFILE, stringResource(Res.string.nav_account), AppIcons.User))
+    val granted = privileges ?: run {
+        LoadingView()
+        return
     }
 
-    var selectedKey by rememberSaveable { mutableStateOf(TAB_VEHICLES) }
-    val currentKey = destinations.firstOrNull { it.key == selectedKey }?.key ?: destinations.first().key
+    val tabs = TopLevelDestination.entries.filter { it.isAllowed(granted) }
+    // El grafo de inicio se fija una vez (cambiarlo reiniciaría la navegación)
+    val startGraph = remember { tabs.first().graph }
+
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = backStackEntry?.destination
+    val currentTab = tabs.firstOrNull { currentDestination.belongsTo(it) }
+    val onTopLevel = currentDestination == null || tabs.any { currentDestination.hasRoute(it.start::class) }
 
     AdaptiveNavScaffold(
-        destinations = destinations,
-        selectedKey = currentKey,
-        onSelect = { selectedKey = it },
+        destinations = tabs.map { TabItem(it.name, stringResource(it.label), it.icon()) },
+        selectedKey = (currentTab ?: tabs.first()).name,
+        onSelect = { key -> navController.navigateToTab(TopLevelDestination.valueOf(key), currentTab) },
+        visible = onTopLevel,
     ) {
-        when (currentKey) {
-            TAB_VEHICLES -> VehicleListRoute(onVehicleClick = onVehicleClick, onAddVehicle = onAddVehicle)
-            TAB_HISTORY -> TripHistoryRoute(onTripClick = onTripClick)
-            else -> ProfileRoute(
-                onEditName = onEditName,
-                onUpdateLicense = onUpdateLicense,
-                onLoggedOut = onLoggedOut,
-            )
+        NavHost(navController = navController, startDestination = startGraph) {
+            catalogGraph(navController)
+            tripRecordingGraph(navController)
+            vehiclesGraph(navController)
+            companyReservationsGraph(navController)
+            tripHistoryGraph(navController)
+            profileGraph(navController, onLoggedOut = onLoggedOut)
         }
+    }
+}
+
+private fun NavDestination?.belongsTo(tab: TopLevelDestination): Boolean =
+    this?.hierarchy?.any { it.hasRoute(tab.graph::class) } == true
+
+/**
+ * Patrón recomendado para pestañas con subgrafos:
+ * - Otra pestaña: guarda el historial de la actual y restaura el de la nueva.
+ * - La misma pestaña: regresa a su pantalla inicial.
+ */
+private fun NavHostController.navigateToTab(tab: TopLevelDestination, current: TopLevelDestination?) {
+    if (tab == current) {
+        popBackStack(route = tab.start, inclusive = false)
+        return
+    }
+    navigate(tab.graph) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
     }
 }

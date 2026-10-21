@@ -6,6 +6,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.core.common.AppClock
+import org.vicpoo.gasolineproject.core.common.SystemAppClock
 import org.vicpoo.gasolineproject.core.network.TokenProvider
 import org.vicpoo.gasolineproject.core.network.UnauthorizedHandler
 import org.vicpoo.gasolineproject.core.network.createHttpClient
@@ -17,7 +19,16 @@ import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.session.SessionStore
 import org.vicpoo.gasolineproject.core.session.SessionWriter
 
-/** Dependencias propias de cada plataforma (carpetas, sistema de archivos, DataStore). */
+/*
+ * Módulos de infraestructura compartida, uno por responsabilidad (SRP):
+ * - coreModule:    JSON, scope de la app y reloj.
+ * - sessionModule: sesión guardada en el teléfono (lectura / escritura por separado, ISP).
+ * - networkModule: cliente Ktor con token y manejo del 401.
+ * - rbacModule:    consulta de privilegios.
+ * Las features solo piden interfaces; nunca crean estas clases (DIP).
+ */
+
+/** Dependencias propias de cada plataforma (carpetas, archivos, DataStore, GPS, cámara...). */
 expect val platformModule: Module
 
 /** Scope de toda la app: para sincronizar en segundo plano aunque la pantalla se cierre. */
@@ -30,15 +41,18 @@ val coreModule = module {
             isLenient = true
         }
     }
-
     single { AppScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
+    single<AppClock> { SystemAppClock() }
+}
 
-    // Sesión: una sola instancia expuesta por sus interfaces
+val sessionModule = module {
+    // Una sola instancia expuesta por sus interfaces
     single<SessionStore> { DataStoreSessionStore(dataStore = get(), json = get()) }
     single<SessionReader> { get<SessionStore>() }
     single<SessionWriter> { get<SessionStore>() }
+}
 
-    // Red
+val networkModule = module {
     single<TokenProvider> {
         val reader = get<SessionReader>()
         TokenProvider { reader.current()?.token }
@@ -55,7 +69,8 @@ val coreModule = module {
             json = get(),
         )
     }
+}
 
-    // RBAC
+val rbacModule = module {
     single<PermissionChecker> { SessionPermissionChecker(get()) }
 }

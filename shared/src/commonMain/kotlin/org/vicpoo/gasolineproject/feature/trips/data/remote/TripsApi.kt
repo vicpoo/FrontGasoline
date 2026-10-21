@@ -6,7 +6,6 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.network.ApiRoutes
-import org.vicpoo.gasolineproject.feature.auth.data.remote.dto.EmpleadoDto
 
 /** ViajeDto de APIGasoline (GET /api/viajes). Fechas en hora local del servidor. */
 @Serializable
@@ -22,6 +21,17 @@ data class ViajeDto(
     val distanciaRecorrida: Double? = null,
     /** "enCurso" | "finalizado" | "interrumpido" */
     val estado: String? = null,
+    val segundosEnPausa: Long = 0,
+    /** Quién manejó (nombre y foto): lo manda la API en cada viaje. */
+    val operador: OperadorDto? = null,
+)
+
+/** OperadorViajeDto de la API. */
+@Serializable
+data class OperadorDto(
+    val empleadoId: String,
+    val nombreCompleto: String? = null,
+    val fotoPerfilUrl: String? = null,
 )
 
 /** CargaCombustibleDto (GET /api/cargas-combustible). */
@@ -47,9 +57,10 @@ data class MapaRutaDto(
 
 interface TripsApi {
     suspend fun getTrips(companyId: String?, operatorId: String?): List<ViajeDto>
-    suspend fun getFuelLoads(companyId: String?): List<CargaCombustibleDto>
+
+    /** Cargas de UN viaje (GET /api/cargas-combustible?viajeId=): así funciona con viaje.ver_propios. */
+    suspend fun getFuelLoads(tripId: String): List<CargaCombustibleDto>
     suspend fun getRouteMap(tripId: String): MapaRutaDto
-    suspend fun getEmployees(companyId: String): List<EmpleadoDto>
 }
 
 class KtorTripsApi(private val client: HttpClient) : TripsApi {
@@ -60,14 +71,9 @@ class KtorTripsApi(private val client: HttpClient) : TripsApi {
             operatorId?.let { parameter("empleadoOperadorId", it) }
         }.body()
 
-    override suspend fun getFuelLoads(companyId: String?): List<CargaCombustibleDto> =
-        client.get(ApiRoutes.FUEL_LOADS) {
-            companyId?.let { parameter("empresaId", it) }
-        }.body()
+    override suspend fun getFuelLoads(tripId: String): List<CargaCombustibleDto> =
+        client.get(ApiRoutes.FUEL_LOADS) { parameter("viajeId", tripId) }.body()
 
     override suspend fun getRouteMap(tripId: String): MapaRutaDto =
         client.get(ApiRoutes.tripRouteMap(tripId)).body()
-
-    override suspend fun getEmployees(companyId: String): List<EmpleadoDto> =
-        client.get(ApiRoutes.EMPLOYEES) { parameter("empresaId", companyId) }.body()
 }
