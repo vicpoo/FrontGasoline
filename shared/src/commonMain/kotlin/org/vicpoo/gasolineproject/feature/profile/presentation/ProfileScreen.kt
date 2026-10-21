@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material3.Text
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +37,7 @@ import gasolineproject.shared.generated.resources.profile_photo_sheet_title
 import gasolineproject.shared.generated.resources.profile_license_ok
 import gasolineproject.shared.generated.resources.profile_license_pending
 import gasolineproject.shared.generated.resources.profile_license_title
+import gasolineproject.shared.generated.resources.profile_title
 import gasolineproject.shared.generated.resources.profile_update_license
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -40,12 +45,12 @@ import org.vicpoo.gasolineproject.core.platform.rememberCameraCapture
 import org.vicpoo.gasolineproject.core.platform.rememberDocumentPicker
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
 import org.vicpoo.gasolineproject.core.ui.components.AppScreen
-import org.vicpoo.gasolineproject.core.ui.components.AppTextButton
 import org.vicpoo.gasolineproject.core.ui.components.EditableAvatar
 import org.vicpoo.gasolineproject.core.ui.components.OptionsBottomSheet
 import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
 import org.vicpoo.gasolineproject.core.ui.components.ResultDialog
 import org.vicpoo.gasolineproject.core.ui.components.ResultType
+import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
 import org.vicpoo.gasolineproject.core.ui.components.SheetOption
 import org.vicpoo.gasolineproject.core.ui.components.SubtitleText
@@ -105,7 +110,9 @@ fun ProfileScreen(
     val canEdit = profile?.hasEmployee == true
 
     AppScreen(horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(Modifier.height(dimens.spaceXl))
+        // Mismo título y posición que "Vehículos" y las demás pestañas
+        ScreenHeader(title = stringResource(Res.string.profile_title), topSpacing = 0.dp)
+        Spacer(Modifier.height(dimens.spaceL))
 
         EditableAvatar(
             photoModel = profile?.photoUrl,
@@ -169,7 +176,8 @@ fun ProfileScreen(
         }
 
         Spacer(Modifier.weight(1f))
-        AppTextButton(text = stringResource(Res.string.action_logout), onClick = { onEvent(ProfileEvent.Logout) })
+        Spacer(Modifier.height(dimens.spaceXl))
+        LogoutRow(onClick = { onEvent(ProfileEvent.Logout) })
     }
 
     if (state.showPhotoOptions) {
@@ -201,3 +209,27 @@ fun ProfileScreen(
         )
     }
 }
+
+/**
+ * "Cerrar sesión" estilo Airbnb: al final del perfil, una línea divisoria y el texto subrayado
+ * en negritas alineado a la izquierda (sin botón de color).
+ */
+@Composable
+private fun LogoutRow(onClick: () -> Unit) {
+    val colors = AppTheme.colors
+    val dimens = AppTheme.dimens
+    Column(Modifier.fillMaxWidth()) {
+        HorizontalDivider(color = colors.textSecondary.copy(alpha = if (colors.isDark) 0.45f else 0.25f))
+        Text(
+            text = stringResource(Res.string.action_logout),
+            style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline),
+            color = colors.title,
+            modifier = Modifier
+                .padding(top = dimens.spaceM)
+                .clip(RoundedCornerShape(dimens.radiusS))
+                .clickable(onClick = onClick)
+                .padding(vertical = dimens.spaceS, horizontal = dimens.spaceXs),
+        )
+    }
+}
+

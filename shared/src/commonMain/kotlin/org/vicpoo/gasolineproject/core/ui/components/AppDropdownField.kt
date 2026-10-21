@@ -1,37 +1,31 @@
 package org.vicpoo.gasolineproject.core.ui.components
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextOverflow
-import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /** Una opción de AppDropdownField. */
 data class DropdownOption(val id: String, val label: String)
 
 /**
- * Lista desplegable con el mismo estilo que AppTextField (caja gris, label arriba).
- * Reutilizable: centros de costo, estados, filtros...
+ * Lista desplegable con el mismo estilo que AppTextField (borde del color principal y label
+ * flotante; rojo con error). Reutilizable: centros de costo, estados, filtros...
+ * Si no se manda [label], el [placeholder] hace de label.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppDropdownField(
     options: List<DropdownOption>,
@@ -44,57 +38,52 @@ fun AppDropdownField(
     enabled: Boolean = true,
 ) {
     val colors = AppTheme.colors
-    val dimens = AppTheme.dimens
     var expanded by remember { mutableStateOf(false) }
     val selected = options.firstOrNull { it.id == selectedId }
+    val canOpen = enabled && options.isNotEmpty()
 
-    Column(modifier) {
-        if (label != null) {
-            Text(text = label, style = AppTheme.typography.body, color = colors.subtitle)
-            Spacer(Modifier.height(dimens.spaceS))
-        }
-        Box {
-            Surface(
-                onClick = { expanded = true },
-                enabled = enabled && options.isNotEmpty(),
-                modifier = Modifier.fillMaxWidth().heightIn(min = dimens.buttonHeight),
-                shape = RoundedCornerShape(dimens.radiusS),
-                color = colors.inputBackground,
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = dimens.spaceM, vertical = dimens.spaceS),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = selected?.label ?: placeholder,
-                        style = AppTheme.typography.body,
-                        color = if (selected != null) colors.onInput else colors.inputPlaceholder,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Icon(AppIcons.ChevronDown, contentDescription = null, tint = colors.onInput)
-                }
+    val supportingContent: (@Composable () -> Unit)? = if (errorMessage != null) {
+        { Text(errorMessage) }
+    } else {
+        null
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && canOpen,
+        onExpandedChange = { if (canOpen) expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value = selected?.label.orEmpty(),
+            onValueChange = {},
+            readOnly = true,
+            enabled = enabled,
+            singleLine = true,
+            isError = errorMessage != null,
+            textStyle = AppTheme.typography.body,
+            label = { Text(label ?: placeholder) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            supportingText = supportingContent,
+            shape = RoundedCornerShape(AppTheme.dimens.radiusS),
+            colors = appOutlinedFieldColors(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = canOpen),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded && canOpen,
+            onDismissRequest = { expanded = false },
+            containerColor = colors.background,
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option.label, style = AppTheme.typography.body, color = colors.text) },
+                    onClick = {
+                        expanded = false
+                        onSelect(option.id)
+                    },
+                )
             }
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                containerColor = colors.background,
-            ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(option.label, style = AppTheme.typography.body, color = colors.text) },
-                        onClick = {
-                            expanded = false
-                            onSelect(option.id)
-                        },
-                    )
-                }
-            }
-        }
-        if (errorMessage != null) {
-            Spacer(Modifier.height(dimens.spaceXs))
-            ErrorText(errorMessage)
         }
     }
 }

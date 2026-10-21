@@ -83,6 +83,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.toImageModel
 import org.vicpoo.gasolineproject.core.ui.components.PendingSyncChip
 import org.vicpoo.gasolineproject.core.ui.components.SyncErrorChip
+import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.common.formatDecimal
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.label
 
@@ -141,6 +142,7 @@ fun VehicleDetailScreen(
             onConfirm = { onEvent(VehicleDetailEvent.DeleteConfirmed) },
             onDismiss = { onEvent(VehicleDetailEvent.DeleteDismissed) },
             isLoading = state.isDeleting,
+            icon = AppIcons.Trash,
         )
     }
 

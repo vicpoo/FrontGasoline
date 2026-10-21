@@ -16,8 +16,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -44,18 +47,17 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
-import org.vicpoo.gasolineproject.core.ui.components.AppFab
-import org.vicpoo.gasolineproject.core.ui.components.AppImage
+import org.vicpoo.gasolineproject.core.ui.components.AppAddButton
+import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.components.AppSearchField
 import org.vicpoo.gasolineproject.core.ui.components.EmptyView
 import org.vicpoo.gasolineproject.core.ui.components.ErrorText
 import org.vicpoo.gasolineproject.core.ui.components.LoadingView
 import org.vicpoo.gasolineproject.core.ui.components.OfflineBanner
-import org.vicpoo.gasolineproject.core.ui.components.TitleText
+import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
-import org.vicpoo.gasolineproject.feature.vehicles.domain.model.toImageModel
 import org.vicpoo.gasolineproject.core.ui.components.PendingSyncChip
 import org.vicpoo.gasolineproject.core.ui.components.SyncErrorChip
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.VehicleStatusChip
@@ -94,9 +96,11 @@ fun VehicleListScreen(
 
     Scaffold(
         containerColor = colors.background,
+        // "Agregar vehículo": botón propio, centrado abajo
+        floatingActionButtonPosition = FabPosition.Center,
         floatingActionButton = {
             if (state.canAdd) {
-                AppFab(onClick = onAddVehicle, contentDescription = stringResource(Res.string.action_add_vehicle))
+                AppAddButton(text = stringResource(Res.string.action_add_vehicle), onClick = onAddVehicle)
             }
         },
     ) { padding ->
@@ -110,12 +114,8 @@ fun VehicleListScreen(
                     .widthIn(max = dimens.maxContentWidthWide)
                     .padding(horizontal = dimens.screenPadding),
             ) {
+                ScreenHeader(title = stringResource(Res.string.vehicle_list_title), action = topEndAction)
                 Spacer(Modifier.height(dimens.spaceM))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TitleText(stringResource(Res.string.vehicle_list_title), modifier = Modifier.weight(1f))
-                    topEndAction?.invoke()
-                }
-                Spacer(Modifier.height(dimens.spaceS))
                 AppSearchField(
                     value = state.query,
                     onValueChange = { onEvent(VehicleListEvent.QueryChanged(it)) },
@@ -178,21 +178,26 @@ private fun VehicleGrid(vehicles: List<Vehicle>, onVehicleClick: (String) -> Uni
     }
 }
 
-/** Tarjeta de vehículo (Figma): foto, "Vocho Amarillo", "Volkswagen Sedán", placas y estado. */
+/**
+ * Tarjeta de vehículo: "Vocho Amarillo", "Volkswagen Sedán", placas y estado.
+ * Sin foto (la foto solo se ve en el detalle); a la izquierda va el ícono del carro.
+ */
 @Composable
 fun VehicleCard(vehicle: Vehicle, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
     AppCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            AppImage(
-                model = vehicle.photo?.toImageModel(),
-                contentDescription = vehicle.cardTitle,
+            Box(
                 modifier = Modifier
-                    .size(width = 96.dp, height = 72.dp)
-                    .clip(RoundedCornerShape(dimens.radiusS)),
-            )
-            Spacer(Modifier.width(dimens.spaceS))
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(colors.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(AppIcons.Car, contentDescription = null, tint = colors.primary, modifier = Modifier.size(26.dp))
+            }
+            Spacer(Modifier.width(dimens.spaceM))
             Column(Modifier.weight(1f)) {
                 Text(
                     text = vehicle.cardTitle,

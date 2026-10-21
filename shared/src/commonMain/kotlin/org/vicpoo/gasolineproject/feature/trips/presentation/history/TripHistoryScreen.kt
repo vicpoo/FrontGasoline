@@ -42,7 +42,7 @@ import org.vicpoo.gasolineproject.core.ui.components.ErrorText
 import org.vicpoo.gasolineproject.core.ui.components.LoadingView
 import org.vicpoo.gasolineproject.core.ui.components.OfflineBanner
 import org.vicpoo.gasolineproject.core.ui.components.RouteMap
-import org.vicpoo.gasolineproject.core.ui.components.TitleText
+import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.trips.domain.Trip
@@ -77,8 +77,7 @@ fun TripHistoryScreen(
                 .widthIn(max = dimens.maxContentWidthWide)
                 .padding(horizontal = dimens.screenPadding),
         ) {
-            Spacer(Modifier.height(dimens.spaceM))
-            TitleText(stringResource(Res.string.trip_history_title))
+            ScreenHeader(title = stringResource(Res.string.trip_history_title))
             if (state.isOffline) {
                 Spacer(Modifier.height(dimens.spaceS))
                 OfflineBanner(stringResource(Res.string.trip_history_offline))

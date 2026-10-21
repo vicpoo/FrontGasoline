@@ -1,14 +1,21 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.form
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,10 +30,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.action_back
-import gasolineproject.shared.generated.resources.action_change
-import gasolineproject.shared.generated.resources.action_next
+import gasolineproject.shared.generated.resources.action_add_short
+import gasolineproject.shared.generated.resources.action_cancel
+import gasolineproject.shared.generated.resources.action_modify
 import gasolineproject.shared.generated.resources.action_save
+import gasolineproject.shared.generated.resources.cd_close
 import gasolineproject.shared.generated.resources.cd_remove_photo
 import gasolineproject.shared.generated.resources.vehicle_field_brand
 import gasolineproject.shared.generated.resources.vehicle_field_color
@@ -38,11 +46,16 @@ import gasolineproject.shared.generated.resources.vehicle_field_tank
 import gasolineproject.shared.generated.resources.vehicle_field_year
 import gasolineproject.shared.generated.resources.vehicle_form_add_title
 import gasolineproject.shared.generated.resources.vehicle_form_edit_title
-import gasolineproject.shared.generated.resources.vehicle_form_no_photo
+import gasolineproject.shared.generated.resources.vehicle_form_new_vehicle
 import gasolineproject.shared.generated.resources.vehicle_form_offline_note
+import gasolineproject.shared.generated.resources.vehicle_form_optional
+import gasolineproject.shared.generated.resources.vehicle_form_photo_added
 import gasolineproject.shared.generated.resources.vehicle_form_photo_change
 import gasolineproject.shared.generated.resources.vehicle_form_photo_empty
-import gasolineproject.shared.generated.resources.vehicle_form_step_label
+import gasolineproject.shared.generated.resources.vehicle_form_save
+import gasolineproject.shared.generated.resources.vehicle_form_section_error
+import gasolineproject.shared.generated.resources.vehicle_form_section_pending
+import gasolineproject.shared.generated.resources.vehicle_form_sections_hint
 import gasolineproject.shared.generated.resources.vehicle_hint_brand
 import gasolineproject.shared.generated.resources.vehicle_hint_color
 import gasolineproject.shared.generated.resources.vehicle_hint_mileage
@@ -61,8 +74,6 @@ import gasolineproject.shared.generated.resources.vehicle_step_identification_su
 import gasolineproject.shared.generated.resources.vehicle_step_identification_title
 import gasolineproject.shared.generated.resources.vehicle_step_photo_subtitle
 import gasolineproject.shared.generated.resources.vehicle_step_photo_title
-import gasolineproject.shared.generated.resources.vehicle_step_review_subtitle
-import gasolineproject.shared.generated.resources.vehicle_step_review_title
 import gasolineproject.shared.generated.resources.vehicle_step_specs_subtitle
 import gasolineproject.shared.generated.resources.vehicle_step_specs_title
 import org.jetbrains.compose.resources.StringResource
@@ -70,18 +81,21 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.vicpoo.gasolineproject.core.platform.rememberDocumentPicker
-import org.vicpoo.gasolineproject.core.ui.components.AppCard
 import org.vicpoo.gasolineproject.core.ui.components.AppImage
-import org.vicpoo.gasolineproject.core.ui.components.AppTextButton
+import org.vicpoo.gasolineproject.core.ui.components.AppScreen
 import org.vicpoo.gasolineproject.core.ui.components.AppTextField
+import org.vicpoo.gasolineproject.core.ui.components.EditSheet
 import org.vicpoo.gasolineproject.core.ui.components.ErrorText
-import org.vicpoo.gasolineproject.core.ui.components.InfoRow
 import org.vicpoo.gasolineproject.core.ui.components.LoadingView
 import org.vicpoo.gasolineproject.core.ui.components.PhotoPickerBox
+import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
+import org.vicpoo.gasolineproject.core.ui.components.ReviewCard
+import org.vicpoo.gasolineproject.core.ui.components.ReviewRow
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
-import org.vicpoo.gasolineproject.core.ui.components.WizardScaffold
-import org.vicpoo.gasolineproject.core.ui.components.WizardStepHeader
+import org.vicpoo.gasolineproject.core.ui.components.SegmentedProgress
+import org.vicpoo.gasolineproject.core.ui.components.TitleText
 import org.vicpoo.gasolineproject.core.ui.components.asText
+import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleField
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleFormValidator
@@ -120,8 +134,10 @@ fun VehicleFormRoute(
 }
 
 /**
- * Agregar / Editar vehículo estilo Airbnb:
- * en vez de un formulario largo, 5 pasos cortos con una pregunta cada uno y un resumen final.
+ * Agregar / Editar vehículo estilo Airbnb ("Evaluar y continuar"):
+ * una tarjeta con el carro arriba y una fila por sección con su botón "Agregar" / "Modificar".
+ * Cada sección se edita en una hoja que sube desde abajo (Cancelar / Guardar).
+ * Abajo, la barra de avance en segmentos y "Guardar vehículo".
  */
 @Composable
 fun VehicleFormScreen(
@@ -134,186 +150,192 @@ fun VehicleFormScreen(
         LoadingView()
         return
     }
+    val dimens = AppTheme.dimens
+    val input = state.input
+    val km = stringResource(Res.string.vehicle_km_suffix)
+    val liters = stringResource(Res.string.vehicle_liters_suffix)
 
-    WizardScaffold(
-        flowTitle = stringResource(if (state.isEdit) Res.string.vehicle_form_edit_title else Res.string.vehicle_form_add_title),
-        stepLabel = stringResource(Res.string.vehicle_form_step_label, state.stepIndex + 1, state.totalSteps),
-        currentStep = state.stepIndex,
-        totalSteps = state.totalSteps,
-        backText = stringResource(Res.string.action_back),
-        nextText = stringResource(if (state.isLastStep) Res.string.action_save else Res.string.action_next),
-        onClose = onClose,
-        onBack = { onEvent(VehicleFormEvent.Back) },
-        onNext = { onEvent(VehicleFormEvent.Next) },
-        isNextLoading = state.isSaving,
-        isBackEnabled = state.stepIndex > 0 || state.returnToReview || state.isEdit,
-    ) { stepIndex ->
-        when (VehicleFormStep.entries[stepIndex]) {
-            VehicleFormStep.BASICS -> BasicsStep(state, onEvent)
-            VehicleFormStep.IDENTIFICATION -> IdentificationStep(state, onEvent)
-            VehicleFormStep.SPECS -> SpecsStep(state, onEvent)
-            VehicleFormStep.PHOTO -> PhotoStep(state, onEvent, onPickPhoto)
-            VehicleFormStep.REVIEW -> ReviewStep(state, onEvent)
+    AppScreen {
+        // Título arriba, a la altura de la X para cerrar (misma posición que los títulos de las pestañas)
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+            TitleText(
+                stringResource(if (state.isEdit) Res.string.vehicle_form_edit_title else Res.string.vehicle_form_add_title),
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(onClick = onClose) {
+                Icon(AppIcons.Close, contentDescription = stringResource(Res.string.cd_close), tint = AppTheme.colors.title)
+            }
+        }
+        Spacer(Modifier.height(dimens.spaceXs))
+        SecondaryText(stringResource(Res.string.vehicle_form_sections_hint))
+        Spacer(Modifier.height(dimens.spaceL))
+
+        ReviewCard {
+            VehicleHeader(state)
+            HorizontalDivider(color = AppTheme.colors.divider)
+
+            SectionRow(
+                state, onEvent, VehicleFormSection.BASICS, Res.string.vehicle_section_basics,
+                value = listOf(input.brand, input.model).filter { it.isNotBlank() }.joinToString(" "),
+            )
+            SectionRow(
+                state, onEvent, VehicleFormSection.IDENTIFICATION, Res.string.vehicle_section_identification,
+                value = listOf(input.plates, input.year, input.color).filter { it.isNotBlank() }.joinToString(" · "),
+            )
+            SectionRow(
+                state, onEvent, VehicleFormSection.SPECS, Res.string.vehicle_section_specs,
+                value = listOfNotNull(
+                    input.mileage.takeIf { it.isNotBlank() }?.let { "$it $km" },
+                    input.tank.takeIf { it.isNotBlank() }?.let { "$it $liters" },
+                ).joinToString(" · "),
+            )
+            SectionRow(
+                state, onEvent, VehicleFormSection.PHOTO, Res.string.vehicle_field_photo,
+                value = stringResource(if (state.photoModel != null) Res.string.vehicle_form_photo_added else Res.string.vehicle_form_optional),
+                showDivider = false,
+            )
+        }
+
+        Spacer(Modifier.height(dimens.spaceM))
+        SecondaryText(stringResource(Res.string.vehicle_form_offline_note))
+        state.error?.let {
+            Spacer(Modifier.height(dimens.spaceS))
+            ErrorText(it.asText())
+        }
+
+        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(dimens.spaceL))
+        SegmentedProgress(total = state.totalSections, done = state.completed.size)
+        Spacer(Modifier.height(dimens.spaceM))
+        PrimaryButton(
+            text = stringResource(Res.string.vehicle_form_save),
+            onClick = { onEvent(VehicleFormEvent.Save) },
+            isLoading = state.isSaving,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+
+    state.editing?.let { section ->
+        SectionSheet(section = section, state = state, onEvent = onEvent, onPickPhoto = onPickPhoto, km = km, liters = liters)
+    }
+}
+
+/** Arriba de la tarjeta: foto (si hay) y "Marca Modelo" (como el alojamiento en Airbnb). */
+@Composable
+private fun VehicleHeader(state: VehicleFormUiState) {
+    val dimens = AppTheme.dimens
+    val title = listOf(state.input.brand, state.input.model).filter { it.isNotBlank() }.joinToString(" ")
+        .ifBlank { stringResource(Res.string.vehicle_form_new_vehicle) }
+    Row(Modifier.fillMaxWidth().padding(vertical = dimens.spaceM), verticalAlignment = Alignment.CenterVertically) {
+        AppImage(
+            model = state.photoModel,
+            contentDescription = null,
+            fallbackIcon = AppIcons.Car,
+            modifier = Modifier.size(width = 96.dp, height = 80.dp).clip(RoundedCornerShape(dimens.radiusM)),
+        )
+        Spacer(Modifier.width(dimens.spaceM))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold), color = AppTheme.colors.title)
+            if (state.input.plates.isNotBlank()) {
+                SecondaryText(state.input.plates)
+            }
         }
     }
 }
 
-// ---------------- Paso 1: Marca y modelo ----------------
-
 @Composable
-private fun ColumnScope.BasicsStep(state: VehicleFormUiState, onEvent: (VehicleFormEvent) -> Unit) {
-    WizardStepHeader(
-        title = stringResource(Res.string.vehicle_step_basics_title),
-        subtitle = stringResource(Res.string.vehicle_step_basics_subtitle),
-    )
-    FormField(state, onEvent, VehicleField.BRAND, Res.string.vehicle_field_brand, Res.string.vehicle_hint_brand, capitalization = KeyboardCapitalization.Words)
-    FieldSpacer()
-    FormField(
-        state, onEvent, VehicleField.MODEL, Res.string.vehicle_field_model, Res.string.vehicle_hint_model,
-        capitalization = KeyboardCapitalization.Words,
-        imeAction = ImeAction.Done,
+private fun SectionRow(
+    state: VehicleFormUiState,
+    onEvent: (VehicleFormEvent) -> Unit,
+    section: VehicleFormSection,
+    title: StringResource,
+    value: String,
+    showDivider: Boolean = true,
+) {
+    val hasError = state.hasError(section)
+    val filled = section in state.completed
+    ReviewRow(
+        title = stringResource(title),
+        value = when {
+            hasError -> stringResource(Res.string.vehicle_form_section_error)
+            value.isBlank() -> stringResource(Res.string.vehicle_form_section_pending)
+            else -> value
+        },
+        actionText = stringResource(if (filled) Res.string.action_modify else Res.string.action_add_short),
+        onAction = { onEvent(VehicleFormEvent.OpenSection(section)) },
+        isError = hasError,
+        showDivider = showDivider,
     )
 }
 
-// ---------------- Paso 2: Identificación ----------------
-
+/** Hoja de edición de una sección (Airbnb "Modifica el número de huéspedes"). */
 @Composable
-private fun ColumnScope.IdentificationStep(state: VehicleFormUiState, onEvent: (VehicleFormEvent) -> Unit) {
-    WizardStepHeader(
-        title = stringResource(Res.string.vehicle_step_identification_title),
-        subtitle = stringResource(Res.string.vehicle_step_identification_subtitle),
-    )
-    FormField(state, onEvent, VehicleField.PLATES, Res.string.vehicle_field_plates, Res.string.vehicle_hint_plates, capitalization = KeyboardCapitalization.Characters)
-    FieldSpacer()
-    FormField(state, onEvent, VehicleField.YEAR, Res.string.vehicle_field_year, Res.string.vehicle_hint_year, keyboardType = KeyboardType.Number)
-    FieldSpacer()
-    FormField(
-        state, onEvent, VehicleField.COLOR, Res.string.vehicle_field_color, Res.string.vehicle_hint_color,
-        capitalization = KeyboardCapitalization.Sentences,
-        imeAction = ImeAction.Done,
-    )
-}
-
-// ---------------- Paso 3: Datos técnicos ----------------
-
-@Composable
-private fun ColumnScope.SpecsStep(state: VehicleFormUiState, onEvent: (VehicleFormEvent) -> Unit) {
-    WizardStepHeader(
-        title = stringResource(Res.string.vehicle_step_specs_title),
-        subtitle = stringResource(Res.string.vehicle_step_specs_subtitle),
-    )
-    FormField(
-        state, onEvent, VehicleField.MILEAGE, Res.string.vehicle_field_mileage_initial, Res.string.vehicle_hint_mileage,
-        keyboardType = KeyboardType.Number,
-        suffix = stringResource(Res.string.vehicle_km_suffix),
-    )
-    FieldSpacer()
-    FormField(
-        state, onEvent, VehicleField.TANK, Res.string.vehicle_field_tank, Res.string.vehicle_hint_tank,
-        keyboardType = KeyboardType.Decimal,
-        suffix = stringResource(Res.string.vehicle_liters_suffix),
-        imeAction = ImeAction.Done,
-    )
-}
-
-// ---------------- Paso 4: Foto ----------------
-
-@Composable
-private fun ColumnScope.PhotoStep(
+private fun SectionSheet(
+    section: VehicleFormSection,
     state: VehicleFormUiState,
     onEvent: (VehicleFormEvent) -> Unit,
     onPickPhoto: () -> Unit,
+    km: String,
+    liters: String,
 ) {
-    WizardStepHeader(
-        title = stringResource(Res.string.vehicle_step_photo_title),
-        subtitle = stringResource(Res.string.vehicle_step_photo_subtitle),
-    )
-    PhotoPickerBox(
-        photoModel = state.photoModel,
-        emptyText = stringResource(Res.string.vehicle_form_photo_empty),
-        changeText = stringResource(Res.string.vehicle_form_photo_change),
-        removeDescription = stringResource(Res.string.cd_remove_photo),
-        onPick = onPickPhoto,
-        onRemove = { onEvent(VehicleFormEvent.RemovePhoto) },
-    )
-    state.photoError?.let {
-        Spacer(Modifier.height(AppTheme.dimens.spaceS))
-        ErrorText(it.asText())
+    val (title, subtitle) = when (section) {
+        VehicleFormSection.BASICS -> Res.string.vehicle_step_basics_title to Res.string.vehicle_step_basics_subtitle
+        VehicleFormSection.IDENTIFICATION -> Res.string.vehicle_step_identification_title to Res.string.vehicle_step_identification_subtitle
+        VehicleFormSection.SPECS -> Res.string.vehicle_step_specs_title to Res.string.vehicle_step_specs_subtitle
+        VehicleFormSection.PHOTO -> Res.string.vehicle_step_photo_title to Res.string.vehicle_step_photo_subtitle
     }
-}
-
-// ---------------- Paso 5: Revisar ----------------
-
-@Composable
-private fun ColumnScope.ReviewStep(state: VehicleFormUiState, onEvent: (VehicleFormEvent) -> Unit) {
-    val dimens = AppTheme.dimens
-    val input = state.input
-    WizardStepHeader(
-        title = stringResource(Res.string.vehicle_step_review_title),
-        subtitle = stringResource(Res.string.vehicle_step_review_subtitle),
-    )
-
-    ReviewSection(Res.string.vehicle_section_basics, onEdit = { onEvent(VehicleFormEvent.GoToStep(VehicleFormStep.BASICS)) }) {
-        InfoRow(stringResource(Res.string.vehicle_field_brand), input.brand)
-        InfoRow(stringResource(Res.string.vehicle_field_model), input.model, showDivider = false)
-    }
-    Spacer(Modifier.height(dimens.spaceM))
-    ReviewSection(Res.string.vehicle_section_identification, onEdit = { onEvent(VehicleFormEvent.GoToStep(VehicleFormStep.IDENTIFICATION)) }) {
-        InfoRow(stringResource(Res.string.vehicle_field_plates), input.plates)
-        InfoRow(stringResource(Res.string.vehicle_field_year), input.year)
-        InfoRow(stringResource(Res.string.vehicle_field_color), input.color, showDivider = false)
-    }
-    Spacer(Modifier.height(dimens.spaceM))
-    ReviewSection(Res.string.vehicle_section_specs, onEdit = { onEvent(VehicleFormEvent.GoToStep(VehicleFormStep.SPECS)) }) {
-        InfoRow(stringResource(Res.string.vehicle_field_mileage_initial), "${input.mileage} ${stringResource(Res.string.vehicle_km_suffix)}")
-        InfoRow(stringResource(Res.string.vehicle_field_tank), "${input.tank} ${stringResource(Res.string.vehicle_liters_suffix)}", showDivider = false)
-    }
-    Spacer(Modifier.height(dimens.spaceM))
-    ReviewSection(Res.string.vehicle_field_photo, onEdit = { onEvent(VehicleFormEvent.GoToStep(VehicleFormStep.PHOTO)) }) {
-        val photo = state.photoModel
-        if (photo != null) {
-            AppImage(
-                model = photo,
-                contentDescription = null,
-                modifier = Modifier.fillMaxWidth().height(140.dp).clip(RoundedCornerShape(dimens.radiusS)),
-            )
-        } else {
-            SecondaryText(stringResource(Res.string.vehicle_form_no_photo))
-        }
-    }
-
-    Spacer(Modifier.height(dimens.spaceL))
-    SecondaryText(stringResource(Res.string.vehicle_form_offline_note))
-    state.error?.let {
-        Spacer(Modifier.height(dimens.spaceS))
-        ErrorText(it.asText())
-    }
-}
-
-/** Tarjeta del resumen con título y enlace "Cambiar" (como en Airbnb). */
-@Composable
-private fun ReviewSection(
-    title: StringResource,
-    onEdit: () -> Unit,
-    content: @Composable ColumnScope.() -> Unit,
-) {
-    AppCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(title),
-                    modifier = Modifier.weight(1f),
-                    style = AppTheme.typography.body.copy(fontWeight = FontWeight.Medium),
-                    color = AppTheme.colors.title,
+    EditSheet(
+        title = stringResource(title),
+        subtitle = stringResource(subtitle),
+        cancelText = stringResource(Res.string.action_cancel),
+        saveText = stringResource(Res.string.action_save),
+        onCancel = { onEvent(VehicleFormEvent.CancelSection) },
+        onSave = { onEvent(VehicleFormEvent.ConfirmSection) },
+        closeDescription = stringResource(Res.string.cd_close),
+    ) {
+        when (section) {
+            VehicleFormSection.BASICS -> {
+                FormField(state, onEvent, VehicleField.BRAND, Res.string.vehicle_field_brand, Res.string.vehicle_hint_brand, capitalization = KeyboardCapitalization.Words)
+                FormField(
+                    state, onEvent, VehicleField.MODEL, Res.string.vehicle_field_model, Res.string.vehicle_hint_model,
+                    capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done,
                 )
-                AppTextButton(text = stringResource(Res.string.action_change), onClick = onEdit)
             }
-            content()
+            VehicleFormSection.IDENTIFICATION -> {
+                FormField(state, onEvent, VehicleField.PLATES, Res.string.vehicle_field_plates, Res.string.vehicle_hint_plates, capitalization = KeyboardCapitalization.Characters)
+                FormField(state, onEvent, VehicleField.YEAR, Res.string.vehicle_field_year, Res.string.vehicle_hint_year, keyboardType = KeyboardType.Number)
+                FormField(
+                    state, onEvent, VehicleField.COLOR, Res.string.vehicle_field_color, Res.string.vehicle_hint_color,
+                    capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done,
+                )
+            }
+            VehicleFormSection.SPECS -> {
+                FormField(
+                    state, onEvent, VehicleField.MILEAGE, Res.string.vehicle_field_mileage_initial, Res.string.vehicle_hint_mileage,
+                    keyboardType = KeyboardType.Number, suffix = km,
+                )
+                FormField(
+                    state, onEvent, VehicleField.TANK, Res.string.vehicle_field_tank, Res.string.vehicle_hint_tank,
+                    keyboardType = KeyboardType.Decimal, suffix = liters, imeAction = ImeAction.Done,
+                )
+            }
+            VehicleFormSection.PHOTO -> {
+                PhotoPickerBox(
+                    photoModel = state.draftPhotoModel,
+                    emptyText = stringResource(Res.string.vehicle_form_photo_empty),
+                    changeText = stringResource(Res.string.vehicle_form_photo_change),
+                    removeDescription = stringResource(Res.string.cd_remove_photo),
+                    onPick = onPickPhoto,
+                    onRemove = { onEvent(VehicleFormEvent.RemovePhoto) },
+                )
+                state.photoError?.let {
+                    Spacer(Modifier.height(AppTheme.dimens.spaceS))
+                    ErrorText(it.asText())
+                }
+            }
         }
     }
 }
-
-// ---------------- Helpers ----------------
 
 @Composable
 private fun FormField(
@@ -326,27 +348,22 @@ private fun FormField(
     capitalization: KeyboardCapitalization = KeyboardCapitalization.None,
     imeAction: ImeAction = ImeAction.Next,
     suffix: String? = null,
-    helper: String? = null,
 ) {
     AppTextField(
-        value = state.input.valueOf(field),
+        value = state.draft.valueOf(field),
         onValueChange = { onEvent(VehicleFormEvent.FieldChanged(field, it)) },
         label = stringResource(label),
         placeholder = stringResource(hint),
         modifier = Modifier.fillMaxWidth(),
-        errorMessage = state.errors[field]?.asText(),
-        helperText = helper,
+        errorMessage = state.draftErrors[field]?.asText(),
         suffix = suffix,
         keyboardOptions = KeyboardOptions(
             keyboardType = keyboardType,
             capitalization = capitalization,
             imeAction = imeAction,
         ),
-        keyboardActions = KeyboardActions(onDone = { onEvent(VehicleFormEvent.Next) }),
+        // "Listo" en el teclado = "Guardar" de la hoja
+        keyboardActions = KeyboardActions(onDone = { onEvent(VehicleFormEvent.ConfirmSection) }),
     )
-}
-
-@Composable
-private fun FieldSpacer() {
-    Spacer(Modifier.height(AppTheme.dimens.spaceL))
+    Spacer(Modifier.height(AppTheme.dimens.spaceS))
 }

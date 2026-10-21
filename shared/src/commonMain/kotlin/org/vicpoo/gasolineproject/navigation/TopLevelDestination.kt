@@ -27,7 +27,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.Vehic
 /**
  * Pestañas de la pantalla principal. Cada una abre el subgrafo de su feature.
  * RBAC: una pestaña se muestra si el usuario tiene AL MENOS UNO de [requiredAnyOf]
- * (vacío = siempre visible). Para agregar una pestaña nueva solo se agrega un valor aquí
+ * (vacío = siempre visible) y ADEMÁS TODOS los de [requiredAllOf]. Para agregar una pestaña nueva solo se agrega un valor aquí
  * y su subgrafo en MainScreen.
  */
 enum class TopLevelDestination(
@@ -39,10 +39,13 @@ enum class TopLevelDestination(
     val label: StringResource,
     val icon: () -> ImageVector,
     val requiredAnyOf: Set<String>,
+    val requiredAllOf: Set<String> = emptySet(),
 ) {
     /**
-     * Casa: los carros de la empresa (carro.ver). En el detalle se manda la solicitud
-     * (solicitud.crear) y arriba está la campana de "Mis solicitudes" (solicitud.ver_propias).
+     * Casa: los carros de la empresa para PEDIR uno. Se necesita carro.ver Y solicitud.crear:
+     * quien solo administra carros (carro.ver + crear/editar/eliminar) ya los ve en la libreta
+     * con lápiz, así no le salen dos pestañas de vehículos. En el detalle se manda la solicitud
+     * y arriba está la campana de "Mis solicitudes" (solicitud.ver_propias).
      */
     HOME(
         graph = CatalogGraph,
@@ -50,6 +53,7 @@ enum class TopLevelDestination(
         label = Res.string.nav_home,
         icon = { AppIcons.Home },
         requiredAnyOf = setOf(Privileges.CARRO_VER),
+        requiredAllOf = setOf(Privileges.SOLICITUD_CREAR),
     ),
 
     /** Carro: viajes (registrar, pausar, terminar y cargas). */
@@ -99,5 +103,6 @@ enum class TopLevelDestination(
     ;
 
     fun isAllowed(privileges: Set<String>): Boolean =
-        requiredAnyOf.isEmpty() || requiredAnyOf.any { it in privileges }
+        (requiredAnyOf.isEmpty() || requiredAnyOf.any { it in privileges }) &&
+            requiredAllOf.all { it in privileges }
 }

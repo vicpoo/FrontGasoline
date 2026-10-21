@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -42,7 +43,7 @@ import org.vicpoo.gasolineproject.core.ui.components.LoadingView
 import org.vicpoo.gasolineproject.core.ui.components.OfflineBanner
 import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
-import org.vicpoo.gasolineproject.core.ui.components.TitleText
+import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
@@ -76,14 +77,14 @@ fun AssignedVehiclesScreen(
 ) {
     val dimens = AppTheme.dimens
     Box(
-        modifier = Modifier.fillMaxSize().padding(horizontal = dimens.screenPadding),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = dimens.screenPadding),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(Modifier.fillMaxSize().widthIn(max = dimens.maxContentWidthWide)) {
-            Spacer(Modifier.height(dimens.spaceM))
-            TitleText(stringResource(Res.string.assigned_title))
-            Spacer(Modifier.height(dimens.spaceXs))
-            SecondaryText(stringResource(Res.string.assigned_subtitle))
+            ScreenHeader(
+                title = stringResource(Res.string.assigned_title),
+                subtitle = stringResource(Res.string.assigned_subtitle),
+            )
 
             if (state.isOffline) {
                 Spacer(Modifier.height(dimens.spaceS))

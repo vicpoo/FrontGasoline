@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -37,7 +38,7 @@ import org.vicpoo.gasolineproject.core.ui.components.EmptyView
 import org.vicpoo.gasolineproject.core.ui.components.ErrorText
 import org.vicpoo.gasolineproject.core.ui.components.LoadingView
 import org.vicpoo.gasolineproject.core.ui.components.OfflineBanner
-import org.vicpoo.gasolineproject.core.ui.components.TitleText
+import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.ReservationCard
@@ -61,12 +62,11 @@ fun CompanyReservationsScreen(
 ) {
     val dimens = AppTheme.dimens
     Box(
-        modifier = Modifier.fillMaxSize().padding(horizontal = dimens.screenPadding),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = dimens.screenPadding),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(Modifier.fillMaxSize().widthIn(max = dimens.maxContentWidthWide)) {
-            Spacer(Modifier.height(dimens.spaceM))
-            TitleText(stringResource(Res.string.company_requests_title))
+            ScreenHeader(title = stringResource(Res.string.company_requests_title))
             Spacer(Modifier.height(dimens.spaceS))
 
             Row(horizontalArrangement = Arrangement.spacedBy(dimens.spaceS)) {

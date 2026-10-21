@@ -22,6 +22,7 @@
     <!-- Navegación principal -->
     <string name="nav_vehicles">Vehículos</string>
     <string name="nav_account">Perfil</string>
+    <string name="profile_title">Perfil</string>
     <string name="nav_history">Historial</string>
 
     <!-- Solicitud de reserva -->
@@ -86,7 +87,7 @@
 
     <!-- Vehículos: lista -->
     <string name="vehicle_list_title">Vehículos</string>
-    <string name="vehicle_list_search">Buscar por marca, modelo o placas</string>
+    <string name="vehicle_list_search">¿Qué vehículo buscas?</string>
     <string name="vehicle_list_empty">Aún no hay vehículos registrados.</string>
     <string name="vehicle_list_no_results">No se encontraron vehículos con esa búsqueda.</string>
     <string name="vehicle_list_offline">Sin conexión: estás viendo la última información guardada.</string>
@@ -150,6 +151,16 @@
     <string name="vehicle_section_basics">Vehículo</string>
     <string name="vehicle_section_identification">Identificación</string>
     <string name="vehicle_section_specs">Datos técnicos</string>
+    <string name="vehicle_form_sections_hint">Revisa cada sección y toca "Agregar" o "Modificar" para llenarla.</string>
+    <string name="vehicle_form_new_vehicle">Nuevo vehículo</string>
+    <string name="vehicle_form_save">Guardar vehículo</string>
+    <string name="action_add_short">Agregar</string>
+    <string name="action_modify">Modificar</string>
+    <string name="vehicle_form_photo_added">Foto agregada</string>
+    <string name="vehicle_form_section_pending">Sin llenar</string>
+    <string name="vehicle_form_section_error">Revisa los datos</string>
+    <string name="vehicle_form_done">Listo</string>
+    <string name="vehicle_form_optional">Opcional</string>
     <string name="vehicle_form_offline_note">Si no tienes conexión, se guardará en el teléfono y se enviará automáticamente después.</string>
 
     <!-- Registrar viaje: carros asignados -->

@@ -28,44 +28,63 @@ import org.vicpoo.gasolineproject.core.common.formatDecimal
 /** vehicleId == null -> Agregar · vehicleId != null -> Editar */
 data class VehicleFormArgs(val vehicleId: String?)
 
-/** Pasos del formulario estilo Airbnb: una idea por pantalla. */
-enum class VehicleFormStep(val fields: Set<VehicleField>) {
+/**
+ * Secciones del formulario estilo Airbnb ("Evaluar y continuar"): una tarjeta con cada sección
+ * y su botón "Agregar" / "Modificar". Cada sección se edita en una hoja que sube desde abajo
+ * con "Cancelar" y "Guardar".
+ */
+enum class VehicleFormSection(val fields: Set<VehicleField>) {
     BASICS(setOf(VehicleField.BRAND, VehicleField.MODEL)),
     IDENTIFICATION(setOf(VehicleField.PLATES, VehicleField.YEAR, VehicleField.COLOR)),
     SPECS(setOf(VehicleField.MILEAGE, VehicleField.TANK)),
     PHOTO(emptySet()),
-    REVIEW(emptySet()),
 }
 
 data class VehicleFormUiState(
     val isEdit: Boolean = false,
-    val step: VehicleFormStep = VehicleFormStep.BASICS,
+    /** Lo ya guardado en la tarjeta. */
     val input: VehicleFormInput = VehicleFormInput(),
     val existingPhoto: VehiclePhoto? = null,
+    /** Secciones ya llenas (cuentan en la barra de progreso). */
+    val completed: Set<VehicleFormSection> = emptySet(),
+    /** Errores al intentar guardar todo (la fila se marca en rojo). */
     val errors: Map<VehicleField, ValidationReason> = emptyMap(),
+    // ---- Hoja de edición abierta ----
+    val editing: VehicleFormSection? = null,
+    /** Copia que se edita en la hoja: "Cancelar" la descarta, "Guardar" la pasa a [input]. */
+    val draft: VehicleFormInput = VehicleFormInput(),
+    val draftErrors: Map<VehicleField, ValidationReason> = emptyMap(),
     val photoError: ValidationReason? = null,
+    // ---- Envío ----
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: AppError? = null,
-    /** true si el usuario vino desde "Revisar" a corregir un paso: "Siguiente" lo regresa a Revisar. */
-    val returnToReview: Boolean = false,
 ) {
-    val stepIndex: Int get() = step.ordinal
-    val totalSteps: Int get() = VehicleFormStep.entries.size
-    val isLastStep: Boolean get() = step == VehicleFormStep.REVIEW
+    /** Foto guardada en la tarjeta (la nueva o la actual si no se quitó). */
+    val photoModel: Any? get() = input.photoModel(existingPhoto)
 
-    /** Lo que se muestra en el selector de foto: la nueva, o la actual si no se quitó. */
-    val photoModel: Any?
-        get() = input.newPhoto?.bytes ?: existingPhoto?.takeIf { !input.removePhoto }?.toImageModel()
+    /** Foto que se ve dentro de la hoja de edición. */
+    val draftPhotoModel: Any? get() = draft.photoModel(existingPhoto)
+
+    val totalSections: Int get() = VehicleFormSection.entries.size
+
+    fun hasError(section: VehicleFormSection): Boolean = section.fields.any { it in errors }
 }
 
+private fun VehicleFormInput.photoModel(existing: VehiclePhoto?): Any? =
+    newPhoto?.bytes ?: existing?.takeIf { !removePhoto }?.toImageModel()
+
 sealed interface VehicleFormEvent {
+    /** "Agregar" / "Modificar" de una fila: abre la hoja de esa sección. */
+    data class OpenSection(val section: VehicleFormSection) : VehicleFormEvent
+    data object CancelSection : VehicleFormEvent
+    data object ConfirmSection : VehicleFormEvent
+
     data class FieldChanged(val field: VehicleField, val value: String) : VehicleFormEvent
     data class PhotoPicked(val file: PickedFile?) : VehicleFormEvent
     data object RemovePhoto : VehicleFormEvent
-    data object Next : VehicleFormEvent
-    data object Back : VehicleFormEvent
-    data class GoToStep(val step: VehicleFormStep) : VehicleFormEvent
+
+    data object Save : VehicleFormEvent
 }
 
 sealed interface VehicleFormEffect {
@@ -92,18 +111,24 @@ class VehicleFormViewModel(
 
     fun onEvent(event: VehicleFormEvent) {
         when (event) {
+            is VehicleFormEvent.OpenSection -> _state.update {
+                it.copy(
+                    editing = event.section,
+                    draft = it.input,
+                    draftErrors = it.errors.filterKeys { field -> field in event.section.fields },
+                    photoError = null,
+                )
+            }
+            VehicleFormEvent.CancelSection -> _state.update { it.copy(editing = null, draftErrors = emptyMap(), photoError = null) }
+            VehicleFormEvent.ConfirmSection -> confirmSection()
             is VehicleFormEvent.FieldChanged -> _state.update {
-                it.copy(input = it.input.with(event.field, event.value), errors = it.errors - event.field, error = null)
+                it.copy(draft = it.draft.with(event.field, event.value), draftErrors = it.draftErrors - event.field)
             }
             is VehicleFormEvent.PhotoPicked -> onPhotoPicked(event.file)
             VehicleFormEvent.RemovePhoto -> _state.update {
-                it.copy(input = it.input.copy(newPhoto = null, removePhoto = true), photoError = null)
+                it.copy(draft = it.draft.copy(newPhoto = null, removePhoto = true), photoError = null)
             }
-            VehicleFormEvent.Next -> onNext()
-            VehicleFormEvent.Back -> onBack()
-            is VehicleFormEvent.GoToStep -> _state.update {
-                it.copy(step = event.step, returnToReview = it.step == VehicleFormStep.REVIEW)
-            }
+            VehicleFormEvent.Save -> save()
         }
     }
 
@@ -120,8 +145,8 @@ class VehicleFormViewModel(
                     isLoading = false,
                     input = vehicle.toFormInput(),
                     existingPhoto = vehicle.photo,
-                    // Al editar se empieza en el resumen: el usuario elige qué sección cambiar
-                    step = VehicleFormStep.REVIEW,
+                    // Al editar todo ya está lleno: solo se modifica la sección que se quiera
+                    completed = VehicleFormSection.entries.toSet(),
                 )
             }
         }
@@ -134,52 +159,49 @@ class VehicleFormViewModel(
             if (error != null) {
                 it.copy(photoError = error)
             } else {
-                it.copy(input = it.input.copy(newPhoto = file, removePhoto = false), photoError = null)
+                it.copy(draft = it.draft.copy(newPhoto = file, removePhoto = false), photoError = null)
             }
         }
     }
 
-    private fun onNext() {
+    /** "Guardar" de la hoja: valida solo esa sección y la pasa a la tarjeta. */
+    private fun confirmSection() {
+        val current = _state.value
+        val section = current.editing ?: return
+        if (current.photoError != null) return
+
+        val sectionErrors = validator.validate(current.draft, section.fields)
+        if (sectionErrors.isNotEmpty()) {
+            _state.update { it.copy(draftErrors = sectionErrors) }
+            return
+        }
+        _state.update {
+            it.copy(
+                input = it.draft,
+                completed = it.completed + section,
+                errors = it.errors - section.fields,
+                editing = null,
+                draftErrors = emptyMap(),
+            )
+        }
+    }
+
+    /** "Guardar vehículo": valida todo; si falta algo, abre la hoja de la primera sección con error. */
+    private fun save() {
         val current = _state.value
         if (current.isSaving) return
 
-        if (current.isLastStep) {
-            save()
-            return
-        }
-
-        val stepErrors = validator.validate(current.input, current.step.fields)
-        if (stepErrors.isNotEmpty()) {
-            _state.update { it.copy(errors = it.errors + stepErrors) }
-            return
-        }
-
-        val nextStep = if (current.returnToReview) {
-            VehicleFormStep.REVIEW
-        } else {
-            VehicleFormStep.entries[current.stepIndex + 1]
-        }
-        _state.update { it.copy(step = nextStep, returnToReview = false) }
-    }
-
-    private fun onBack() {
-        val current = _state.value
-        when {
-            current.returnToReview -> _state.update { it.copy(step = VehicleFormStep.REVIEW, returnToReview = false) }
-            // Primer paso, o el resumen al editar: "Atrás" cierra el formulario
-            current.stepIndex == 0 || (current.isEdit && current.isLastStep) ->
-                viewModelScope.launch { _effects.send(VehicleFormEffect.Close) }
-            else -> _state.update { it.copy(step = VehicleFormStep.entries[current.stepIndex - 1]) }
-        }
-    }
-
-    private fun save() {
-        val current = _state.value
         val allErrors = validator.validate(current.input)
         if (allErrors.isNotEmpty()) {
-            // Lleva al primer paso que tenga un error
-            val firstStepWithError = VehicleFormStep.entries.first { step -> step.fields.any { it in allErrors } }
-            _state.update { it.copy(errors = allErrors, step = firstStepWithError, returnToReview = true) }
+            val firstWithError = VehicleFormSection.entries.first { section -> section.fields.any { it in allErrors } }
+            _state.update {
+                it.copy(
+                    errors = allErrors,
+                    editing = firstWithError,
+                    draft = it.input,
+                    draftErrors = allErrors.filterKeys { field -> field in firstWithError.fields },
+                )
+            }
             return
         }
 
