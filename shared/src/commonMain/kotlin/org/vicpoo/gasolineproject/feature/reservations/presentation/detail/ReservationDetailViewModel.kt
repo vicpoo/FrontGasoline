@@ -152,7 +152,7 @@ class ReservationDetailViewModel(
                     decisionError = (result as? AppResult.Failure)?.error,
                 )
             }
-            if (result is AppResult.Success) load()
+            // Con éxito la pantalla regresa sola a la lista (la lista ya se actualizó en el repositorio)
         }
     }
 
@@ -163,7 +163,6 @@ class ReservationDetailViewModel(
             when (val result = rejectReservation(reservationId, ui.value.rejectReason)) {
                 is AppResult.Success -> {
                     ui.update { it.copy(isSending = false, showRejectDialog = false, decision = ReservationDecision.REJECTED) }
-                    load()
                 }
                 is AppResult.Failure -> ui.update {
                     val validation = (result.error as? AppError.Validation)?.reason

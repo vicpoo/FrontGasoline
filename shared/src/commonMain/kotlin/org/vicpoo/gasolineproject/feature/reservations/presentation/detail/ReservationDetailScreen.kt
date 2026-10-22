@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -99,6 +100,12 @@ fun ReservationDetailRoute(
     },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    // Al aceptar o rechazar, regresa sola a la lista de solicitudes
+    LaunchedEffect(state.decision) {
+        if (state.decision != null) onBack()
+    }
+
     ReservationDetailScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack)
 }
 
@@ -307,33 +314,16 @@ private fun Dialogs(state: ReservationDetailUiState, onEvent: (ReservationDetail
         )
     }
 
-    when (state.decision) {
-        ReservationDecision.APPROVED -> ResultDialog(
-            type = ResultType.Success,
-            title = stringResource(Res.string.company_requests_approved_title),
-            message = stringResource(Res.string.company_requests_approved_message),
+    // Con éxito no hay diálogo: la pantalla regresa sola a la lista. Solo se avisan los errores.
+    state.decisionError?.let { error ->
+        ResultDialog(
+            type = ResultType.Error,
+            title = stringResource(Res.string.company_requests_error_title),
+            message = error.asText(),
             buttonText = stringResource(Res.string.action_understood),
             onButtonClick = dismiss,
             onDismiss = dismiss,
         )
-        ReservationDecision.REJECTED -> ResultDialog(
-            type = ResultType.Success,
-            title = stringResource(Res.string.company_requests_rejected_title),
-            message = stringResource(Res.string.company_requests_rejected_message),
-            buttonText = stringResource(Res.string.action_understood),
-            onButtonClick = dismiss,
-            onDismiss = dismiss,
-        )
-        null -> state.decisionError?.let { error ->
-            ResultDialog(
-                type = ResultType.Error,
-                title = stringResource(Res.string.company_requests_error_title),
-                message = error.asText(),
-                buttonText = stringResource(Res.string.action_understood),
-                onButtonClick = dismiss,
-                onDismiss = dismiss,
-            )
-        }
     }
 }
 

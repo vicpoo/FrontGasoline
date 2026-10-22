@@ -128,6 +128,7 @@ fun AssignedVehiclesScreen(
                                         },
                                         leadingIcon = AppIcons.Play,
                                         variant = AppButtonVariant.Primary,
+                                        modifier = Modifier.fillMaxWidth(),
                                     )
                                 },
                             )

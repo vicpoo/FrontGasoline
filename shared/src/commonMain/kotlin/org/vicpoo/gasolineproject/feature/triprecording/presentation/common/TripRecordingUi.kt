@@ -1,5 +1,7 @@
 package org.vicpoo.gasolineproject.feature.triprecording.presentation.common
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,7 +42,7 @@ fun CostCenter.label(): String = stringResource(Res.string.cost_center_value, na
 
 /**
  * Tarjeta del carro asignado (Figma "Registrar" / "Iniciar Viaje"): foto, modelo y placas.
- * [action] es el botón de la derecha (ej. "▷ comienzo"); puede ser null.
+ * [action] va abajo y ocupa todo el ancho de la tarjeta (ej. "▷ Comenzar"); puede ser null.
  */
 @Composable
 fun AssignedVehicleCard(
@@ -52,38 +54,38 @@ fun AssignedVehicleCard(
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
     AppCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            AppImage(
-                model = vehicle.photoUrl,
-                contentDescription = vehicle.title,
-                modifier = Modifier
-                    .size(width = 96.dp, height = 72.dp)
-                    .clip(RoundedCornerShape(dimens.radiusS)),
-            )
-            Spacer(Modifier.width(dimens.spaceS))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = vehicle.title,
-                    style = AppTheme.typography.body.copy(fontWeight = FontWeight.Medium),
-                    color = colors.title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+        Column(Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AppImage(
+                    model = vehicle.photoUrl,
+                    contentDescription = vehicle.title,
+                    modifier = Modifier
+                        .size(width = 112.dp, height = 84.dp)
+                        .clip(RoundedCornerShape(dimens.radiusM)),
                 )
-                vehicle.color?.takeIf { it.isNotBlank() }?.let {
-                    Text(text = it, style = AppTheme.typography.caption, color = colors.textSecondary, maxLines = 1)
-                }
-                Text(
-                    text = stringResource(Res.string.vehicle_plates_value, vehicle.plates),
-                    style = AppTheme.typography.caption,
-                    color = colors.textSecondary,
-                )
-                if (action != null) {
-                    Spacer(Modifier.height(dimens.spaceXs))
-                    Row(Modifier.fillMaxWidth()) {
-                        Spacer(Modifier.weight(1f))
-                        action()
+                Spacer(Modifier.width(dimens.spaceM))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(dimens.spaceXs)) {
+                    Text(
+                        text = vehicle.title,
+                        style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                        color = colors.title,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    vehicle.color?.takeIf { it.isNotBlank() }?.let {
+                        Text(text = it, style = AppTheme.typography.bodySecondary, color = colors.textSecondary, maxLines = 1)
                     }
+                    Text(
+                        text = stringResource(Res.string.vehicle_plates_value, vehicle.plates),
+                        style = AppTheme.typography.bodySecondary,
+                        color = colors.textSecondary,
+                    )
                 }
+            }
+            // El botón abajo, a todo lo ancho de la tarjeta
+            if (action != null) {
+                Spacer(Modifier.height(dimens.spaceM))
+                Box(Modifier.fillMaxWidth()) { action() }
             }
         }
     }
