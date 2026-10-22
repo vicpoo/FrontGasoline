@@ -1,5 +1,18 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.detail
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import org.vicpoo.gasolineproject.core.ui.components.EditSheet
+import org.vicpoo.gasolineproject.feature.reservations.domain.RequestVehicleUseCase
+import gasolineproject.shared.generated.resources.action_cancel
+import gasolineproject.shared.generated.resources.cd_close
+import gasolineproject.shared.generated.resources.reservation_sheet_title
+import gasolineproject.shared.generated.resources.reservation_sheet_subtitle
+import gasolineproject.shared.generated.resources.reservation_sheet_send
+import gasolineproject.shared.generated.resources.reservation_sheet_counter
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -53,7 +66,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Surface
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import gasolineproject.shared.generated.resources.action_retry
 import gasolineproject.shared.generated.resources.action_understood
 import gasolineproject.shared.generated.resources.reservation_error_message
@@ -149,7 +161,7 @@ fun VehicleDetailScreen(
     // ---- Solicitud de reserva ----
     val vehicleName = vehicle?.model.orEmpty()
     if (state.showRequestDialog) {
-        RequestReasonDialog(state = state, onEvent = onEvent)
+        RequestReasonSheet(vehicle = vehicle, state = state, onEvent = onEvent)
     }
     state.requestError?.let { error ->
         ResultDialog(
@@ -180,38 +192,71 @@ fun VehicleDetailScreen(
     }
 }
 
-/** Figma: "Motivo de la solicitud" + área de texto + "Enviar". */
+/**
+ * Enviar solicitud estilo Airbnb: hoja que sube desde abajo con título grande, el carro que se
+ * pide (foto, nombre y placas), el motivo con contador y abajo "Cancelar" / "Enviar solicitud".
+ */
 @Composable
-private fun RequestReasonDialog(state: VehicleDetailUiState, onEvent: (VehicleDetailEvent) -> Unit) {
+private fun RequestReasonSheet(vehicle: Vehicle?, state: VehicleDetailUiState, onEvent: (VehicleDetailEvent) -> Unit) {
+    val colors = AppTheme.colors
     val dimens = AppTheme.dimens
-    Dialog(onDismissRequest = { if (!state.isSendingRequest) onEvent(VehicleDetailEvent.RequestDismissed) }) {
-        Surface(
-            modifier = Modifier.widthIn(max = 420.dp),
-            shape = RoundedCornerShape(dimens.radiusM * 2),
-            color = AppTheme.colors.background,
-        ) {
-            Column(Modifier.padding(dimens.spaceL), horizontalAlignment = Alignment.CenterHorizontally) {
-                AppTextField(
-                    value = state.requestReason,
-                    onValueChange = { onEvent(VehicleDetailEvent.RequestReasonChanged(it)) },
-                    label = stringResource(Res.string.reservation_reason_label),
-                    placeholder = stringResource(Res.string.reservation_reason_hint),
-                    modifier = Modifier.fillMaxWidth(),
-                    errorMessage = state.requestReasonError?.asText(),
-                    enabled = !state.isSendingRequest,
-                    singleLine = false,
-                    minLines = 6,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                )
-                Spacer(Modifier.height(dimens.spaceL))
-                PrimaryButton(
-                    text = stringResource(Res.string.reservation_send),
-                    onClick = { onEvent(VehicleDetailEvent.SendRequest) },
-                    isLoading = state.isSendingRequest,
-                    modifier = Modifier.widthIn(min = 160.dp),
-                )
+    EditSheet(
+        title = stringResource(Res.string.reservation_sheet_title),
+        subtitle = stringResource(Res.string.reservation_sheet_subtitle),
+        cancelText = stringResource(Res.string.action_cancel),
+        saveText = stringResource(Res.string.reservation_sheet_send),
+        onCancel = { onEvent(VehicleDetailEvent.RequestDismissed) },
+        onSave = { onEvent(VehicleDetailEvent.SendRequest) },
+        isSaving = state.isSendingRequest,
+        closeDescription = stringResource(Res.string.cd_close),
+    ) {
+        // El carro que se está pidiendo
+        if (vehicle != null) {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(dimens.radiusM * 2),
+                color = colors.background,
+                border = BorderStroke(1.dp, colors.textSecondary.copy(alpha = if (colors.isDark) 0.45f else 0.25f)),
+            ) {
+                Row(Modifier.padding(dimens.spaceM), verticalAlignment = Alignment.CenterVertically) {
+                    AppImage(
+                        model = vehicle.photo?.toImageModel(),
+                        contentDescription = vehicle.cardTitle,
+                        modifier = Modifier.size(width = 88.dp, height = 72.dp).clip(RoundedCornerShape(dimens.radiusM)),
+                    )
+                    Spacer(Modifier.width(dimens.spaceM))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = vehicle.cardTitle,
+                            style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.title,
+                        )
+                        Text(vehicle.plates, style = AppTheme.typography.bodySecondary, color = colors.textSecondary)
+                    }
+                }
             }
+            Spacer(Modifier.height(dimens.spaceL))
         }
+
+        AppTextField(
+            value = state.requestReason,
+            onValueChange = { onEvent(VehicleDetailEvent.RequestReasonChanged(it)) },
+            label = stringResource(Res.string.reservation_reason_label),
+            placeholder = stringResource(Res.string.reservation_reason_hint),
+            modifier = Modifier.fillMaxWidth(),
+            errorMessage = state.requestReasonError?.asText(),
+            enabled = !state.isSendingRequest,
+            singleLine = false,
+            minLines = 5,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+        // Contador como en Airbnb (máx. 255, igual que la API)
+        Text(
+            text = stringResource(Res.string.reservation_sheet_counter, state.requestReason.length, RequestVehicleUseCase.MAX_REASON),
+            style = AppTheme.typography.caption,
+            color = colors.textSecondary,
+            modifier = Modifier.align(Alignment.End),
+        )
     }
 }
 

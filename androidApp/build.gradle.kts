@@ -15,6 +15,8 @@ dependencies {
     implementation(project(":shared"))
 
     implementation(libs.androidx.activity.compose)
+    // Pantalla de inicio con el logo (Android 12+ y versiones anteriores)
+    implementation(libs.androidx.core.splashscreen)
     implementation(libs.koin.android)
 
     implementation(libs.compose.uiToolingPreview)

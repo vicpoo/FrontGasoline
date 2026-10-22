@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -51,12 +52,10 @@ import gasolineproject.shared.generated.resources.request_detail_requested_at
 import gasolineproject.shared.generated.resources.request_detail_resolution_reason
 import gasolineproject.shared.generated.resources.request_detail_resolved_at
 import gasolineproject.shared.generated.resources.request_detail_resolved_by
-import gasolineproject.shared.generated.resources.request_detail_same_car_note
 import gasolineproject.shared.generated.resources.request_detail_title
 import gasolineproject.shared.generated.resources.request_detail_vehicle
 import gasolineproject.shared.generated.resources.request_detail_view_license
 import gasolineproject.shared.generated.resources.request_detail_year
-import gasolineproject.shared.generated.resources.requests_card_title
 import gasolineproject.shared.generated.resources.requests_unknown_requester
 import gasolineproject.shared.generated.resources.requests_unknown_vehicle
 import org.jetbrains.compose.resources.stringResource
@@ -87,7 +86,7 @@ import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.EmployeeAvatar
-import org.vicpoo.gasolineproject.feature.reservations.presentation.common.StatusPill
+import org.vicpoo.gasolineproject.feature.reservations.presentation.common.StatusBadge
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDate
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDateTime
 
@@ -134,14 +133,16 @@ fun ReservationDetailScreen(
             )
             else -> {
                 RequesterSection(state)
-                Spacer(Modifier.height(dimens.spaceM))
-                StatusPill(request.status)
                 Spacer(Modifier.height(dimens.spaceL))
 
                 // Motivo de la solicitud
                 SubtitleText(stringResource(Res.string.request_detail_reason))
                 Spacer(Modifier.height(dimens.spaceXs))
                 BodyText(request.requestReason?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.request_detail_no_reason))
+                Spacer(Modifier.height(dimens.spaceS))
+                formatDateTime(request.requestedAt)?.let {
+                    InfoRow(stringResource(Res.string.request_detail_requested_at), it, showDivider = false)
+                }
                 Spacer(Modifier.height(dimens.spaceL))
 
                 LicenseSection(state, onEvent)
@@ -154,8 +155,6 @@ fun ReservationDetailScreen(
 
                 if (state.canDecide) {
                     Spacer(Modifier.height(dimens.spaceL))
-                    SecondaryText(stringResource(Res.string.request_detail_same_car_note))
-                    Spacer(Modifier.height(dimens.spaceM))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
                         if (state.canReject) {
                             AppButton(
@@ -183,19 +182,17 @@ fun ReservationDetailScreen(
     Dialogs(state = state, onEvent = onEvent)
 }
 
+/** Arriba y centrado: foto grande, nombre y una etiqueta chica con el estado. */
 @Composable
 private fun RequesterSection(state: ReservationDetailUiState) {
     val request = state.current ?: return
     val name = request.requesterName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.requests_unknown_requester)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        EmployeeAvatar(photoUrl = request.requesterPhotoUrl, size = 72.dp, contentDescription = name)
-        Spacer(Modifier.width(AppTheme.dimens.spaceM))
-        Column(Modifier.weight(1f)) {
-            SubtitleText(stringResource(Res.string.requests_card_title, name))
-            formatDateTime(request.requestedAt)?.let {
-                SecondaryText(stringResource(Res.string.request_detail_requested_at) + ": " + it)
-            }
-        }
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        EmployeeAvatar(photoUrl = request.requesterPhotoUrl, size = 96.dp, contentDescription = name)
+        Spacer(Modifier.height(AppTheme.dimens.spaceM))
+        SubtitleText(name, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(AppTheme.dimens.spaceS))
+        StatusBadge(request.status)
     }
 }
 

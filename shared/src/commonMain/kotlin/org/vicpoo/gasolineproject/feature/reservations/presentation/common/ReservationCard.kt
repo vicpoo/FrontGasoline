@@ -47,7 +47,8 @@ import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationStatus
 
 /**
  * Tarjeta de una solicitud.
- * - [showRequester] = true (pestaña llave): arriba la foto del empleado y "Solicitud de {nombre}".
+ * - [showRequester] = true (pestaña llave): SOLO la foto del empleado y "Solicitud de {nombre}";
+ *   el carro, el motivo y el estado se ven en el detalle.
  * - false (campana): el carro, para qué lo pidió y su estado.
  * Con [onClick] la tarjeta se puede tocar (abre el detalle).
  */
@@ -60,12 +61,14 @@ fun ReservationCard(
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
     val title = request.vehicleTitle ?: stringResource(Res.string.requests_unknown_vehicle)
+    if (showRequester) {
+        AppCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
+            RequesterHeader(request)
+        }
+        return
+    }
     AppCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
         Column(Modifier.fillMaxWidth()) {
-            if (showRequester) {
-                RequesterHeader(request)
-                Spacer(Modifier.height(dimens.spaceS))
-            }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AppImage(
@@ -96,11 +99,9 @@ fun ReservationCard(
             }
 
             // En la campana se recuerda para qué se pidió
-            if (!showRequester) {
-                request.requestReason?.takeIf { it.isNotBlank() }?.let {
-                    Spacer(Modifier.height(dimens.spaceXs))
-                    SecondaryText(stringResource(Res.string.requests_my_reason, it))
-                }
+            request.requestReason?.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(dimens.spaceXs))
+                SecondaryText(stringResource(Res.string.requests_my_reason, it))
             }
 
             Spacer(Modifier.height(dimens.spaceS))
@@ -122,11 +123,11 @@ fun ReservationCard(
 private fun RequesterHeader(request: ReservationRequest) {
     val name = request.requesterName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.requests_unknown_requester)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        EmployeeAvatar(photoUrl = request.requesterPhotoUrl, size = 44.dp, contentDescription = name)
-        Spacer(Modifier.width(AppTheme.dimens.spaceS))
+        EmployeeAvatar(photoUrl = request.requesterPhotoUrl, size = 52.dp, contentDescription = name)
+        Spacer(Modifier.width(AppTheme.dimens.spaceM))
         Text(
             text = stringResource(Res.string.requests_card_title, name),
-            style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
+            style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
             color = AppTheme.colors.title,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
@@ -144,6 +145,33 @@ fun EmployeeAvatar(photoUrl: String?, size: Dp, contentDescription: String?) {
         fallbackIcon = AppIcons.User,
         modifier = Modifier.size(size).clip(CircleShape),
     )
+}
+
+/** Etiqueta chica con el estado (Pendiente, Aprobado, Denegado...), para el detalle. */
+@Composable
+fun StatusBadge(status: ReservationStatus) {
+    val (text, container, content) = statusColors(status)
+    Surface(shape = RoundedCornerShape(50), color = container.copy(alpha = 0.15f)) {
+        Text(
+            text = text,
+            style = AppTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
+            color = if (status == ReservationStatus.CANCELLED || status == ReservationStatus.UNKNOWN) content else container,
+            modifier = Modifier.padding(horizontal = AppTheme.dimens.spaceM, vertical = AppTheme.dimens.spaceXs),
+        )
+    }
+}
+
+@Composable
+private fun statusColors(status: ReservationStatus): Triple<String, Color, Color> {
+    val colors = AppTheme.colors
+    return when (status) {
+        ReservationStatus.PENDING -> Triple(stringResource(Res.string.requests_status_pending), colors.primary, colors.onPrimary)
+        ReservationStatus.APPROVED -> Triple(stringResource(Res.string.requests_status_approved), colors.confirm, colors.onConfirm)
+        ReservationStatus.REJECTED -> Triple(stringResource(Res.string.requests_status_rejected), colors.danger, colors.onDanger)
+        ReservationStatus.CANCELLED -> Triple(stringResource(Res.string.requests_status_cancelled), colors.labelBackground, colors.textSecondary)
+        ReservationStatus.FINISHED -> Triple(stringResource(Res.string.requests_status_finished), colors.secondary, colors.onSecondary)
+        ReservationStatus.UNKNOWN -> Triple(stringResource(Res.string.requests_status_unknown), colors.labelBackground, colors.textSecondary)
+    }
 }
 
 /** Barra de color con el estado (Pendiente azul, Denegado rojo...). */

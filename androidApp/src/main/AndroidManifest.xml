@@ -29,6 +29,7 @@
         android:theme="@style/Theme.Gasoline">
         <activity
             android:exported="true"
+            android:theme="@style/Theme.Gasoline.Starting"
             android:windowSoftInputMode="adjustResize"
             android:name=".MainActivity">
             <intent-filter>
