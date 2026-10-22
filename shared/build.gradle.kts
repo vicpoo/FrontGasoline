@@ -28,6 +28,9 @@ kotlin {
         // Necesario para Compose Resources (fuentes, imágenes, strings) en AGP 8.x
         experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
 
+        // Pruebas unitarias en la JVM: corren commonTest con ./gradlew :shared:testAndroidHostTest
+        withHostTestBuilder {}
+
         compilations.configureEach {
             compilerOptions.configure {
                 jvmTarget.set(JvmTarget.JVM_11)
@@ -45,6 +48,7 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.ktor.client.okhttp)
             implementation(libs.kotlinx.coroutines.android)
+            implementation(libs.androidx.work.runtime) // sincronización en segundo plano
 
             // Mapa del viaje en curso (MapLibre). Solo Android por ahora: en iOS se usa RouteMap
             implementation(libs.maplibre.compose)
@@ -90,6 +94,7 @@ kotlin {
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

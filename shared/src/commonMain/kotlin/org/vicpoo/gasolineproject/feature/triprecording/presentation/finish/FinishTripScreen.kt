@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.feature.triprecording.presentation.finish
 
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
+import androidx.compose.ui.text.style.TextAlign
+import gasolineproject.shared.generated.resources.finish_trip_map_hidden
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
@@ -233,6 +238,7 @@ private fun OdometerPhotoSection(state: FinishTripUiState, onEvent: (FinishTripE
 }
 
 /** "Ruta": el mapa con la ruta que se hizo pintada (Figma). */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun RouteSection(state: FinishTripUiState) {
     val colors = AppTheme.colors
@@ -246,12 +252,22 @@ private fun RouteSection(state: FinishTripUiState) {
             .clip(RoundedCornerShape(dimens.radiusM))
             .background(colors.labelBackground),
     ) {
-        LiveRouteMap(
-            route = state.route,
-            current = state.route.lastOrNull(),
-            followCurrent = false,
-            modifier = Modifier.matchParentSize(),
-        )
+        // Con el teclado abierto el mapa (GL) se quita: en Android, redimensionarlo junto con el teclado
+        // dentro de una pantalla con scroll congelaba la app ("no responde" / ANR al escribir el kilometraje)
+        if (WindowInsets.isImeVisible) {
+            SecondaryText(
+                stringResource(Res.string.finish_trip_map_hidden),
+                modifier = Modifier.align(Alignment.Center).padding(dimens.spaceM),
+                textAlign = TextAlign.Center,
+            )
+        } else {
+            LiveRouteMap(
+                route = state.route,
+                current = state.route.lastOrNull(),
+                followCurrent = false,
+                modifier = Modifier.matchParentSize(),
+            )
+        }
     }
     if (state.route.isEmpty()) {
         Spacer(Modifier.height(dimens.spaceXs))

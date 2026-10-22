@@ -4,8 +4,10 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.session.LogoutListener
+import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.feature.vehicles.data.local.JsonFileVehicleLocalDataSource
 import org.vicpoo.gasolineproject.feature.vehicles.data.local.VehicleLocalDataSource
 import org.vicpoo.gasolineproject.feature.vehicles.data.remote.KtorVehicleApi
@@ -33,7 +35,8 @@ val vehiclesModule = module {
     // Data
     single<VehicleApi> { KtorVehicleApi(get()) }
     single<VehicleLocalDataSource> { JsonFileVehicleLocalDataSource(fileSystem = get(), directories = get(), json = get()) }
-    single { VehicleSyncer(local = get(), api = get()) }
+    // También se registra como PendingSyncTask para la sincronización en segundo plano
+    single { VehicleSyncer(local = get(), api = get(), scheduler = get()) } bind PendingSyncTask::class
     single<VehicleRepository> {
         OfflineFirstVehicleRepository(local = get(), api = get(), syncer = get(), sessionReader = get(), appScope = get())
     }

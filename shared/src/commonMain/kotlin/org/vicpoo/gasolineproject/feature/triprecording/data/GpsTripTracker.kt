@@ -227,6 +227,7 @@ class GpsTripTracker(
                     odometerPhotoMimeType = odometerPhoto.mimeType,
                     odometerPhotoSent = false,
                     syncErrorMessage = null,
+                    syncErrorCode = null,
                 )
             } ?: return AppResult.Failure(AppError.NotFound)
             if (previousPhoto != photoPath) store.deleteFile(previousPhoto)
@@ -252,6 +253,8 @@ class GpsTripTracker(
 
     override suspend fun retryFinishSend(): SendOutcome {
         val localId = lastFinishedLocalId ?: return SendOutcome.Sent
+        // El usuario pidió reintentar: se quita el rechazo para que la sincronización lo vuelva a enviar
+        store.updateTrip(localId) { it.copy(syncErrorMessage = null, syncErrorCode = null) }
         return sendAndReport(localId)
     }
 

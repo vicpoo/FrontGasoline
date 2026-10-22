@@ -6,8 +6,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.navigation.privilegedComposable
-import org.vicpoo.gasolineproject.core.rbac.Privileges
-import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.RESERVATIONS_BELL_PRIVILEGES
+import org.vicpoo.gasolineproject.core.rbac.AppAccess
 import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBell
 import org.vicpoo.gasolineproject.feature.reservations.presentation.list.MyReservationsRoute
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.detail.VehicleDetailRoute
@@ -39,7 +38,7 @@ sealed interface CatalogDestination {
 fun NavGraphBuilder.catalogGraph(navController: NavHostController) {
     navigation<CatalogGraph>(startDestination = CatalogDestination.List) {
 
-        privilegedComposable<CatalogDestination.List>(setOf(Privileges.CARRO_VER)) {
+        privilegedComposable<CatalogDestination.List>(AppAccess.VEHICLE_LIST) {
             VehicleListRoute(
                 mode = VehiclesMode.CATALOG,
                 onVehicleClick = { id -> navController.navigate(CatalogDestination.Detail(id)) },
@@ -53,14 +52,14 @@ fun NavGraphBuilder.catalogGraph(navController: NavHostController) {
         }
 
         privilegedComposable<CatalogDestination.MyReservations>(
-            privileges = RESERVATIONS_BELL_PRIVILEGES,
+            access = AppAccess.MY_RESERVATIONS,
             onDenied = { navController.popBackStack() },
         ) {
             MyReservationsRoute(onBack = { navController.popBackStack() })
         }
 
         privilegedComposable<CatalogDestination.Detail>(
-            privileges = setOf(Privileges.CARRO_VER_DETALLE),
+            access = AppAccess.VEHICLE_DETAIL,
             onDenied = { navController.popBackStack() },
         ) { entry ->
             val route = entry.toRoute<CatalogDestination.Detail>()
@@ -100,7 +99,7 @@ sealed interface VehiclesDestination {
 fun NavGraphBuilder.vehiclesGraph(navController: NavHostController) {
     navigation<VehiclesGraph>(startDestination = VehiclesDestination.List) {
 
-        privilegedComposable<VehiclesDestination.List>(setOf(Privileges.CARRO_VER)) {
+        privilegedComposable<VehiclesDestination.List>(AppAccess.VEHICLE_LIST) {
             VehicleListRoute(
                 mode = VehiclesMode.FLEET,
                 onVehicleClick = { id -> navController.navigate(VehiclesDestination.Detail(id)) },
@@ -109,7 +108,7 @@ fun NavGraphBuilder.vehiclesGraph(navController: NavHostController) {
         }
 
         privilegedComposable<VehiclesDestination.Detail>(
-            privileges = setOf(Privileges.CARRO_VER_DETALLE),
+            access = AppAccess.VEHICLE_DETAIL,
             onDenied = { navController.popBackStack() },
         ) { entry ->
             val route = entry.toRoute<VehiclesDestination.Detail>()
@@ -124,7 +123,7 @@ fun NavGraphBuilder.vehiclesGraph(navController: NavHostController) {
         // Crear o editar: cualquiera de los dos privilegios abre el formulario;
         // el ViewModel y la API validan la acción concreta
         privilegedComposable<VehiclesDestination.Form>(
-            privileges = setOf(Privileges.CARRO_CREAR, Privileges.CARRO_EDITAR),
+            access = AppAccess.VEHICLE_FORM,
             onDenied = { navController.popBackStack() },
         ) { entry ->
             val route = entry.toRoute<VehiclesDestination.Form>()

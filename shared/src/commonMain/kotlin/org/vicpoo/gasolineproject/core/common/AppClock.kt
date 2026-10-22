@@ -2,6 +2,7 @@ package org.vicpoo.gasolineproject.core.common
 
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.offsetAt
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -16,8 +17,10 @@ interface AppClock {
     fun nowMillis(): Long
 
     /**
-     * Fecha y hora LOCAL sin zona, con segundos: "2026-10-19T12:30:15".
-     * Así espera las fechas APIGasoline (DateTime en hora local del servidor).
+     * Fecha y hora LOCAL del teléfono CON su zona horaria: "2026-10-19T12:30:15-06:00".
+     * La API (System.Text.Json / model binding) la convierte a la hora local del servidor, así
+     * no importa si el teléfono y la PC del servidor tienen distinta zona horaria (antes se mandaba
+     * sin zona y, si no coincidían, la API rechazaba puntos y cargas "fuera del periodo del viaje").
      */
     fun nowLocalIso(): String = toLocalIso(nowMillis())
 
@@ -32,13 +35,16 @@ class SystemAppClock(
     override fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
 
     override fun toLocalIso(epochMillis: Long): String {
-        val local: LocalDateTime = Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(timeZone())
-        // LocalDate.toString() ya es ISO "2026-10-19"
+        val zone = timeZone()
+        val instant = Instant.fromEpochMilliseconds(epochMillis)
+        val local: LocalDateTime = instant.toLocalDateTime(zone)
+        // LocalDate.toString() ya es ISO "2026-10-19"; UtcOffset.toString() es "-06:00" (o "Z")
         return buildString {
             append(local.date.toString()).append('T')
             append(local.hour.pad()).append(':')
             append(local.minute.pad()).append(':')
             append(local.second.pad())
+            append(zone.offsetAt(instant).toString())
         }
     }
 

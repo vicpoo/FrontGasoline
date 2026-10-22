@@ -8,6 +8,9 @@ import kotlin.time.Instant
  * Sin dependencias extra: se lee el texto directamente.
  */
 object AppDates {
+    /** "Z", "+01:00" o "-06:00" al final de una fecha ISO. */
+    private val OFFSET_SUFFIX = Regex("""(Z|[+-]\d{2}:\d{2})$""")
+
 
     private val ISO = Regex("""^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})""")
 
@@ -73,8 +76,9 @@ object AppDates {
     @OptIn(ExperimentalTime::class)
     private fun toInstant(iso: String?): Instant? {
         val raw = iso?.trim() ?: return null
-        // Sin zona horaria: se trata como UTC solo para poder restar (ambas fechas están en la misma zona)
-        val normalized = if (raw.endsWith("Z") || raw.contains('+')) raw else "${raw}Z"
+        // Con zona ("Z", "+01:00" o "-06:00") se lee tal cual. Sin zona (fechas de la API): se trata
+        // como UTC solo para poder restar (ambas fechas están en la misma zona)
+        val normalized = if (OFFSET_SUFFIX.containsMatchIn(raw)) raw else "${raw}Z"
         return runCatching { Instant.parse(normalized) }.getOrNull()
     }
 

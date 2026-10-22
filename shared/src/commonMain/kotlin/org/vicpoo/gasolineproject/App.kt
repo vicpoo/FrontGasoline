@@ -24,7 +24,7 @@ import org.vicpoo.gasolineproject.navigation.AppNavHost
 import org.vicpoo.gasolineproject.navigation.StartViewModel
 
 /** Tiempo mínimo que se ve el logo al abrir la app. */
-private const val SPLASH_MIN_MILLIS = 900L
+private const val SPLASH_MIN_MILLIS = 800L
 
 /** Raíz de la app (Koin ya debe estar iniciado: ver GasolineApplication / MainViewController). */
 @Composable

@@ -7,6 +7,10 @@ import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.httpCode
 import org.vicpoo.gasolineproject.core.common.serverMessage
 import org.vicpoo.gasolineproject.core.network.safeApiCall
+import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
+import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
+import org.vicpoo.gasolineproject.core.sync.SyncRejection
+import org.vicpoo.gasolineproject.core.sync.stopsSync
 import org.vicpoo.gasolineproject.feature.vehicles.data.local.VehicleEntity
 import org.vicpoo.gasolineproject.feature.vehicles.data.local.VehicleLocalDataSource
 import org.vicpoo.gasolineproject.feature.vehicles.data.mapper.toRequest
@@ -19,15 +23,21 @@ import org.vicpoo.gasolineproject.feature.vehicles.domain.model.SyncState
  * - Sin red: se detiene y deja todo pendiente para el siguiente intento.
  * - Error de la API (400, 409 placas repetidas...): guarda el mensaje en ese vehículo
  *   para mostrarlo al usuario y sigue con los demás.
+ * - Un rechazo definitivo (4xx) ya no se reenvía solo: espera a que el usuario edite el vehículo
+ *   (editar limpia el error). Los errores temporales (5xx) sí se reintentan.
+ * - Sin red pide al [BackgroundSyncScheduler] que lo vuelva a intentar en cuanto haya internet.
  */
 class VehicleSyncer(
     private val local: VehicleLocalDataSource,
     private val api: VehicleApi,
-) {
+    private val scheduler: BackgroundSyncScheduler,
+) : PendingSyncTask {
     private val mutex = Mutex()
 
-    suspend fun syncPending(): AppResult<Unit> = mutex.withLock {
-        val pending = local.getAll().filter { it.syncState != SyncState.SYNCED }
+    override suspend fun syncPending(): AppResult<Unit> = mutex.withLock {
+        val pending = local.getAll().filter {
+            it.syncState != SyncState.SYNCED && !SyncRejection.isPermanent(it.lastSyncErrorCode)
+        }
         for (entity in pending) {
             val result = when (entity.syncState) {
                 SyncState.PENDING_CREATE -> pushCreate(entity)
@@ -36,7 +46,8 @@ class VehicleSyncer(
                 SyncState.SYNCED -> AppResult.Success(Unit)
             }
             if (result is AppResult.Failure) {
-                if (result.error == AppError.NoConnection || result.error == AppError.Unauthorized) {
+                if (result.error.stopsSync()) {
+                    if (result.error == AppError.NoConnection) scheduler.requestWhenOnline()
                     return@withLock result
                 }
                 markError(entity, result.error)

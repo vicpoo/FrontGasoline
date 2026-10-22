@@ -13,6 +13,8 @@ import org.vicpoo.gasolineproject.core.platform.AndroidImageCompressor
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
 import org.vicpoo.gasolineproject.core.session.DATASTORE_FILE_NAME
 import org.vicpoo.gasolineproject.core.session.createDataStore
+import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
+import org.vicpoo.gasolineproject.core.sync.WorkManagerSyncScheduler
 
 actual val platformModule: Module = module {
     single { AppDirectories(filesDir = androidContext().filesDir.absolutePath) }
@@ -26,4 +28,7 @@ actual val platformModule: Module = module {
     single<LocationProvider> { AndroidLocationProvider(androidContext()) }
     single<ImageCompressor> { AndroidImageCompressor() }
     single<TrackingServiceController> { AndroidTrackingServiceController(androidContext()) }
+
+    // Sincronización en segundo plano (WorkManager)
+    single<BackgroundSyncScheduler> { WorkManagerSyncScheduler(androidContext()) }
 }

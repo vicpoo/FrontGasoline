@@ -6,7 +6,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.navigation.privilegedComposable
-import org.vicpoo.gasolineproject.core.rbac.Privileges
+import org.vicpoo.gasolineproject.core.rbac.AppAccess
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseRoute
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.RequireLicense
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.active.ActiveTripRoute
@@ -43,12 +43,10 @@ sealed interface TripRecordingDestination {
     data object UploadLicense : TripRecordingDestination
 }
 
-private val TRIP_PRIVILEGES = setOf(Privileges.VIAJE_REGISTRAR)
-
 fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
     navigation<TripRecordingGraph>(startDestination = TripRecordingDestination.AssignedVehicles) {
 
-        privilegedComposable<TripRecordingDestination.AssignedVehicles>(TRIP_PRIVILEGES) {
+        privilegedComposable<TripRecordingDestination.AssignedVehicles>(AppAccess.TRIP_RECORDING) {
             // Entran los que pueden iniciar un viaje Y ya subieron su licencia
             RequireLicense(onUploadLicense = { navController.navigate(TripRecordingDestination.UploadLicense) }) {
                 AssignedVehiclesRoute(
@@ -61,7 +59,7 @@ fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
         }
 
         privilegedComposable<TripRecordingDestination.UploadLicense>(
-            privileges = TRIP_PRIVILEGES,
+            access = AppAccess.TRIP_RECORDING,
             onDenied = { navController.popBackStack() },
         ) {
             LicenseRoute(
@@ -72,7 +70,7 @@ fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
         }
 
         privilegedComposable<TripRecordingDestination.StartTrip>(
-            privileges = TRIP_PRIVILEGES,
+            access = AppAccess.TRIP_RECORDING,
             onDenied = { navController.popBackStack() },
         ) { entry ->
             val route = entry.toRoute<TripRecordingDestination.StartTrip>()
@@ -90,7 +88,7 @@ fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
         }
 
         privilegedComposable<TripRecordingDestination.ActiveTrip>(
-            privileges = TRIP_PRIVILEGES,
+            access = AppAccess.TRIP_RECORDING,
             onDenied = { navController.popBackStack() },
         ) {
             ActiveTripRoute(
@@ -104,7 +102,7 @@ fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
         }
 
         privilegedComposable<TripRecordingDestination.FinishTrip>(
-            privileges = TRIP_PRIVILEGES,
+            access = AppAccess.TRIP_RECORDING,
             onDenied = { navController.popBackStack() },
         ) {
             FinishTripRoute(
@@ -118,7 +116,7 @@ fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
         }
 
         privilegedComposable<TripRecordingDestination.FuelRecordForm>(
-            privileges = setOf(Privileges.CARGA_REGISTRAR),
+            access = AppAccess.FUEL_FORM,
             onDenied = { navController.popBackStack() },
         ) { entry ->
             val route = entry.toRoute<TripRecordingDestination.FuelRecordForm>()

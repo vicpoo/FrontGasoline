@@ -6,7 +6,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.navigation.privilegedComposable
-import org.vicpoo.gasolineproject.core.rbac.Privileges
+import org.vicpoo.gasolineproject.core.rbac.AppAccess
 import org.vicpoo.gasolineproject.feature.trips.presentation.detail.TripDetailRoute
 import org.vicpoo.gasolineproject.feature.trips.presentation.history.TripHistoryRoute
 
@@ -22,18 +22,16 @@ sealed interface TripHistoryDestination {
     data class Detail(val tripId: String) : TripHistoryDestination
 }
 
-private val HISTORY_PRIVILEGES = setOf(Privileges.VIAJE_VER_PROPIOS, Privileges.VIAJE_VER_TODOS)
-
 fun NavGraphBuilder.tripHistoryGraph(navController: NavHostController) {
     navigation<TripHistoryGraph>(startDestination = TripHistoryDestination.List) {
 
-        privilegedComposable<TripHistoryDestination.List>(HISTORY_PRIVILEGES) {
+        privilegedComposable<TripHistoryDestination.List>(AppAccess.TRIP_HISTORY) {
             TripHistoryRoute(onTripClick = { id -> navController.navigate(TripHistoryDestination.Detail(id)) })
         }
 
         // Detalle del viaje (datos, mapa y cargas): viaje.ver_detalle
         privilegedComposable<TripHistoryDestination.Detail>(
-            privileges = setOf(Privileges.VIAJE_VER_DETALLE),
+            access = AppAccess.TRIP_DETAIL,
             onDenied = { navController.popBackStack() },
         ) { entry ->
             val route = entry.toRoute<TripHistoryDestination.Detail>()

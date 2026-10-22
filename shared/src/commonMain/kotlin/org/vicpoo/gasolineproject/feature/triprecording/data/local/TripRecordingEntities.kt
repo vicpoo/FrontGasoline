@@ -75,9 +75,13 @@ data class TripEntity(
     val odometerPhotoSent: Boolean = false,
     /** true cuando la API ya lo tiene como finalizado (finalizar o sincronizar). */
     val closedOnServer: Boolean = false,
-    /** Cuántos puntos GPS del archivo ya llegaron a la API. */
+    /** Cuántos puntos GPS del archivo ya se procesaron (enviados o descartados). */
     val pointsSent: Int = 0,
+    /** Puntos que la API rechazó de forma definitiva (400): se saltan para no reintentarlos siempre. */
+    val pointsDiscarded: Int = 0,
     val syncErrorMessage: String? = null,
+    /** Código HTTP del último rechazo (4xx = definitivo, no se reintenta solo). */
+    val syncErrorCode: Int? = null,
 )
 
 /** Pausa del viaje guardada en el teléfono. */
@@ -129,6 +133,8 @@ data class FuelEntity(
     val lng: Double? = null,
     val state: FuelSyncState = FuelSyncState.PENDING_CREATE,
     val syncErrorMessage: String? = null,
+    /** Código HTTP del último rechazo (4xx = definitivo, no se reintenta solo). */
+    val syncErrorCode: Int? = null,
 )
 
 /** Todo lo que el registro de viajes tiene pendiente en el teléfono. */

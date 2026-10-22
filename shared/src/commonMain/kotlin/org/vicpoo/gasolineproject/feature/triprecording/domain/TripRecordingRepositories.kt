@@ -80,6 +80,12 @@ interface FuelRecordRepository {
 
     /** Marca la recarga para borrarse (si nunca se envió, se borra al momento). */
     suspend fun delete(localId: String): AppResult<Unit>
+
+    /**
+     * Quita el rechazo guardado para que la siguiente sincronización la vuelva a enviar
+     * (los rechazos definitivos no se reintentan solos).
+     */
+    suspend fun markForRetry(localId: String)
 }
 
 /** Envía a la API todo lo pendiente: viajes, puntos GPS, recargas y cierres. */

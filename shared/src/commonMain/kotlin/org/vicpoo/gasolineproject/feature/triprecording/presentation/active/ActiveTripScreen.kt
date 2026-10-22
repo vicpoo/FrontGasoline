@@ -412,44 +412,51 @@ private fun FuelRecordRow(
         shape = RoundedCornerShape(dimens.radiusM),
         color = colors.labelBackground,
     ) {
-        Row(
-            modifier = Modifier.padding(start = dimens.spaceM, end = dimens.spaceXs, top = dimens.spaceXs, bottom = dimens.spaceXs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(AppIcons.Fuel, contentDescription = null, tint = colors.onLabel, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(dimens.spaceS))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(Res.string.active_trip_fuel_item, record.number),
-                    style = AppTheme.typography.body,
-                    color = colors.onLabel,
-                )
-                Text(
-                    stringResource(
-                        Res.string.active_trip_fuel_detail,
-                        TripFormat.money(record.amount),
-                        TripFormat.number(record.liters),
-                    ),
-                    style = AppTheme.typography.caption,
-                    color = colors.onLabel,
-                )
+        Column(Modifier.padding(start = dimens.spaceM, end = dimens.spaceXs, top = dimens.spaceXs, bottom = dimens.spaceS)) {
+            // Fila: ícono · "Recarga 1#" y "$2,000 • 25 L" · editar · eliminar
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(AppIcons.Fuel, contentDescription = null, tint = colors.onLabel, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(dimens.spaceS))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(Res.string.active_trip_fuel_item, record.number),
+                        style = AppTheme.typography.body,
+                        color = colors.onLabel,
+                        maxLines = 1,
+                    )
+                    Text(
+                        stringResource(
+                            Res.string.active_trip_fuel_detail,
+                            TripFormat.money(record.amount),
+                            TripFormat.number(record.liters),
+                        ),
+                        style = AppTheme.typography.caption,
+                        color = colors.onLabel,
+                        maxLines = 1,
+                    )
+                }
+                if (canEdit) {
+                    IconButton(onClick = onEdit) {
+                        Icon(AppIcons.Pencil, contentDescription = stringResource(Res.string.cd_edit_fuel), tint = colors.onLabel)
+                    }
+                }
+                if (canDelete) {
+                    IconButton(onClick = onDelete) {
+                        Icon(AppIcons.Trash, contentDescription = stringResource(Res.string.cd_delete_fuel), tint = colors.danger)
+                    }
+                }
+            }
+            // Estado de envío y el motivo del error, debajo y a todo lo ancho (así no aprietan el texto)
+            if (record.syncState != RecordSyncState.SYNCED) {
+                Spacer(Modifier.height(dimens.spaceXs))
+                when (record.syncState) {
+                    RecordSyncState.PENDING -> PendingSyncChip()
+                    RecordSyncState.ERROR -> SyncErrorChip()
+                    RecordSyncState.SYNCED -> Unit
+                }
                 record.syncErrorMessage?.let {
+                    Spacer(Modifier.height(dimens.spaceXs))
                     Text(it, style = AppTheme.typography.caption, color = colors.error)
-                }
-            }
-            when (record.syncState) {
-                RecordSyncState.PENDING -> PendingSyncChip()
-                RecordSyncState.ERROR -> SyncErrorChip()
-                RecordSyncState.SYNCED -> Unit
-            }
-            if (canEdit) {
-                IconButton(onClick = onEdit) {
-                    Icon(AppIcons.Pencil, contentDescription = stringResource(Res.string.cd_edit_fuel), tint = colors.onLabel)
-                }
-            }
-            if (canDelete) {
-                IconButton(onClick = onDelete) {
-                    Icon(AppIcons.Trash, contentDescription = stringResource(Res.string.cd_delete_fuel), tint = colors.danger)
                 }
             }
         }

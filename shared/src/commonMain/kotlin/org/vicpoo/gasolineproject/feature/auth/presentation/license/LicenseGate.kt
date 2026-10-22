@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -23,27 +22,30 @@ import gasolineproject.shared.generated.resources.license_gate_button
 import gasolineproject.shared.generated.resources.license_gate_message
 import gasolineproject.shared.generated.resources.license_gate_title
 import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
 import org.vicpoo.gasolineproject.core.ui.components.SubtitleText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.ObserveMustUploadLicenseUseCase
 
 /**
  * Pestaña de viajes: solo se entra con la licencia subida. Si al usuario le dieron
  * viaje.registrar después del login y todavía no la sube, se le pide aquí (no se le bloquea la app).
+ * El estado vive en [LicenseGateViewModel] (MVVM); mientras se lee la sesión no dibuja nada.
  */
 @Composable
 fun RequireLicense(
     onUploadLicense: () -> Unit,
+    viewModel: LicenseGateViewModel = koinViewModel(),
     content: @Composable () -> Unit,
 ) {
-    val observe = koinInject<ObserveMustUploadLicenseUseCase>()
-    val flow = remember(observe) { observe() }
-    val mustUpload by flow.collectAsStateWithLifecycle(initialValue = false)
-    if (mustUpload) LicenseRequiredView(onUploadLicense) else content()
+    val mustUpload by viewModel.mustUploadLicense.collectAsStateWithLifecycle()
+    when (mustUpload) {
+        true -> LicenseRequiredView(onUploadLicense)
+        false -> content()
+        null -> Unit
+    }
 }
 
 @Composable

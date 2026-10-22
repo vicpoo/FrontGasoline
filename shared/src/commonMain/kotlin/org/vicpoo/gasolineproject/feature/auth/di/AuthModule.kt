@@ -16,6 +16,7 @@ import org.vicpoo.gasolineproject.feature.auth.domain.usecase.ObserveMustUploadL
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.RefreshPrivilegesUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.usecase.UploadLicenseUseCase
 import org.vicpoo.gasolineproject.feature.auth.domain.validation.LoginValidator
+import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseGateViewModel
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseViewModel
 import org.vicpoo.gasolineproject.feature.auth.presentation.login.LoginViewModel
 
@@ -44,4 +45,5 @@ val authModule = module {
     // Presentation
     viewModelOf(::LoginViewModel)
     viewModelOf(::LicenseViewModel)
+    viewModelOf(::LicenseGateViewModel)
 }

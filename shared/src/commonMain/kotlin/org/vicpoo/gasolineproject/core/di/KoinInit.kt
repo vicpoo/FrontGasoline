@@ -10,13 +10,14 @@ import org.vicpoo.gasolineproject.feature.trips.di.tripsModule
 import org.vicpoo.gasolineproject.feature.vehicles.di.vehiclesModule
 import org.vicpoo.gasolineproject.navigation.di.navigationModule
 
-/** Infraestructura compartida (plataforma, sesión, red, RBAC). */
+/** Infraestructura compartida (plataforma, sesión, red, RBAC, sincronización). */
 private val infrastructureModules = listOf(
     platformModule,
     coreModule,
     sessionModule,
     networkModule,
     rbacModule,
+    syncModule,
 )
 
 /** Una entrada por feature. Al agregar una feature nueva, agrega aquí su módulo. */

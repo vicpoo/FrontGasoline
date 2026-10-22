@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -38,6 +37,7 @@ import gasolineproject.shared.generated.resources.requests_unknown_requester
 import gasolineproject.shared.generated.resources.requests_unknown_vehicle
 import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
+import org.vicpoo.gasolineproject.core.ui.components.UserAvatar
 import org.vicpoo.gasolineproject.core.ui.components.AppImage
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
@@ -123,7 +123,7 @@ fun ReservationCard(
 private fun RequesterHeader(request: ReservationRequest) {
     val name = request.requesterName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.requests_unknown_requester)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        EmployeeAvatar(photoUrl = request.requesterPhotoUrl, size = 52.dp, contentDescription = name)
+        UserAvatar(photoUrl = request.requesterPhotoUrl, size = 52.dp, contentDescription = name)
         Spacer(Modifier.width(AppTheme.dimens.spaceM))
         Text(
             text = stringResource(Res.string.requests_card_title, name),
@@ -133,18 +133,6 @@ private fun RequesterHeader(request: ReservationRequest) {
             overflow = TextOverflow.Ellipsis,
         )
     }
-}
-
-/** Foto de perfil redonda (ícono de persona si no tiene). */
-@Composable
-fun EmployeeAvatar(photoUrl: String?, size: Dp, contentDescription: String?) {
-    AppImage(
-        model = photoUrl,
-        contentDescription = contentDescription,
-        contentScale = ContentScale.Crop,
-        fallbackIcon = AppIcons.User,
-        modifier = Modifier.size(size).clip(CircleShape),
-    )
 }
 
 /** Etiqueta chica con el estado (Pendiente, Aprobado, Denegado...), para el detalle. */

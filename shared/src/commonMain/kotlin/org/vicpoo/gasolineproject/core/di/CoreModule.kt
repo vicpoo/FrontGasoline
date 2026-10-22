@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import org.koin.core.module.Module
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.SystemAppClock
@@ -12,12 +13,16 @@ import org.vicpoo.gasolineproject.core.network.TokenProvider
 import org.vicpoo.gasolineproject.core.network.UnauthorizedHandler
 import org.vicpoo.gasolineproject.core.network.createHttpClient
 import org.vicpoo.gasolineproject.core.network.httpEngine
+import org.vicpoo.gasolineproject.core.rbac.AccessGateViewModel
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.rbac.SessionPermissionChecker
 import org.vicpoo.gasolineproject.core.session.DataStoreSessionStore
 import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.session.SessionStore
 import org.vicpoo.gasolineproject.core.session.SessionWriter
+import org.vicpoo.gasolineproject.core.sync.BackgroundSyncCoordinator
+import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
+import org.vicpoo.gasolineproject.core.sync.SyncAllPendingUseCase
 
 /*
  * Módulos de infraestructura compartida, uno por responsabilidad (SRP):
@@ -25,6 +30,7 @@ import org.vicpoo.gasolineproject.core.session.SessionWriter
  * - sessionModule: sesión guardada en el teléfono (lectura / escritura por separado, ISP).
  * - networkModule: cliente Ktor con token y manejo del 401.
  * - rbacModule:    consulta de privilegios.
+ * - syncModule:    sincronización offline-first en segundo plano.
  * Las features solo piden interfaces; nunca crean estas clases (DIP).
  */
 
@@ -73,4 +79,14 @@ val networkModule = module {
 
 val rbacModule = module {
     single<PermissionChecker> { SessionPermissionChecker(get()) }
+    // Una instancia por regla (la llave del ViewModel es AccessRule.key)
+    viewModel { params -> AccessGateViewModel(permissionChecker = get(), rule = params.get()) }
+}
+
+val syncModule = module {
+    // Todas las features registradas con `bind PendingSyncTask::class`
+    factory { SyncAllPendingUseCase(getAll<PendingSyncTask>()) }
+    single(createdAtStart = true) {
+        BackgroundSyncCoordinator(sessionReader = get(), scheduler = get(), appScope = get())
+    }
 }

@@ -180,12 +180,15 @@ class SaveFuelRecordUseCase(
         sync.outcomeFor(localId) { repository.get(it) }
 }
 
-/** Reintenta enviar una recarga que quedó pendiente (botón "Reintentar"). */
+/** Reintenta enviar una recarga que quedó pendiente o rechazada (botón "Reintentar"). */
 class RetryFuelRecordUseCase(
     private val repository: FuelRecordRepository,
     private val sync: TripRecordingSync,
 ) {
-    suspend operator fun invoke(localId: String): SendOutcome = sync.outcomeFor(localId) { repository.get(it) }
+    suspend operator fun invoke(localId: String): SendOutcome {
+        repository.markForRetry(localId)
+        return sync.outcomeFor(localId) { repository.get(it) }
+    }
 }
 
 class DeleteFuelRecordUseCase(

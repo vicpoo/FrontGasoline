@@ -167,6 +167,7 @@ class FuelRecordRepositoryImpl(
                     // Si nunca se envió sigue siendo "crear"; si ya estaba en la API es "corregir"
                     state = if (current.serverId == null) FuelSyncState.PENDING_CREATE else FuelSyncState.PENDING_UPDATE,
                     syncErrorMessage = null,
+                    syncErrorCode = null,
                 )
             } ?: return AppResult.Failure(AppError.NotFound)
         }
@@ -181,9 +182,13 @@ class FuelRecordRepositoryImpl(
             store.update { snapshot -> snapshot.copy(fuel = snapshot.fuel.filterNot { it.localId == localId }) }
             store.deleteFile(fuel.receiptPath)
         } else {
-            store.updateFuel(localId) { it.copy(state = FuelSyncState.PENDING_DELETE, syncErrorMessage = null) }
+            store.updateFuel(localId) { it.copy(state = FuelSyncState.PENDING_DELETE, syncErrorMessage = null, syncErrorCode = null) }
         }
         return AppResult.Success(Unit)
+    }
+
+    override suspend fun markForRetry(localId: String) {
+        store.updateFuel(localId) { it.copy(syncErrorMessage = null, syncErrorCode = null) }
     }
 }
 

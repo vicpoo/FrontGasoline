@@ -4,9 +4,11 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.data.JsonFileCache
 import org.vicpoo.gasolineproject.core.session.LogoutListener
+import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.feature.triprecording.data.AssignedVehicleRepositoryImpl
 import org.vicpoo.gasolineproject.feature.triprecording.data.CostCenterRepositoryImpl
 import org.vicpoo.gasolineproject.feature.triprecording.data.FuelRecordRepositoryImpl
@@ -88,7 +90,9 @@ val tripRecordingModule = module {
 
     single<FuelRecordRepository> { FuelRecordRepositoryImpl(store = get(), clock = get()) }
 
-    single<TripRecordingSync> { TripRecordingSyncer(store = get(), api = get(), appScope = get()) }
+    // Una sola instancia: la usan los casos de uso (TripRecordingSync) y el trabajo en segundo plano (PendingSyncTask)
+    single { TripRecordingSyncer(store = get(), api = get(), appScope = get(), scheduler = get()) } bind PendingSyncTask::class
+    single<TripRecordingSync> { get<TripRecordingSyncer>() }
 
     // Se crea al iniciar la app: si quedó un viaje en curso, el GPS se reanuda solo
     single(createdAtStart = true) {

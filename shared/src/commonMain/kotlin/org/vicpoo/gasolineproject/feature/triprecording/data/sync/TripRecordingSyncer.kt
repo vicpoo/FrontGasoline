@@ -5,9 +5,14 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.common.httpCode
 import org.vicpoo.gasolineproject.core.common.serverMessage
 import org.vicpoo.gasolineproject.core.di.AppScope
 import org.vicpoo.gasolineproject.core.network.safeApiCall
+import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
+import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
+import org.vicpoo.gasolineproject.core.sync.SyncRejection
+import org.vicpoo.gasolineproject.core.sync.stopsSync
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.FuelEntity
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.FuelSyncState
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.PauseEntity
@@ -41,14 +46,20 @@ import kotlin.math.round
  * Un viaje completo hecho sin red (ya guardado en "Registrar Viaje") se manda de una vez con
  * POST /viajes/sincronizar, incluidas sus pausas.
  *
- * Sin red o con sesión vencida se detiene y lo deja pendiente. Si la API rechaza algo
- * (400 / 409), guarda el mensaje en ese registro y continúa con lo demás.
+ * Sin red o con sesión vencida se detiene, lo deja pendiente y pide al [BackgroundSyncScheduler]
+ * que lo vuelva a intentar en cuanto haya internet (aunque la app esté cerrada).
+ *
+ * Si la API rechaza algo guarda el mensaje y el código en ese registro y continúa con lo demás.
+ * Un rechazo definitivo (4xx, ver [SyncRejection]) ya no se reenvía en automático: espera a que el
+ * usuario lo corrija (editar la recarga / volver a guardar "Registrar Viaje") o toque "Reintentar".
+ * Un lote de puntos GPS rechazado se descarta (se cuenta en pointsDiscarded) para no bloquear el viaje.
  */
 class TripRecordingSyncer(
     private val store: TripRecordingLocalStore,
     private val api: TripRecordingApi,
     private val appScope: AppScope,
-) : TripRecordingSync {
+    private val scheduler: BackgroundSyncScheduler,
+) : TripRecordingSync, PendingSyncTask {
 
     private val mutex = Mutex()
 
@@ -56,10 +67,15 @@ class TripRecordingSyncer(
         appScope.scope.launch { sync() }
     }
 
+    override suspend fun syncPending(): AppResult<Unit> = sync()
+
     override suspend fun sync(): AppResult<Unit> = mutex.withLock {
         for (trip in store.current().trips) {
             val result = syncTrip(trip.localId)
-            if (result is AppResult.Failure) return@withLock result
+            if (result is AppResult.Failure) {
+                if (result.error == AppError.NoConnection) scheduler.requestWhenOnline()
+                return@withLock result
+            }
         }
         AppResult.Success(Unit)
     }
@@ -69,6 +85,8 @@ class TripRecordingSyncer(
         // 1. Viaje
         var trip = currentTrip(localId) ?: return AppResult.Success(Unit)
         if (trip.serverId == null) {
+            // Rechazado de forma definitiva: espera a que el usuario lo corrija
+            if (trip.isBlocked()) return AppResult.Success(Unit)
             when (val created = createOnServer(trip)) {
                 is Step.Stop -> return AppResult.Failure(created.error)
                 is Step.Rejected -> return AppResult.Success(Unit) // el error quedó guardado en el viaje
@@ -87,14 +105,16 @@ class TripRecordingSyncer(
         }
 
         // 4. Recargas
-        val fuel = store.current().fuel.filter { it.tripLocalId == localId && it.state != FuelSyncState.SYNCED }
+        val fuel = store.current().fuel.filter {
+            it.tripLocalId == localId && it.state != FuelSyncState.SYNCED && !SyncRejection.isPermanent(it.syncErrorCode)
+        }
         for (entity in fuel) {
             (syncFuel(entity, serverId) as? Step.Stop)?.let { return AppResult.Failure(it.error) }
         }
 
         // 5. Cierre (solo cuando el usuario ya guardó "Registrar Viaje")
         trip = currentTrip(localId) ?: return AppResult.Success(Unit)
-        if (!trip.running && !trip.closedOnServer) {
+        if (!trip.running && !trip.closedOnServer && !trip.isBlocked()) {
             (finishOnServer(trip, serverId) as? Step.Stop)?.let { return AppResult.Failure(it.error) }
         }
 
@@ -163,6 +183,7 @@ class TripRecordingSyncer(
                         // Con /sincronizar las pausas ya viajaron junto con el viaje
                         pauses = if (completeOffline) entity.pauses.map { it.copy(startSent = true, endSent = true) } else entity.pauses,
                         syncErrorMessage = null,
+                        syncErrorCode = null,
                     )
                 }
                 Step.Done
@@ -185,9 +206,13 @@ class TripRecordingSyncer(
                     store.updateTrip(trip.localId) { it.copy(pointsSent = total) }
                 }
                 is AppResult.Failure -> {
-                    if (result.error.isStop()) return Step.Stop(result.error)
-                    // Un lote rechazado no debe bloquear el resto del viaje: se intenta en la próxima vuelta
-                    return Step.Rejected
+                    if (result.error.stopsSync()) return Step.Stop(result.error)
+                    // Error temporal (5xx): se intenta en la próxima vuelta
+                    if (!SyncRejection.isPermanent(result.error.httpCode())) return Step.Rejected
+                    // Rechazo definitivo (400): reenviarlo daría lo mismo. Se salta el lote y se cuenta
+                    sent += batch.size
+                    val total = sent
+                    store.updateTrip(trip.localId) { it.copy(pointsSent = total, pointsDiscarded = it.pointsDiscarded + batch.size) }
                 }
             }
         }
@@ -207,7 +232,7 @@ class TripRecordingSyncer(
                 when (val result = safeApiCall { api.pauseTrip(serverId, request) }) {
                     is AppResult.Success -> markPause(trip.localId, pause.localId) { it.copy(startSent = true) }
                     is AppResult.Failure -> {
-                        if (result.error.isStop()) return Step.Stop(result.error)
+                        if (result.error.stopsSync()) return Step.Stop(result.error)
                         // 400 "ya está en pausa": la llamada anterior sí llegó aunque se perdió la respuesta
                         markPause(trip.localId, pause.localId) { it.copy(startSent = true) }
                     }
@@ -217,7 +242,7 @@ class TripRecordingSyncer(
                 when (val result = safeApiCall { api.resumeTrip(serverId, ReanudarViajeRequestDto(fecha = pause.endedAt)) }) {
                     is AppResult.Success -> markPause(trip.localId, pause.localId) { it.copy(endSent = true) }
                     is AppResult.Failure -> {
-                        if (result.error.isStop()) return Step.Stop(result.error)
+                        if (result.error.stopsSync()) return Step.Stop(result.error)
                         // 400 "no está en pausa": ya se había reanudado
                         markPause(trip.localId, pause.localId) { it.copy(endSent = true) }
                     }
@@ -243,7 +268,7 @@ class TripRecordingSyncer(
 
     private suspend fun createFuel(entity: FuelEntity, tripServerId: String): Step {
         val receipt = receiptOf(entity)
-            ?: return markFuelError(entity.localId, MISSING_RECEIPT)
+            ?: return markFuelError(entity.localId, MISSING_RECEIPT, SyncRejection.LOCAL_INVALID)
         val result = safeApiCall { api.createFuelLoad(entity.toForm(viajeId = tripServerId, motivo = null, receipt = receipt)) }
         return when (result) {
             is AppResult.Success -> {
@@ -254,6 +279,7 @@ class TripRecordingSyncer(
                         receiptChanged = false,
                         state = FuelSyncState.SYNCED,
                         syncErrorMessage = null,
+                        syncErrorCode = null,
                     )
                 }
                 Step.Done
@@ -273,6 +299,7 @@ class TripRecordingSyncer(
                         receiptChanged = false,
                         state = FuelSyncState.SYNCED,
                         syncErrorMessage = null,
+                        syncErrorCode = null,
                     )
                 }
                 Step.Done
@@ -287,10 +314,14 @@ class TripRecordingSyncer(
             val result = safeApiCall { api.deleteFuelLoad(serverId, DELETE_REASON) }
             // 404 = ya no existe en la API: igual se borra en el teléfono
             if (result is AppResult.Failure && result.error != AppError.NotFound) {
-                if (result.error.isStop()) return Step.Stop(result.error)
+                if (result.error.stopsSync()) return Step.Stop(result.error)
                 // La API no lo dejó borrar: vuelve a aparecer en la lista con el mensaje
                 store.updateFuel(entity.localId) {
-                    it.copy(state = FuelSyncState.SYNCED, syncErrorMessage = result.error.messageOrDefault())
+                    it.copy(
+                        state = FuelSyncState.SYNCED,
+                        syncErrorMessage = result.error.messageOrDefault(),
+                        syncErrorCode = result.error.httpCode(),
+                    )
                 }
                 return Step.Rejected
             }
@@ -311,13 +342,13 @@ class TripRecordingSyncer(
         )
         return when (val result = safeApiCall { api.finishTrip(serverId, request) }) {
             is AppResult.Success -> {
-                store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null) }
+                store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null, syncErrorCode = null) }
                 Step.Done
             }
             is AppResult.Failure -> {
                 // 409 "solo se puede finalizar un viaje en curso": ya estaba cerrado en la API
                 if (result.error is AppError.Server && result.error.code == 409) {
-                    store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null) }
+                    store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null, syncErrorCode = null) }
                     Step.Done
                 } else {
                     handleTripFailure(trip.localId, result.error)
@@ -344,8 +375,14 @@ class TripRecordingSyncer(
                 Step.Done
             }
             is AppResult.Failure -> {
-                if (result.error.isStop()) return Step.Stop(result.error)
-                // Se vuelve a intentar en la próxima sincronización (el viaje ya quedó cerrado)
+                if (result.error.stopsSync()) return Step.Stop(result.error)
+                if (SyncRejection.isPermanent(result.error.httpCode())) {
+                    // La API no acepta esta foto (ej. formato o tamaño): no se reintenta siempre.
+                    // El viaje ya está cerrado en la API; la foto se puede corregir desde la web.
+                    store.updateTrip(trip.localId) { it.copy(odometerPhotoSent = true) }
+                    return Step.Done
+                }
+                // Error temporal: se vuelve a intentar en la próxima sincronización
                 Step.Rejected
             }
         }
@@ -370,6 +407,10 @@ class TripRecordingSyncer(
     private suspend fun currentTrip(localId: String): TripEntity? =
         store.current().trips.firstOrNull { it.localId == localId }
 
+    /** El viaje tiene un rechazo definitivo pendiente de que el usuario lo corrija. */
+    private fun TripEntity.isBlocked(): Boolean =
+        syncErrorMessage != null && SyncRejection.isPermanent(syncErrorCode)
+
     private suspend fun receiptOf(entity: FuelEntity): ReceiptUpload? {
         val path = entity.receiptPath ?: return null
         val bytes = store.readReceipt(path) ?: return null
@@ -379,18 +420,18 @@ class TripRecordingSyncer(
     }
 
     private suspend fun handleTripFailure(localId: String, error: AppError): Step {
-        if (error.isStop()) return Step.Stop(error)
-        store.updateTrip(localId) { it.copy(syncErrorMessage = error.messageOrDefault()) }
+        if (error.stopsSync()) return Step.Stop(error)
+        store.updateTrip(localId) { it.copy(syncErrorMessage = error.messageOrDefault(), syncErrorCode = error.httpCode()) }
         return Step.Rejected
     }
 
     private suspend fun handleFuelFailure(localId: String, error: AppError): Step {
-        if (error.isStop()) return Step.Stop(error)
-        return markFuelError(localId, error.messageOrDefault())
+        if (error.stopsSync()) return Step.Stop(error)
+        return markFuelError(localId, error.messageOrDefault(), error.httpCode())
     }
 
-    private suspend fun markFuelError(localId: String, message: String): Step {
-        store.updateFuel(localId) { it.copy(syncErrorMessage = message) }
+    private suspend fun markFuelError(localId: String, message: String, code: Int?): Step {
+        store.updateFuel(localId) { it.copy(syncErrorMessage = message, syncErrorCode = code) }
         return Step.Rejected
     }
 
@@ -408,9 +449,6 @@ class TripRecordingSyncer(
         const val MISSING_RECEIPT = "Falta la foto del recibo. Edita la recarga y vuelve a subirla."
         const val DEFAULT_REJECTED = "El servidor rechazó el registro."
     }
-
-    private fun AppError.isStop(): Boolean =
-        this == AppError.NoConnection || this == AppError.Unauthorized
 
     private fun AppError.messageOrDefault(): String = serverMessage() ?: DEFAULT_REJECTED
 }

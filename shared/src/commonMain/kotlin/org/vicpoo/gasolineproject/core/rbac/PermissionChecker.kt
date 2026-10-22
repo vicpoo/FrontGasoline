@@ -13,6 +13,10 @@ interface PermissionChecker {
     fun observePrivileges(): Flow<Set<String>>
     fun observe(privilege: String): Flow<Boolean>
     suspend fun has(privilege: String): Boolean
+
+    /** true mientras el usuario cumpla la [rule] (cambia en vivo si le quitan o dan privilegios). */
+    fun observe(rule: AccessRule): Flow<Boolean> =
+        observePrivileges().map { rule.isSatisfiedBy(it) }.distinctUntilChanged()
 }
 
 /** Lee los privilegios de la sesión guardada, así funcionan también sin red. */

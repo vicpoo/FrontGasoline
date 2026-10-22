@@ -9,7 +9,8 @@ import gasolineproject.shared.generated.resources.nav_requests
 import gasolineproject.shared.generated.resources.nav_trips
 import gasolineproject.shared.generated.resources.nav_history
 import org.jetbrains.compose.resources.StringResource
-import org.vicpoo.gasolineproject.core.rbac.Privileges
+import org.vicpoo.gasolineproject.core.rbac.AccessRule
+import org.vicpoo.gasolineproject.core.rbac.AppAccess
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.ProfileDestination
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
@@ -26,9 +27,9 @@ import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.Vehic
 
 /**
  * Pestañas de la pantalla principal. Cada una abre el subgrafo de su feature.
- * RBAC: una pestaña se muestra si el usuario tiene AL MENOS UNO de [requiredAnyOf]
- * (vacío = siempre visible) y ADEMÁS TODOS los de [requiredAllOf]. Para agregar una pestaña nueva solo se agrega un valor aquí
- * y su subgrafo en MainScreen.
+ * RBAC: una pestaña se muestra si el usuario cumple su [access]. Las reglas viven en
+ * AppAccess (catálogo único). Para agregar una pestaña nueva se agrega un valor aquí,
+ * su regla en AppAccess y su subgrafo en MainScreen.
  */
 enum class TopLevelDestination(
     /** Ruta del subgrafo (navigation<Graph>). */
@@ -38,8 +39,7 @@ enum class TopLevelDestination(
     /** Nombre de la pestaña (la barra solo muestra el ícono; el nombre es para accesibilidad). */
     val label: StringResource,
     val icon: () -> ImageVector,
-    val requiredAnyOf: Set<String>,
-    val requiredAllOf: Set<String> = emptySet(),
+    val access: AccessRule,
 ) {
     /**
      * Casa: los carros de la empresa para PEDIR uno. Se necesita carro.ver Y solicitud.crear:
@@ -52,8 +52,7 @@ enum class TopLevelDestination(
         start = CatalogDestination.List,
         label = Res.string.nav_home,
         icon = { AppIcons.Home },
-        requiredAnyOf = setOf(Privileges.CARRO_VER),
-        requiredAllOf = setOf(Privileges.SOLICITUD_CREAR),
+        access = AppAccess.HOME_TAB,
     ),
 
     /** Carro: viajes (registrar, pausar, terminar y cargas). */
@@ -62,7 +61,7 @@ enum class TopLevelDestination(
         start = TripRecordingDestination.AssignedVehicles,
         label = Res.string.nav_trips,
         icon = { AppIcons.Car },
-        requiredAnyOf = setOf(Privileges.VIAJE_REGISTRAR),
+        access = AppAccess.TRIP_RECORDING,
     ),
 
     /** Libreta con lápiz: gestión de carros (ver, agregar, editar, eliminar). */
@@ -71,7 +70,7 @@ enum class TopLevelDestination(
         start = VehiclesDestination.List,
         label = Res.string.nav_fleet,
         icon = { AppIcons.Fleet },
-        requiredAnyOf = setOf(Privileges.CARRO_CREAR, Privileges.CARRO_EDITAR, Privileges.CARRO_ELIMINAR),
+        access = AppAccess.FLEET_TAB,
     ),
 
     /** Llave: solicitudes de la empresa (aceptar / rechazar). */
@@ -80,7 +79,7 @@ enum class TopLevelDestination(
         start = CompanyReservationsDestination.List,
         label = Res.string.nav_requests,
         icon = { AppIcons.Requests },
-        requiredAnyOf = setOf(Privileges.SOLICITUD_VER_TODAS),
+        access = AppAccess.COMPANY_REQUESTS,
     ),
 
     /** Hoja con reloj: historial de viajes. */
@@ -89,7 +88,7 @@ enum class TopLevelDestination(
         start = TripHistoryDestination.List,
         label = Res.string.nav_history,
         icon = { AppIcons.History },
-        requiredAnyOf = setOf(Privileges.VIAJE_VER_PROPIOS, Privileges.VIAJE_VER_TODOS),
+        access = AppAccess.TRIP_HISTORY,
     ),
 
     /** Persona: perfil (todos lo tienen). */
@@ -98,11 +97,9 @@ enum class TopLevelDestination(
         start = ProfileDestination.Overview,
         label = Res.string.nav_account,
         icon = { AppIcons.User },
-        requiredAnyOf = emptySet(),
+        access = AppAccess.PROFILE,
     ),
     ;
 
-    fun isAllowed(privileges: Set<String>): Boolean =
-        (requiredAnyOf.isEmpty() || requiredAnyOf.any { it in privileges }) &&
-            requiredAllOf.all { it in privileges }
+    fun isAllowed(privileges: Set<String>): Boolean = access.isSatisfiedBy(privileges)
 }

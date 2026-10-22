@@ -1,41 +1,38 @@
 package org.vicpoo.gasolineproject.core.rbac
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import kotlinx.coroutines.flow.map
-import org.koin.compose.koinInject
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 /**
- * Muestra [content] solo si el usuario tiene el privilegio.
- * Uso:
- *   RequirePrivilege(Privileges.CARRO_CREAR) { PrimaryButton("Agregar", ...) }
- */
-@Composable
-fun RequirePrivilege(
-    privilege: String,
-    fallback: @Composable () -> Unit = {},
-    content: @Composable () -> Unit,
-) = RequireAnyPrivilege(setOf(privilege), fallback, content)
-
-/**
- * Muestra [content] si el usuario tiene AL MENOS UNO de los privilegios.
+ * Muestra [content] solo si el usuario cumple la [rule] (ver [AppAccess]).
  * Mientras se leen los privilegios guardados no dibuja nada (así no parpadea el [fallback]).
+ * El estado vive en [AccessGateViewModel]; este composable no consulta datos (MVVM).
+ *
+ * Uso:
+ *   RequireAccess(AppAccess.MY_RESERVATIONS) { ReservationsBell(...) }
  */
 @Composable
-fun RequireAnyPrivilege(
-    privileges: Set<String>,
+fun RequireAccess(
+    rule: AccessRule,
     fallback: @Composable () -> Unit = {},
     content: @Composable () -> Unit,
 ) {
-    val checker = koinInject<PermissionChecker>()
-    val allowed: Boolean? by remember(privileges, checker) {
-        checker.observePrivileges().map { granted -> privileges.any { it in granted } }
-    }.collectAsState(initial = null)
+    val viewModel = koinViewModel<AccessGateViewModel>(key = "access-gate:${rule.key}") { parametersOf(rule) }
+    val allowed by viewModel.allowed.collectAsStateWithLifecycle()
     when (allowed) {
         true -> content()
         false -> fallback()
         null -> Unit
     }
 }
+
+/** Atajo: un solo privilegio. */
+@Composable
+fun RequirePrivilege(
+    privilege: String,
+    fallback: @Composable () -> Unit = {},
+    content: @Composable () -> Unit,
+) = RequireAccess(AccessRule.anyOf(privilege), fallback, content)

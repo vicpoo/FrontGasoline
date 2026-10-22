@@ -62,6 +62,7 @@ import gasolineproject.shared.generated.resources.requests_unknown_vehicle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.vicpoo.gasolineproject.core.ui.components.UserAvatar
 import org.vicpoo.gasolineproject.core.ui.components.AppBackButton
 import org.vicpoo.gasolineproject.core.ui.components.AppButton
 import org.vicpoo.gasolineproject.core.ui.components.AppButtonVariant
@@ -86,7 +87,6 @@ import org.vicpoo.gasolineproject.core.ui.components.TitleText
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
-import org.vicpoo.gasolineproject.feature.reservations.presentation.common.EmployeeAvatar
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.StatusBadge
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDate
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDateTime
@@ -195,7 +195,7 @@ private fun RequesterSection(state: ReservationDetailUiState) {
     val request = state.current ?: return
     val name = request.requesterName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.requests_unknown_requester)
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        EmployeeAvatar(photoUrl = request.requesterPhotoUrl, size = 96.dp, contentDescription = name)
+        UserAvatar(photoUrl = request.requesterPhotoUrl, size = 96.dp, contentDescription = name)
         Spacer(Modifier.height(AppTheme.dimens.spaceM))
         SubtitleText(name, textAlign = TextAlign.Center)
         Spacer(Modifier.height(AppTheme.dimens.spaceS))
@@ -272,7 +272,7 @@ private fun ResolutionSection(state: ReservationDetailUiState) {
     Column(Modifier.fillMaxWidth()) {
         detail?.confirmerName?.let { name ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                EmployeeAvatar(photoUrl = detail.confirmerPhotoUrl, size = 36.dp, contentDescription = name)
+                UserAvatar(photoUrl = detail.confirmerPhotoUrl, size = 36.dp, contentDescription = name)
                 Spacer(Modifier.width(AppTheme.dimens.spaceS))
                 InfoRow(stringResource(Res.string.request_detail_resolved_by), name, modifier = Modifier.weight(1f))
             }

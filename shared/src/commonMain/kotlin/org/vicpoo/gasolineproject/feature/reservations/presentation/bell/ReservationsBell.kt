@@ -21,15 +21,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
-import org.vicpoo.gasolineproject.core.rbac.Privileges
-import org.vicpoo.gasolineproject.core.rbac.RequireAnyPrivilege
+import org.vicpoo.gasolineproject.core.rbac.AppAccess
+import org.vicpoo.gasolineproject.core.rbac.RequireAccess
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.reservations.domain.ObserveUnseenReservationUpdatesUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.RefreshUnseenReservationUpdatesUseCase
-
-/** Quién ve la campana: los que pueden ver el estado de sus solicitudes. */
-val RESERVATIONS_BELL_PRIVILEGES = setOf(Privileges.SOLICITUD_VER_PROPIAS)
 
 /** Número del badge: respuestas a mis solicitudes que no he visto (sin red, el último guardado). */
 class ReservationsBellViewModel(
@@ -55,7 +52,8 @@ class ReservationsBellViewModel(
  */
 @Composable
 fun ReservationsBell(onClick: () -> Unit, modifier: Modifier = Modifier) {
-    RequireAnyPrivilege(RESERVATIONS_BELL_PRIVILEGES) {
+    // Quién ve la campana: los que pueden ver el estado de sus solicitudes
+    RequireAccess(AppAccess.MY_RESERVATIONS) {
         BellButton(onClick = onClick, modifier = modifier)
     }
 }

@@ -153,6 +153,7 @@
     <string name="vehicle_section_specs">Datos técnicos</string>
     <string name="vehicle_form_sections_hint">Revisa cada sección y toca "Agregar" o "Modificar" para llenarla.</string>
     <string name="vehicle_form_new_vehicle">Nuevo vehículo</string>
+    <string name="finish_trip_map_hidden">El mapa se muestra al cerrar el teclado.</string>
     <string name="vehicle_form_save">Guardar vehículo</string>
     <string name="action_add_short">Agregar</string>
     <string name="action_modify">Modificar</string>

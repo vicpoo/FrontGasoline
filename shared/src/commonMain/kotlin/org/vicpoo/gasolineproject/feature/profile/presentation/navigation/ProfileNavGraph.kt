@@ -6,7 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.navigation.privilegedComposable
-import org.vicpoo.gasolineproject.core.rbac.Privileges
+import org.vicpoo.gasolineproject.core.rbac.AppAccess
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseRoute
 import org.vicpoo.gasolineproject.feature.profile.presentation.ProfileRoute
 import org.vicpoo.gasolineproject.feature.profile.presentation.editname.EditNameRoute
@@ -45,7 +45,7 @@ fun NavGraphBuilder.profileGraph(navController: NavHostController, onLoggedOut: 
 
         // Reutiliza la pantalla de licencia de la feature auth en modo "actualizar"
         privilegedComposable<ProfileDestination.UpdateLicense>(
-            privileges = setOf(Privileges.VIAJE_REGISTRAR),
+            access = AppAccess.UPDATE_LICENSE,
             onDenied = { navController.popBackStack() },
         ) {
             LicenseRoute(
