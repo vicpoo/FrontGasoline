@@ -59,7 +59,7 @@ fun TripHistoryRoute(
     // Se vuelve a pedir el historial cada vez que la pestaña se muestra (al cambiar de pestaña,
     // al regresar del detalle o al volver a la app), no solo la primera vez que se crea el ViewModel.
     LifecycleResumeEffect(viewModel) {
-        viewModel.refresh()
+        viewModel.refreshSilently()
         onPauseOrDispose { }
     }
     TripHistoryScreen(state = state, onRefresh = viewModel::refresh, onTripClick = onTripClick)

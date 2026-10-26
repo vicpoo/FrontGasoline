@@ -30,6 +30,9 @@ class TripHistoryViewModel(
 
     private data class Status(
         val loadedOnce: Boolean = false,
+        /** Hay una petición en curso (visible o en segundo plano). */
+        val isLoading: Boolean = false,
+        /** Solo true cuando el usuario jaló para recargar: es lo único que muestra el indicador. */
         val isRefreshing: Boolean = false,
         val isOffline: Boolean = false,
         val error: AppError? = null,
@@ -41,20 +44,30 @@ class TripHistoryViewModel(
         TripHistoryUiState(
             trips = trips,
             isInitialLoading = trips.isEmpty() && !s.loadedOnce,
-            isRefreshing = s.isRefreshing && s.loadedOnce,
+            isRefreshing = s.isRefreshing,
             isOffline = s.isOffline,
             error = s.error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TripHistoryUiState())
 
     init {
-        refresh()
+        refreshSilently()
     }
 
-    fun refresh() {
-        if (status.value.isRefreshing) return
+    /** El usuario jaló para recargar: se muestra el indicador. */
+    fun refresh() = load(showIndicator = true)
+
+    /** Al abrir o volver a la pestaña: se actualiza sin mostrar el indicador. */
+    fun refreshSilently() = load(showIndicator = false)
+
+    private fun load(showIndicator: Boolean) {
+        if (status.value.isLoading) {
+            // Si ya hay una carga silenciosa y el usuario jala, se muestra el indicador hasta que termine
+            if (showIndicator) status.update { it.copy(isRefreshing = true) }
+            return
+        }
         viewModelScope.launch {
-            status.update { it.copy(isRefreshing = true) }
+            status.update { it.copy(isLoading = true, isRefreshing = showIndicator) }
             val failure = (refreshTrips() as? AppResult.Failure)?.error
             status.value = Status(
                 loadedOnce = true,

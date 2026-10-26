@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.feature.triprecording.presentation.common
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,10 +22,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import gasolineproject.shared.generated.resources.Res
 import gasolineproject.shared.generated.resources.cost_center_value
-import gasolineproject.shared.generated.resources.vehicle_plates_value
 import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
-import org.vicpoo.gasolineproject.core.ui.components.AppImage
+import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.triprecording.domain.AssignedVehicle
 import org.vicpoo.gasolineproject.feature.triprecording.domain.CostCenter
@@ -41,8 +42,9 @@ fun ReceiptPhoto.toImageModel(): Any = when (this) {
 fun CostCenter.label(): String = stringResource(Res.string.cost_center_value, name, key)
 
 /**
- * Tarjeta del carro asignado (Figma "Registrar" / "Iniciar Viaje"): foto, modelo y placas.
- * [action] va abajo y ocupa todo el ancho de la tarjeta (ej. "▷ Comenzar"); puede ser null.
+ * Tarjeta del carro asignado (Figma "Registrar" / "Iniciar Viaje"), estilo limpio (Material 3):
+ * - Encabezado tipo list item: ícono en un recuadro suave + nombre y "Color · Placas".
+ * - [action] abajo a todo lo ancho (ej. "Comenzar viaje"); puede ser null.
  */
 @Composable
 fun AssignedVehicleCard(
@@ -55,36 +57,40 @@ fun AssignedVehicleCard(
     val dimens = AppTheme.dimens
     AppCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
         Column(Modifier.fillMaxWidth()) {
+            // Encabezado
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AppImage(
-                    model = vehicle.photoUrl,
-                    contentDescription = vehicle.title,
+                Box(
                     modifier = Modifier
-                        .size(width = 112.dp, height = 84.dp)
-                        .clip(RoundedCornerShape(dimens.radiusM)),
-                )
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(dimens.radiusM))
+                        .background(colors.labelBackground),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(AppIcons.Car, contentDescription = null, tint = colors.title, modifier = Modifier.size(24.dp))
+                }
                 Spacer(Modifier.width(dimens.spaceM))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(dimens.spaceXs)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         text = vehicle.title,
-                        style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                        style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
                         color = colors.title,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    vehicle.color?.takeIf { it.isNotBlank() }?.let {
-                        Text(text = it, style = AppTheme.typography.bodySecondary, color = colors.textSecondary, maxLines = 1)
-                    }
                     Text(
-                        text = stringResource(Res.string.vehicle_plates_value, vehicle.plates),
+                        text = listOfNotNull(vehicle.color?.takeIf { it.isNotBlank() }, vehicle.plates)
+                            .joinToString("  ·  "),
                         style = AppTheme.typography.bodySecondary,
                         color = colors.textSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
+
             // El botón abajo, a todo lo ancho de la tarjeta
             if (action != null) {
-                Spacer(Modifier.height(dimens.spaceM))
+                Spacer(Modifier.height(dimens.spaceL))
                 Box(Modifier.fillMaxWidth()) { action() }
             }
         }

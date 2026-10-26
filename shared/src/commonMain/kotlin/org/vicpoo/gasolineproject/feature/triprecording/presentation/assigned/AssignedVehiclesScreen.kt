@@ -126,7 +126,6 @@ fun AssignedVehiclesScreen(
                                         onClick = {
                                             if (state.activeTrip == null) onStartTrip(vehicle.reservationId) else onOpenActiveTrip()
                                         },
-                                        leadingIcon = AppIcons.Play,
                                         variant = AppButtonVariant.Primary,
                                         modifier = Modifier.fillMaxWidth(),
                                     )

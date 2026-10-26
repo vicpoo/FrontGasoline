@@ -170,7 +170,7 @@
     <string name="assigned_subtitle">Elige el vehículo con el que vas a viajar.</string>
     <string name="assigned_empty">No tienes vehículos asignados. Solicita uno en la pestaña Vehículos y espera a que el administrador lo apruebe.</string>
     <string name="assigned_offline">Sin conexión: estás viendo los últimos vehículos guardados.</string>
-    <string name="assigned_start">comienzo</string>
+    <string name="assigned_start">Comenzar viaje</string>
     <string name="assigned_active_title">Tienes un viaje en curso</string>
     <string name="assigned_active_continue">Continuar viaje</string>
     <string name="assigned_pending_trips">Viajes pendientes de enviar: %1$d</string>

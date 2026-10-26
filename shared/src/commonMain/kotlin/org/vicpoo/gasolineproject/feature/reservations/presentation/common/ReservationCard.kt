@@ -1,5 +1,7 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.common
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,7 +41,6 @@ import gasolineproject.shared.generated.resources.requests_unknown_vehicle
 import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
 import org.vicpoo.gasolineproject.core.ui.components.UserAvatar
-import org.vicpoo.gasolineproject.core.ui.components.AppImage
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
@@ -71,15 +73,16 @@ fun ReservationCard(
         Column(Modifier.fillMaxWidth()) {
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AppImage(
-                    model = request.photoUrl,
-                    contentDescription = title,
-                    contentScale = ContentScale.Crop,
-                    fallbackIcon = AppIcons.Car,
+                // Ícono de "Solicitudes" (el mismo de la pestaña), en lugar de la foto del carro
+                Box(
                     modifier = Modifier
-                        .size(width = 80.dp, height = 64.dp)
-                        .clip(RoundedCornerShape(50)),
-                )
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(colors.primary.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(AppIcons.Requests, contentDescription = null, tint = colors.primary, modifier = Modifier.size(26.dp))
+                }
                 Spacer(Modifier.width(dimens.spaceM))
                 Column(Modifier.weight(1f)) {
                     Text(
