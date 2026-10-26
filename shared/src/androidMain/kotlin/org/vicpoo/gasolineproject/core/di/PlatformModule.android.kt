@@ -9,6 +9,8 @@ import org.vicpoo.gasolineproject.core.location.AndroidTrackingServiceController
 import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.location.TrackingServiceController
 import org.vicpoo.gasolineproject.core.platform.AppDirectories
+import org.vicpoo.gasolineproject.core.push.AndroidPushTokenProvider
+import org.vicpoo.gasolineproject.core.push.PushTokenProvider
 import org.vicpoo.gasolineproject.core.platform.AndroidImageCompressor
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
 import org.vicpoo.gasolineproject.core.session.DATASTORE_FILE_NAME
@@ -31,4 +33,7 @@ actual val platformModule: Module = module {
 
     // Sincronización en segundo plano (WorkManager)
     single<BackgroundSyncScheduler> { WorkManagerSyncScheduler(androidContext()) }
+
+    // Notificaciones push (Firebase Cloud Messaging)
+    single<PushTokenProvider> { AndroidPushTokenProvider() }
 }

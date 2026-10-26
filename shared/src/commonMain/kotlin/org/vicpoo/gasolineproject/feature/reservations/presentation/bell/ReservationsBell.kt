@@ -1,5 +1,7 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.bell
 
+import org.vicpoo.gasolineproject.core.push.PushEvents
+import org.vicpoo.gasolineproject.core.push.PushType
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -32,6 +34,7 @@ import org.vicpoo.gasolineproject.feature.reservations.domain.RefreshUnseenReser
 class ReservationsBellViewModel(
     observeUnseen: ObserveUnseenReservationUpdatesUseCase,
     private val refreshUnseen: RefreshUnseenReservationUpdatesUseCase,
+    pushEvents: PushEvents,
 ) : ViewModel() {
 
     val unseen: StateFlow<Int> = observeUnseen()
@@ -39,6 +42,10 @@ class ReservationsBellViewModel(
 
     init {
         refresh()
+        // El número de la campana sube en cuanto llega la respuesta
+        viewModelScope.launch {
+            pushEvents.received.collect { if (it.type == PushType.REQUEST_RESULT) refresh() }
+        }
     }
 
     fun refresh() {

@@ -31,6 +31,7 @@
             android:exported="true"
             android:theme="@style/Theme.Gasoline.Starting"
             android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTop"
             android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -44,6 +45,22 @@
             android:name="org.vicpoo.gasolineproject.core.location.TripTrackingService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- Notificaciones push (Firebase Cloud Messaging): solicitudes de vehículos -->
+        <service
+            android:name="org.vicpoo.gasolineproject.core.push.GasolineMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- Con la app cerrada Firebase muestra el push solo: con este ícono y en este canal -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="solicitudes" />
 
         <!-- La cámara guarda la foto (recibos, perfil) en un archivo temporal de la app -->
         <provider

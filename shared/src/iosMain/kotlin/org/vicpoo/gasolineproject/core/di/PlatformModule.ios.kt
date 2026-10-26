@@ -11,6 +11,8 @@ import org.vicpoo.gasolineproject.core.location.TrackingServiceController
 import org.vicpoo.gasolineproject.core.platform.AppDirectories
 import org.vicpoo.gasolineproject.core.platform.IosImageCompressor
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
+import org.vicpoo.gasolineproject.core.push.IosPushTokenProvider
+import org.vicpoo.gasolineproject.core.push.PushTokenProvider
 import org.vicpoo.gasolineproject.core.session.DATASTORE_FILE_NAME
 import org.vicpoo.gasolineproject.core.session.createDataStore
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
@@ -31,6 +33,7 @@ actual val platformModule: Module = module {
     single<ImageCompressor> { IosImageCompressor() }
     single<TrackingServiceController> { IosTrackingServiceController() }
     single<BackgroundSyncScheduler> { IosSyncScheduler() }
+    single<PushTokenProvider> { IosPushTokenProvider() }
 }
 
 @OptIn(ExperimentalForeignApi::class)

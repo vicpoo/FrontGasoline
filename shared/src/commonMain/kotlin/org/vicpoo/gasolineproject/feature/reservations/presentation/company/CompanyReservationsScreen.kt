@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.company
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,12 +48,25 @@ import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.ReservationCard
 
+private const val AUTO_REFRESH_MS = 30_000L
+
 @Composable
 fun CompanyReservationsRoute(
     onRequestClick: (String) -> Unit,
     viewModel: CompanyReservationsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Mientras la pestaña está en pantalla: se actualiza al entrar (cambiar de pestaña, regresar
+    // del detalle o volver a la app) y cada 30 s, sin el indicador. El push la actualiza al instante.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                viewModel.refreshSilently()
+                delay(AUTO_REFRESH_MS)
+            }
+        }
+    }
     CompanyReservationsScreen(state = state, onEvent = viewModel::onEvent, onRequestClick = onRequestClick)
 }
 

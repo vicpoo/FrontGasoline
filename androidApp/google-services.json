@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1004971342591",
+    "project_id": "apigasoline",
+    "storage_bucket": "apigasoline.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1004971342591:android:774d19b8d9b57147ae6aca",
+        "android_client_info": {
+          "package_name": "org.vicpoo.gasolineproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbXd0U49sTh8vXIYtkGZ6lz4euBZWXfWU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

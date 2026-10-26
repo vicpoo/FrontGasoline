@@ -2,6 +2,7 @@ package org.vicpoo.gasolineproject.core.di
 
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
+import org.vicpoo.gasolineproject.core.push.pushModule
 import org.vicpoo.gasolineproject.feature.auth.di.authModule
 import org.vicpoo.gasolineproject.feature.profile.di.profileModule
 import org.vicpoo.gasolineproject.feature.reservations.di.reservationsModule
@@ -18,6 +19,7 @@ private val infrastructureModules = listOf(
     networkModule,
     rbacModule,
     syncModule,
+    pushModule,
 )
 
 /** Una entrada por feature. Al agregar una feature nueva, agrega aquí su módulo. */

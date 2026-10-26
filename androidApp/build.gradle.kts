@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.composeCompiler)
+    // Firebase: lee google-services.json (notificaciones push)
+    alias(libs.plugins.googleServices)
 }
 
 kotlin {

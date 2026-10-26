@@ -55,6 +55,10 @@ object ApiRoutes {
     const val NOTIFICATIONS = "notificaciones"
     fun notificationRead(id: String) = "notificaciones/$id/marcar-leida"
 
+    // Celulares que reciben notificaciones push (DispositivosController)
+    const val DEVICES = "dispositivos"
+    fun device(id: String) = "dispositivos/$id"
+
     // Vehículos (CarrosController)
     const val VEHICLES = "carros"
     fun vehicle(id: String) = "carros/$id"

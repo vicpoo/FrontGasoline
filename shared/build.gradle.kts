@@ -52,6 +52,10 @@ kotlin {
 
             // Mapa del viaje en curso (MapLibre). Solo Android por ahora: en iOS se usa RouteMap
             implementation(libs.maplibre.compose)
+
+            // Notificaciones push (Firebase Cloud Messaging)
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.messaging)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

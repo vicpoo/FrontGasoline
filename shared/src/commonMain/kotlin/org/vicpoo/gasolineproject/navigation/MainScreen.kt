@@ -1,6 +1,8 @@
 package org.vicpoo.gasolineproject.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -12,6 +14,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import org.koin.compose.koinInject
+import org.vicpoo.gasolineproject.core.push.PushEvents
+import org.vicpoo.gasolineproject.core.push.PushTarget
+import org.vicpoo.gasolineproject.core.push.PushType
+import org.vicpoo.gasolineproject.core.push.RequestNotificationPermission
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.CatalogDestination
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.core.ui.adaptive.AdaptiveNavScaffold
@@ -36,6 +47,7 @@ fun MainScreen(
     onLoggedOut: () -> Unit,
     viewModel: MainViewModel = koinViewModel(),
     navController: NavHostController = rememberNavController(),
+    pushEvents: PushEvents = koinInject(),
 ) {
     val privileges by viewModel.privileges.collectAsStateWithLifecycle()
     val granted = privileges ?: run {
@@ -52,6 +64,17 @@ fun MainScreen(
     val currentTab = tabs.firstOrNull { currentDestination.belongsTo(it) }
     val onTopLevel = currentDestination == null || tabs.any { currentDestination.hasRoute(it.start::class) }
 
+    // Notificaciones push: se pide el permiso y, si se tocó una, se abre su pantalla
+    RequestNotificationPermission()
+    val pushTarget by pushEvents.pendingOpen.collectAsStateWithLifecycle()
+    LaunchedEffect(pushTarget) {
+        val target = pushTarget ?: return@LaunchedEffect
+        // Espera a que el NavHost ya tenga su grafo (la primera vez se arma después de este efecto)
+        snapshotFlow { navController.currentBackStackEntry }.filterNotNull().first()
+        navController.openPushTarget(target)
+        pushEvents.consumeOpen()
+    }
+
     AdaptiveNavScaffold(
         destinations = tabs.map { TabItem(it.name, stringResource(it.label), it.icon()) },
         selectedKey = (currentTab ?: tabs.first()).name,
@@ -66,6 +89,21 @@ fun MainScreen(
             tripHistoryGraph(navController)
             profileGraph(navController, onLoggedOut = onLoggedOut)
         }
+    }
+}
+
+/**
+ * Pantalla de cada push (sin el privilegio, privilegedComposable regresa solo):
+ * - Nueva solicitud → su detalle en la pestaña Solicitudes, para aceptarla o rechazarla.
+ * - Resultado de mi solicitud → "Mis solicitudes" (lo mismo que abre la campana).
+ */
+private fun NavHostController.openPushTarget(target: PushTarget) {
+    when (target.type) {
+        PushType.NEW_REQUEST -> target.referenceId?.let { id ->
+            navigate(CompanyReservationsDestination.Detail(id)) { launchSingleTop = true }
+        }
+        PushType.REQUEST_RESULT -> navigate(CatalogDestination.MyReservations) { launchSingleTop = true }
+        PushType.VEHICLE_STATUS, PushType.OTHER -> Unit
     }
 }
 

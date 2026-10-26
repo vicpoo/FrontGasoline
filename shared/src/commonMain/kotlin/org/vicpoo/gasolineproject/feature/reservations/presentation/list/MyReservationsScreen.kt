@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.list
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -63,12 +68,24 @@ import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.ReservationCard
 
+private const val AUTO_REFRESH_MS = 30_000L
+
 @Composable
 fun MyReservationsRoute(
     onBack: () -> Unit,
     viewModel: MyReservationsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Se actualiza al entrar y cada 30 s mientras está en pantalla (sin el indicador)
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                viewModel.refreshSilently()
+                delay(AUTO_REFRESH_MS)
+            }
+        }
+    }
     MyReservationsScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack)
 }
 

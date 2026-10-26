@@ -1,5 +1,7 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.company
 
+import org.vicpoo.gasolineproject.core.push.PushEvents
+import org.vicpoo.gasolineproject.core.push.PushType
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +42,7 @@ sealed interface CompanyReservationsEvent {
 class CompanyReservationsViewModel(
     observeRequests: ObserveCompanyReservationsUseCase,
     private val refreshRequests: RefreshCompanyReservationsUseCase,
+    pushEvents: PushEvents,
 ) : ViewModel() {
 
     private data class LoadState(
@@ -55,6 +58,10 @@ class CompanyReservationsViewModel(
     val state: StateFlow<CompanyReservationsUiState> = _state.asStateFlow()
 
     init {
+        // Llegó una solicitud nueva con la app abierta: se actualiza la lista sin el indicador
+        viewModelScope.launch {
+            pushEvents.received.collect { if (it.type == PushType.NEW_REQUEST) refresh(initial = true) }
+        }
         viewModelScope.launch {
             combine(observeRequests(), loading, filter) { requests, load, selected ->
                 CompanyReservationsUiState(
@@ -80,6 +87,9 @@ class CompanyReservationsViewModel(
             is CompanyReservationsEvent.FilterChanged -> filter.value = event.filter
         }
     }
+
+    /** Al entrar a la pantalla y cada cierto tiempo: actualiza sin mostrar el indicador. */
+    fun refreshSilently() = refresh(initial = true)
 
     private fun refresh(initial: Boolean) {
         if (loading.value.refreshing) return
