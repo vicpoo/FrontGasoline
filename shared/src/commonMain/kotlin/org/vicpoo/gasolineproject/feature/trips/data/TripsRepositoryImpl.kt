@@ -95,12 +95,13 @@ class TripsRepositoryImpl(
             }.awaitAll().toMap()
         }
 
-        // Rutas: se reutiliza la guardada; solo se descargan las que faltan (en paralelo)
-        val cachedRoutes = cached.mapValues { it.value.route }
+        // Rutas: se reutiliza la guardada SOLO si el viaje ya estaba terminado cuando se guardó.
+        // Si estaba en curso, la ruta guardada está incompleta y se vuelve a descargar.
         val routes = coroutineScope {
             trips.map { trip ->
                 async {
-                    val cached = cachedRoutes[trip.viajeId]
+                    val previous = cached[trip.viajeId]
+                    val cached = previous?.route?.takeIf { previous.endedAt != null && trip.fechaFin != null }
                     if (!cached.isNullOrEmpty()) {
                         trip.viajeId to cached
                     } else {

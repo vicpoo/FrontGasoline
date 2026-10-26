@@ -24,6 +24,7 @@ object AppPalette {
     val Ink = Color(0xFF1F1F1F)         // Texto general y secundario
     val White = Color(0xFFFFFFFF)       // Fondo
     val Black = Color(0xFF000000)       // Fondo del tema oscuro
+    val LightBlue = Color(0xFF476D9E)   // Bordes de tarjetas y divisores en el tema oscuro (se distingue sobre el negro)
 }
 
 @Immutable
@@ -113,7 +114,7 @@ val DarkAppColors = AppColors(
     onInput = AppPalette.Ink,
     inputPlaceholder = AppPalette.Ink.copy(alpha = 0.5f),
     error = AppPalette.Crimson,
-    divider = AppPalette.Navy,
+    divider = AppPalette.LightBlue,
     illustration = AppPalette.Gray,
     isDark = true,
 )

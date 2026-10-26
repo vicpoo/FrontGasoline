@@ -11,10 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material3.Text
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -111,7 +108,21 @@ fun ProfileScreen(
 
     AppScreen(horizontalAlignment = Alignment.CenterHorizontally) {
         // Mismo título y posición que "Vehículos" y las demás pestañas
-        ScreenHeader(title = stringResource(Res.string.profile_title), topSpacing = 0.dp)
+        // Salir: ícono a la derecha del título (mismo lugar que la campana en otras pestañas)
+        ScreenHeader(
+            title = stringResource(Res.string.profile_title),
+            topSpacing = 0.dp,
+            action = {
+                IconButton(onClick = { onEvent(ProfileEvent.Logout) }) {
+                    Icon(
+                        imageVector = AppIcons.Logout,
+                        contentDescription = stringResource(Res.string.action_logout),
+                        tint = AppTheme.colors.title,
+                        modifier = Modifier.size(26.dp),
+                    )
+                }
+            },
+        )
         Spacer(Modifier.height(dimens.spaceL))
 
         EditableAvatar(
@@ -175,9 +186,7 @@ fun ProfileScreen(
             }
         }
 
-        Spacer(Modifier.weight(1f))
         Spacer(Modifier.height(dimens.spaceXl))
-        LogoutRow(onClick = { onEvent(ProfileEvent.Logout) })
     }
 
     if (state.showPhotoOptions) {
@@ -209,27 +218,3 @@ fun ProfileScreen(
         )
     }
 }
-
-/**
- * "Cerrar sesión" estilo Airbnb: al final del perfil, una línea divisoria y el texto subrayado
- * en negritas alineado a la izquierda (sin botón de color).
- */
-@Composable
-private fun LogoutRow(onClick: () -> Unit) {
-    val colors = AppTheme.colors
-    val dimens = AppTheme.dimens
-    Column(Modifier.fillMaxWidth()) {
-        HorizontalDivider(color = colors.textSecondary.copy(alpha = if (colors.isDark) 0.45f else 0.25f))
-        Text(
-            text = stringResource(Res.string.action_logout),
-            style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold, textDecoration = TextDecoration.Underline),
-            color = colors.title,
-            modifier = Modifier
-                .padding(top = dimens.spaceM)
-                .clip(RoundedCornerShape(dimens.radiusS))
-                .clickable(onClick = onClick)
-                .padding(vertical = dimens.spaceS, horizontal = dimens.spaceXs),
-        )
-    }
-}
-

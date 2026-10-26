@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import gasolineproject.shared.generated.resources.Res
 import gasolineproject.shared.generated.resources.trip_history_empty
@@ -55,6 +56,12 @@ fun TripHistoryRoute(
     viewModel: TripHistoryViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Se vuelve a pedir el historial cada vez que la pestaña se muestra (al cambiar de pestaña,
+    // al regresar del detalle o al volver a la app), no solo la primera vez que se crea el ViewModel.
+    LifecycleResumeEffect(viewModel) {
+        viewModel.refresh()
+        onPauseOrDispose { }
+    }
     TripHistoryScreen(state = state, onRefresh = viewModel::refresh, onTripClick = onTripClick)
 }
 

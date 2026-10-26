@@ -84,6 +84,29 @@ object AppIcons {
         }
     }
 
+    /** Salir / cerrar sesión: marco de puerta con flecha hacia afuera. */
+    val Logout: ImageVector by lazy {
+        lineIcon("Logout") {
+            strokePath {
+                moveTo(9f, 21f)
+                lineTo(5f, 21f)
+                quadTo(3f, 21f, 3f, 19f)
+                lineTo(3f, 5f)
+                quadTo(3f, 3f, 5f, 3f)
+                lineTo(9f, 3f)
+            }
+            strokePath {
+                moveTo(16f, 17f)
+                lineTo(21f, 12f)
+                lineTo(16f, 7f)
+            }
+            strokePath {
+                moveTo(21f, 12f)
+                lineTo(9f, 12f)
+            }
+        }
+    }
+
     val Pencil: ImageVector by lazy {
         lineIcon("Pencil") {
             strokePath {
