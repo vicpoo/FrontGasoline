@@ -8,7 +8,7 @@ package org.vicpoo.gasolineproject.core.network
  * Debe terminar en "/".
  */
 object ApiConfig {
-    const val BASE_URL = "http://10.0.2.2:5234/api/"
+    const val BASE_URL = "http://13.222.72.73/api/"
     const val REQUEST_TIMEOUT_MS = 30_000L
     const val CONNECT_TIMEOUT_MS = 15_000L
     const val ORIGIN_HEADER = "X-Origen"
