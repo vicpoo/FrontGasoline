@@ -63,6 +63,7 @@ kotlin {
         commonMain.dependencies {
             // Módulos de core
             implementation(project(":core:common"))
+            implementation(project(":core:data"))
 
             // UI
             implementation(libs.compose.runtime)

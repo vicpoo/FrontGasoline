@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import org.koin.core.module.Module
-import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppScope
@@ -14,7 +13,6 @@ import org.vicpoo.gasolineproject.core.network.TokenProvider
 import org.vicpoo.gasolineproject.core.network.UnauthorizedHandler
 import org.vicpoo.gasolineproject.core.network.createHttpClient
 import org.vicpoo.gasolineproject.core.network.httpEngine
-import org.vicpoo.gasolineproject.core.rbac.AccessGateViewModel
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.rbac.SessionPermissionChecker
 import org.vicpoo.gasolineproject.core.session.DataStoreSessionStore
@@ -77,8 +75,6 @@ val networkModule = module {
 
 val rbacModule = module {
     single<PermissionChecker> { SessionPermissionChecker(get()) }
-    // Una instancia por regla (la llave del ViewModel es AccessRule.key)
-    viewModel { params -> AccessGateViewModel(permissionChecker = get(), rule = params.get()) }
 }
 
 val syncModule = module {

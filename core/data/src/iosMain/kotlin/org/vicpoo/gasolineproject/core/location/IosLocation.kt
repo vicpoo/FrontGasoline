@@ -1,7 +1,5 @@
 package org.vicpoo.gasolineproject.core.location
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -17,7 +15,3 @@ class IosTrackingServiceController : TrackingServiceController {
     override fun start() = Unit
     override fun stop() = Unit
 }
-
-@Composable
-actual fun rememberLocationPermission(onResult: (granted: Boolean) -> Unit): LocationPermissionLauncher =
-    remember { LocationPermissionLauncher { onResult(false) } }

@@ -1,6 +1,5 @@
 package org.vicpoo.gasolineproject.core.push
 
-import androidx.compose.runtime.Composable
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -86,10 +85,3 @@ class PushEvents {
         _received.tryEmit(target)
     }
 }
-
-/**
- * Pide el permiso de notificaciones una vez (Android 13+). En iOS no hace nada por ahora.
- * Se llama desde MainScreen para que también lo vea quien nunca inicia un viaje.
- */
-@Composable
-expect fun RequestNotificationPermission()

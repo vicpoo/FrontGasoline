@@ -15,6 +15,7 @@ kotlin {
 }
 dependencies {
     implementation(project(":shared"))
+    implementation(project(":core:data")) // MainActivity y GasolineApplication usan PushEvents / PushNotifications
 
     implementation(libs.androidx.activity.compose)
     // Pantalla de inicio con el logo (Android 12+ y versiones anteriores)

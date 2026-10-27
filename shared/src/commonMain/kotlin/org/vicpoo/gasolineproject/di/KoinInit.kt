@@ -9,6 +9,7 @@ import org.vicpoo.gasolineproject.core.di.rbacModule
 import org.vicpoo.gasolineproject.core.di.sessionModule
 import org.vicpoo.gasolineproject.core.di.syncModule
 import org.vicpoo.gasolineproject.core.push.pushModule
+import org.vicpoo.gasolineproject.core.rbac.rbacUiModule
 import org.vicpoo.gasolineproject.feature.auth.di.authModule
 import org.vicpoo.gasolineproject.feature.profile.di.profileModule
 import org.vicpoo.gasolineproject.feature.reservations.di.reservationsModule
@@ -29,6 +30,7 @@ private val infrastructureModules = listOf(
     sessionModule,
     networkModule,
     rbacModule,
+    rbacUiModule,
     syncModule,
     pushModule,
 )
