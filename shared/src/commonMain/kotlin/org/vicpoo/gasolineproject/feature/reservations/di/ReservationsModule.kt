@@ -4,9 +4,11 @@ import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
+import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.data.JsonFileCache
 import org.vicpoo.gasolineproject.core.session.LogoutListener
+import org.vicpoo.gasolineproject.feature.reservations.api.VehicleRequester
 import org.vicpoo.gasolineproject.feature.reservations.data.ReservationRepositoryImpl
 import org.vicpoo.gasolineproject.feature.reservations.data.local.CompanyReservationsSnapshot
 import org.vicpoo.gasolineproject.feature.reservations.data.local.MyReservationsSnapshot
@@ -57,7 +59,8 @@ val reservationsModule = module {
     }
 
     // Enviar solicitud (detalle del carro en Inicio)
-    factoryOf(::RequestVehicleUseCase)
+    // Expuesto a otras features (vehículos) solo por su API pública
+    factoryOf(::RequestVehicleUseCase) bind VehicleRequester::class
 
     // Campana: mis solicitudes y su estado
     factoryOf(::ObserveMyReservationsUseCase)

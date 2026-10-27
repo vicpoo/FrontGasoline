@@ -30,6 +30,7 @@ import org.vicpoo.gasolineproject.core.session.createDataStore
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.core.sync.SyncAllPendingUseCase
+import org.vicpoo.gasolineproject.di.appModules
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseGateViewModel
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseViewModel
 import org.vicpoo.gasolineproject.feature.auth.presentation.login.LoginViewModel

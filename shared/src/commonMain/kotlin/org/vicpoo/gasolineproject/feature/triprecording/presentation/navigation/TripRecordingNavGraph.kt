@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation
 
+import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
@@ -7,8 +8,6 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.navigation.privilegedComposable
 import org.vicpoo.gasolineproject.core.rbac.AppAccess
-import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseRoute
-import org.vicpoo.gasolineproject.feature.auth.presentation.license.RequireLicense
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.active.ActiveTripRoute
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.assigned.AssignedVehiclesRoute
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.finish.FinishTripRoute
@@ -43,12 +42,22 @@ sealed interface TripRecordingDestination {
     data object UploadLicense : TripRecordingDestination
 }
 
-fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
+/**
+ * La licencia es una regla de la feature auth. Para que esta feature no dependa de auth, la app
+ * le pasa la regla y la pantalla:
+ * @param licenseGate muestra [content] solo si ya subió su licencia; si no, ofrece subirla (onUploadLicense).
+ * @param uploadLicenseScreen pantalla para subir la licencia. Recibe "cerrar" (atrás o al terminar).
+ */
+fun NavGraphBuilder.tripRecordingGraph(
+    navController: NavHostController,
+    licenseGate: @Composable (onUploadLicense: () -> Unit, content: @Composable () -> Unit) -> Unit,
+    uploadLicenseScreen: @Composable (onClose: () -> Unit) -> Unit,
+) {
     navigation<TripRecordingGraph>(startDestination = TripRecordingDestination.AssignedVehicles) {
 
         privilegedComposable<TripRecordingDestination.AssignedVehicles>(AppAccess.TRIP_RECORDING) {
             // Entran los que pueden iniciar un viaje Y ya subieron su licencia
-            RequireLicense(onUploadLicense = { navController.navigate(TripRecordingDestination.UploadLicense) }) {
+            licenseGate({ navController.navigate(TripRecordingDestination.UploadLicense) }) {
                 AssignedVehiclesRoute(
                     onStartTrip = { id -> navController.navigate(TripRecordingDestination.StartTrip(id)) },
                     onOpenActiveTrip = {
@@ -62,11 +71,7 @@ fun NavGraphBuilder.tripRecordingGraph(navController: NavHostController) {
             access = AppAccess.TRIP_RECORDING,
             onDenied = { navController.popBackStack() },
         ) {
-            LicenseRoute(
-                isUpdate = true,
-                onBack = { navController.popBackStack() },
-                onGoToHome = { navController.popBackStack() },
-            )
+            uploadLicenseScreen { navController.popBackStack() }
         }
 
         privilegedComposable<TripRecordingDestination.StartTrip>(

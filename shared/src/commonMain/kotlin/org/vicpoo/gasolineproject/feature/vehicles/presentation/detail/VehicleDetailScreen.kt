@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import org.vicpoo.gasolineproject.core.ui.components.EditSheet
-import org.vicpoo.gasolineproject.feature.reservations.domain.RequestVehicleUseCase
+import org.vicpoo.gasolineproject.feature.reservations.api.VehicleRequester
 import gasolineproject.shared.generated.resources.action_cancel
 import gasolineproject.shared.generated.resources.cd_close
 import gasolineproject.shared.generated.resources.reservation_sheet_title
@@ -252,7 +252,7 @@ private fun RequestReasonSheet(vehicle: Vehicle?, state: VehicleDetailUiState, o
         )
         // Contador como en Airbnb (máx. 255, igual que la API)
         Text(
-            text = stringResource(Res.string.reservation_sheet_counter, state.requestReason.length, RequestVehicleUseCase.MAX_REASON),
+            text = stringResource(Res.string.reservation_sheet_counter, state.requestReason.length, VehicleRequester.MAX_REASON),
             style = AppTheme.typography.caption,
             color = colors.textSecondary,
             modifier = Modifier.align(Alignment.End),

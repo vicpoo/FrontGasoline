@@ -18,7 +18,7 @@ import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.ValidationReason
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.rbac.Privileges
-import org.vicpoo.gasolineproject.feature.reservations.domain.RequestVehicleUseCase
+import org.vicpoo.gasolineproject.feature.reservations.api.VehicleRequester
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleStatus
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.DeleteVehicleUseCase
@@ -71,7 +71,7 @@ class VehicleDetailViewModel(
     private val args: VehicleDetailArgs,
     observeVehicle: ObserveVehicleUseCase,
     private val deleteVehicle: DeleteVehicleUseCase,
-    private val requestVehicle: RequestVehicleUseCase,
+    private val requestVehicle: VehicleRequester,
     permissionChecker: PermissionChecker,
 ) : ViewModel() {
 
@@ -112,7 +112,7 @@ class VehicleDetailViewModel(
                 it.copy(showRequestDialog = true, requestReason = "", requestReasonError = null)
             }
             is VehicleDetailEvent.RequestReasonChanged -> local.update {
-                it.copy(requestReason = event.value.take(RequestVehicleUseCase.MAX_REASON), requestReasonError = null)
+                it.copy(requestReason = event.value.take(VehicleRequester.MAX_REASON), requestReasonError = null)
             }
             VehicleDetailEvent.RequestDismissed -> local.update { it.copy(showRequestDialog = false) }
             VehicleDetailEvent.SendRequest -> sendRequest()

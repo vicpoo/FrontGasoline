@@ -2,7 +2,9 @@ package org.vicpoo.gasolineproject.feature.auth.di
 
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
+import org.koin.dsl.bind
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.core.session.LogoutAction
 import org.vicpoo.gasolineproject.core.session.LogoutListener
 import org.vicpoo.gasolineproject.feature.auth.data.remote.AuthApi
 import org.vicpoo.gasolineproject.feature.auth.data.remote.KtorAuthApi
@@ -37,7 +39,8 @@ val authModule = module {
     factoryOf(::LoginUseCase)
     factoryOf(::UploadLicenseUseCase)
     factoryOf(::RefreshPrivilegesUseCase)
-    factoryOf(::LogoutUseCase)
+    // Otras features (Perfil) cierran sesión por el contrato LogoutAction de core
+    factoryOf(::LogoutUseCase) bind LogoutAction::class
     factoryOf(::GetAuthStatusUseCase)
     factoryOf(::ObserveIsLoggedInUseCase)
     factoryOf(::ObserveMustUploadLicenseUseCase)

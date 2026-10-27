@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation
 
+import androidx.compose.runtime.Composable
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
@@ -7,8 +8,6 @@ import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.navigation.privilegedComposable
 import org.vicpoo.gasolineproject.core.rbac.AppAccess
-import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBell
-import org.vicpoo.gasolineproject.feature.reservations.presentation.list.MyReservationsRoute
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.detail.VehicleDetailRoute
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.form.VehicleFormRoute
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehicleListRoute
@@ -18,7 +17,8 @@ import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMod
 
 /**
  * Subgrafo de la pestaña "Inicio": ver los carros de la empresa, su detalle y mandar la solicitud
- * con su motivo. Arriba a la derecha está la campana con "Mis solicitudes" (solo su estado).
+ * con su motivo. Arriba a la derecha va lo que la app ponga en [topEndAction] (hoy la campana de
+ * "Mis solicitudes", que es de la feature de reservas).
  */
 @Serializable
 data object CatalogGraph
@@ -29,13 +29,18 @@ sealed interface CatalogDestination {
 
     @Serializable
     data class Detail(val vehicleId: String) : CatalogDestination
-
-    /** Campana: mis solicitudes y su estado. */
-    @Serializable
-    data object MyReservations : CatalogDestination
 }
 
-fun NavGraphBuilder.catalogGraph(navController: NavHostController) {
+/**
+ * @param topEndAction botón de la esquina superior derecha de la lista (lo decide la app).
+ * @param extraDestinations pantallas de otras features que deben vivir dentro de esta pestaña
+ *   (para que la barra marque "Inicio" y el historial de la pestaña se conserve).
+ */
+fun NavGraphBuilder.catalogGraph(
+    navController: NavHostController,
+    topEndAction: (@Composable () -> Unit)? = null,
+    extraDestinations: NavGraphBuilder.() -> Unit = {},
+) {
     navigation<CatalogGraph>(startDestination = CatalogDestination.List) {
 
         privilegedComposable<CatalogDestination.List>(AppAccess.VEHICLE_LIST) {
@@ -43,19 +48,8 @@ fun NavGraphBuilder.catalogGraph(navController: NavHostController) {
                 mode = VehiclesMode.CATALOG,
                 onVehicleClick = { id -> navController.navigate(CatalogDestination.Detail(id)) },
                 onAddVehicle = {},
-                topEndAction = {
-                    ReservationsBell(onClick = {
-                        navController.navigate(CatalogDestination.MyReservations) { launchSingleTop = true }
-                    })
-                },
+                topEndAction = topEndAction,
             )
-        }
-
-        privilegedComposable<CatalogDestination.MyReservations>(
-            access = AppAccess.MY_RESERVATIONS,
-            onDenied = { navController.popBackStack() },
-        ) {
-            MyReservationsRoute(onBack = { navController.popBackStack() })
         }
 
         privilegedComposable<CatalogDestination.Detail>(
@@ -70,6 +64,8 @@ fun NavGraphBuilder.catalogGraph(navController: NavHostController) {
                 onEdit = {},
             )
         }
+
+        extraDestinations()
     }
 }
 

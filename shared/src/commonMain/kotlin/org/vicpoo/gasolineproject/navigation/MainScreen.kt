@@ -2,9 +2,9 @@ package org.vicpoo.gasolineproject.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -16,24 +16,28 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.core.push.PushEvents
 import org.vicpoo.gasolineproject.core.push.PushTarget
 import org.vicpoo.gasolineproject.core.push.PushType
 import org.vicpoo.gasolineproject.core.push.RequestNotificationPermission
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.CatalogDestination
-import org.jetbrains.compose.resources.stringResource
-import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.core.ui.adaptive.AdaptiveNavScaffold
+import org.vicpoo.gasolineproject.core.ui.adaptive.NavDestination as TabItem
 import org.vicpoo.gasolineproject.core.ui.components.LoadingView
+import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseRoute
+import org.vicpoo.gasolineproject.feature.auth.presentation.license.RequireLicense
 import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.profileGraph
+import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBell
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.MyReservationsDestination
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.companyReservationsGraph
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.myReservationsDestination
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.tripRecordingGraph
 import org.vicpoo.gasolineproject.feature.trips.presentation.navigation.tripHistoryGraph
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.catalogGraph
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.vehiclesGraph
-import org.vicpoo.gasolineproject.core.ui.adaptive.NavDestination as TabItem
 
 /**
  * Pantalla principal con NAVEGACIÓN ANIDADA:
@@ -81,15 +85,40 @@ fun MainScreen(
         onSelect = { key -> navController.navigateToTab(TopLevelDestination.valueOf(key), currentTab) },
         visible = onTopLevel,
     ) {
+        // Aquí (nivel app) se conectan las features entre sí: ninguna feature importa a otra.
         NavHost(navController = navController, startDestination = startGraph) {
-            catalogGraph(navController)
-            tripRecordingGraph(navController)
+            catalogGraph(
+                navController = navController,
+                // Campana de "Mis solicitudes" (reservas) en la lista de carros (vehículos)
+                topEndAction = {
+                    ReservationsBell(onClick = {
+                        navController.navigate(MyReservationsDestination) { launchSingleTop = true }
+                    })
+                },
+                extraDestinations = { myReservationsDestination(navController) },
+            )
+            tripRecordingGraph(
+                navController = navController,
+                // Regla y pantalla de licencia (auth) dentro de Registrar (triprecording)
+                licenseGate = { onUploadLicense, content -> RequireLicense(onUploadLicense = onUploadLicense, content = content) },
+                uploadLicenseScreen = { onClose -> UpdateLicenseRoute(onClose) },
+            )
             vehiclesGraph(navController)
             companyReservationsGraph(navController)
             tripHistoryGraph(navController)
-            profileGraph(navController, onLoggedOut = onLoggedOut)
+            profileGraph(
+                navController = navController,
+                onLoggedOut = onLoggedOut,
+                updateLicenseScreen = { onClose -> UpdateLicenseRoute(onClose) },
+            )
         }
     }
+}
+
+/** Pantalla de licencia de auth en modo "actualizar": atrás y al terminar solo se cierra. */
+@Composable
+private fun UpdateLicenseRoute(onClose: () -> Unit) {
+    LicenseRoute(isUpdate = true, onBack = onClose, onGoToHome = onClose)
 }
 
 /**
@@ -102,7 +131,7 @@ private fun NavHostController.openPushTarget(target: PushTarget) {
         PushType.NEW_REQUEST -> target.referenceId?.let { id ->
             navigate(CompanyReservationsDestination.Detail(id)) { launchSingleTop = true }
         }
-        PushType.REQUEST_RESULT -> navigate(CatalogDestination.MyReservations) { launchSingleTop = true }
+        PushType.REQUEST_RESULT -> navigate(MyReservationsDestination) { launchSingleTop = true }
         PushType.VEHICLE_STATUS, PushType.OTHER -> Unit
     }
 }

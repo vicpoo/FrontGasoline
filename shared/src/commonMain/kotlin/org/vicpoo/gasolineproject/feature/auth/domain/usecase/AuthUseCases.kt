@@ -8,6 +8,7 @@ import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.ValidationReason
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
 import org.vicpoo.gasolineproject.core.platform.PickedFile
+import org.vicpoo.gasolineproject.core.session.LogoutAction
 import org.vicpoo.gasolineproject.core.session.Session
 import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.session.SessionWriter
@@ -54,8 +55,8 @@ class RefreshPrivilegesUseCase(private val repository: AuthRepository) {
 }
 
 /** Cierra sesión (borra la sesión local). */
-class LogoutUseCase(private val repository: AuthRepository) {
-    suspend operator fun invoke() = repository.logout()
+class LogoutUseCase(private val repository: AuthRepository) : LogoutAction {
+    override suspend operator fun invoke() = repository.logout()
 }
 
 /** true mientras haya sesión; cambia a false al cerrar sesión o si el token venció (401). */

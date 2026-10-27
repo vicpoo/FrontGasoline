@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.platform.PickedFile
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.LogoutUseCase
+import org.vicpoo.gasolineproject.core.session.LogoutAction
 import org.vicpoo.gasolineproject.feature.profile.domain.ObserveProfileUseCase
 import org.vicpoo.gasolineproject.feature.profile.domain.Profile
 import org.vicpoo.gasolineproject.feature.profile.domain.RefreshProfileUseCase
@@ -47,7 +47,7 @@ class ProfileViewModel(
     observeProfile: ObserveProfileUseCase,
     private val refreshProfile: RefreshProfileUseCase,
     private val updatePhoto: UpdateProfilePhotoUseCase,
-    private val logout: LogoutUseCase,
+    private val logout: LogoutAction,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(ProfileUiState())
