@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos de :feature:reservations. -->
+<resources>
+    <string name="cd_notifications">Mis solicitudes (%1$d sin ver)</string>
+    <string name="company_requests_all">Todas</string>
+    <string name="company_requests_approve">Aceptar</string>
+    <string name="company_requests_approve_confirm">¿Aceptar la solicitud del %1$s de %2$s? Las demás solicitudes pendientes de ese carro se rechazarán.</string>
+    <string name="company_requests_approved_message">El carro quedó asignado y se le avisó al solicitante.</string>
+    <string name="company_requests_approved_title">¡Solicitud aceptada!</string>
+    <string name="company_requests_empty_all">Aún no hay solicitudes en la empresa.</string>
+    <string name="company_requests_empty_pending">No hay solicitudes pendientes.</string>
+    <string name="company_requests_error_title">No se pudo guardar la decisión</string>
+    <string name="company_requests_pending">Pendientes (%1$d)</string>
+    <string name="company_requests_reject">Rechazar</string>
+    <string name="company_requests_reject_reason">Motivo del rechazo</string>
+    <string name="company_requests_reject_reason_hint">Ej. El carro está reservado para otra ruta.</string>
+    <string name="company_requests_rejected_message">Se le avisó al solicitante con el motivo.</string>
+    <string name="company_requests_rejected_title">Solicitud rechazada</string>
+    <string name="company_requests_title">Solicitudes</string>
+    <string name="request_detail_color">Color</string>
+    <string name="request_detail_license">Licencia de conducir</string>
+    <string name="request_detail_license_missing">No ha subido su licencia</string>
+    <string name="request_detail_license_uploaded">Subida el %1$s</string>
+    <string name="request_detail_mileage">Kilometraje</string>
+    <string name="request_detail_no_reason">Sin motivo</string>
+    <string name="request_detail_offline">Sin conexión: se muestran los datos guardados. Para aceptar o rechazar necesitas internet.</string>
+    <string name="request_detail_plates">Placas</string>
+    <string name="request_detail_reason">Motivo de la solicitud</string>
+    <string name="request_detail_requested_at">Fecha de solicitud</string>
+    <string name="request_detail_resolution_reason">Motivo de la respuesta</string>
+    <string name="request_detail_resolved_at">Fecha de respuesta</string>
+    <string name="request_detail_resolved_by">Resolvió</string>
+    <string name="request_detail_title">Detalle de la solicitud</string>
+    <string name="request_detail_vehicle">Vehículo</string>
+    <string name="request_detail_view_license">Ver licencia</string>
+    <string name="request_detail_year">Año</string>
+    <string name="requests_card_title">Solicitud de %1$s</string>
+    <string name="requests_date">Solicitada el %1$s</string>
+    <string name="requests_empty">Aún no has enviado solicitudes de vehículo.</string>
+    <string name="requests_my_reason">Para: %1$s</string>
+    <string name="requests_offline">Sin conexión: se muestran las últimas solicitudes guardadas.</string>
+    <string name="requests_reason">Motivo: %1$s</string>
+    <string name="requests_status_approved">Aprobado</string>
+    <string name="requests_status_cancelled">Cancelado</string>
+    <string name="requests_status_finished">Finalizado</string>
+    <string name="requests_status_pending">Pendiente</string>
+    <string name="requests_status_rejected">Denegado</string>
+    <string name="requests_status_unknown">Sin estado</string>
+    <string name="requests_title">Solicitudes</string>
+    <string name="requests_unknown_requester">un empleado</string>
+    <string name="requests_unknown_vehicle">Vehículo</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_no">No</string>
+    <string name="action_understood">Entendido</string>
+    <string name="action_yes">Sí</string>
+    <string name="cd_close">Cerrar</string>
+</resources>

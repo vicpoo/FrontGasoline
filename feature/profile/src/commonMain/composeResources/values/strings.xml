@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos de :feature:profile. -->
+<resources>
+    <string name="action_logout">Salir</string>
+    <string name="cd_change_photo">Cambiar foto de perfil</string>
+    <string name="cd_edit_name">Editar nombre</string>
+    <string name="edit_name_error_message">No pudimos guardar el nombre. Por favor revisa tu conexión e inténtalo de nuevo.</string>
+    <string name="edit_name_error_title">¡Error al guardar!</string>
+    <string name="edit_name_hint">Ej. Juan Pérez López</string>
+    <string name="edit_name_label">Nombre completo</string>
+    <string name="edit_name_success_message">El nombre se ha guardado exitosamente.</string>
+    <string name="edit_name_success_title">¡Nombre guardado!</string>
+    <string name="edit_name_title">Nombre</string>
+    <string name="profile_license_ok">Licencia registrada</string>
+    <string name="profile_license_pending">Pendiente: súbela para poder pedir carros y registrar viajes.</string>
+    <string name="profile_license_title">Licencia de conducir</string>
+    <string name="profile_photo_error_title">¡Error al subir la foto!</string>
+    <string name="profile_photo_sheet_title">Foto de perfil</string>
+    <string name="profile_title">Perfil</string>
+    <string name="profile_update_license">Actualizar licencia de conducir</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_understood">Entendido</string>
+    <string name="cd_close">Cerrar</string>
+    <string name="profile_option_camera">Cámara</string>
+    <string name="profile_option_gallery">Galería</string>
+</resources>

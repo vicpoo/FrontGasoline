@@ -39,41 +39,26 @@ kotlin {
     }
 
     sourceSets {
-        androidMain.dependencies {
-            implementation(libs.compose.uiToolingPreview)
-            implementation(libs.compose.uiTooling)
-            implementation(libs.androidx.activity.compose)
-            implementation(libs.androidx.core.ktx) // LocationManagerCompat, FileProvider, NotificationCompat
-            implementation(libs.androidx.exifinterface) // orientación de las fotos de la cámara
-            implementation(libs.koin.android)
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.androidx.work.runtime) // sincronización en segundo plano
-
-            // Mapa del viaje en curso (MapLibre). Solo Android por ahora: en iOS se usa RouteMap
-            implementation(libs.maplibre.compose)
-
-            // Notificaciones push (Firebase Cloud Messaging)
-            implementation(project.dependencies.platform(libs.firebase.bom))
-            implementation(libs.firebase.messaging)
-        }
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-        }
         commonMain.dependencies {
-            // Módulos de core
+            // shared es el ensamblador de la app: App.kt, navegación raíz, KoinInit y el framework de iOS.
+            // Todo lo demás vive en :core:* y :feature:*.
             implementation(project(":core:common"))
             implementation(project(":core:data"))
             implementation(project(":core:ui"))
+            implementation(project(":feature:reservations:api"))
+            implementation(project(":feature:auth"))
+            implementation(project(":feature:profile"))
+            implementation(project(":feature:reservations"))
             implementation(project(":feature:trips"))
+            implementation(project(":feature:triprecording"))
+            implementation(project(":feature:vehicles"))
 
-            // UI
+            // UI (App.kt, MainScreen y los textos de las pestañas)
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
             implementation(libs.compose.ui)
             implementation(libs.compose.components.resources)
-            implementation(libs.compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.navigation.compose)
@@ -83,30 +68,18 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
 
-            // Red
-            implementation(libs.ktor.client.core)
-            implementation(libs.ktor.client.contentNegotiation)
-            implementation(libs.ktor.client.logging)
-            implementation(libs.ktor.serialization.json)
-
-            // Kotlinx
+            // Rutas tipadas (@Serializable) y corrutinas
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.datetime)
 
-            // Sesión persistente
-            implementation(libs.datastore.preferences.core)
-            implementation(libs.okio)
-
-            // Imágenes
+            // Imágenes: el ImageLoader global se configura en App.kt
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.ktor.client.mock) // API falsa para probar repositorios y sincronizadores
-            implementation(libs.okio.fakefilesystem) // archivos en memoria para el almacenamiento local
+            implementation(project(":core:testing")) // fakes, API falsa y archivos en memoria
         }
     }
 }

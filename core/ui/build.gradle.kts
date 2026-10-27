@@ -66,5 +66,6 @@ kotlin {
 compose.resources {
     // Solo los archivos de este módulo usan su Res; las features tienen el suyo
     publicResClass = false
+    generateResClass = always
     packageOfResClass = "org.vicpoo.gasolineproject.core.ui.resources"
 }

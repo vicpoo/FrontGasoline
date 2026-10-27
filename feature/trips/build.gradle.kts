@@ -33,6 +33,8 @@ kotlin {
         commonMain.dependencies {
             // :core:ui trae :core:data, :core:common, Compose, navegación y lifecycle
             implementation(project(":core:ui"))
+            // Directo (no solo vía :core:ui): el plugin genera la clase Res solo si el módulo lo declara
+            implementation(libs.compose.components.resources)
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
             implementation(libs.kotlinx.serialization.json)
@@ -46,5 +48,6 @@ kotlin {
 
 compose.resources {
     publicResClass = false
+    generateResClass = always
     packageOfResClass = "org.vicpoo.gasolineproject.feature.trips.resources"
 }

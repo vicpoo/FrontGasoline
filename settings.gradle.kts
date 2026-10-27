@@ -34,6 +34,13 @@ include(":shared")
 include(":core:common")
 include(":core:data")
 include(":core:ui")
+include(":core:testing")
 
 // Fase 2: módulos de features
+include(":feature:reservations:api")
 include(":feature:trips")
+include(":feature:profile")
+include(":feature:reservations")
+include(":feature:vehicles")
+include(":feature:triprecording")
+include(":feature:auth")

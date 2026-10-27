@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos de :feature:auth. -->
+<resources>
+    <string name="action_access">Acceder</string>
+    <string name="action_retry">Reintentar</string>
+    <string name="cd_close">Cerrar</string>
+    <string name="license_action_upload">Subir documento</string>
+    <string name="license_gate_button">Subir licencia</string>
+    <string name="license_gate_message">Para registrar viajes necesitas tener tu licencia en la app.</string>
+    <string name="license_gate_title">Sube tu licencia de conducir</string>
+    <string name="license_option_camera">Tomar foto</string>
+    <string name="license_option_file">Elegir foto o PDF</string>
+    <string name="license_sheet_title">Licencia de conducir</string>
+    <string name="license_subtitle">Solo un paso más: sube una foto o PDF de tu licencia de conducir.</string>
+    <string name="license_title">Bienvenido</string>
+    <string name="license_update_subtitle">Sube una foto o PDF de tu licencia de conducir vigente.</string>
+    <string name="license_update_title">Actualizar licencia</string>
+    <string name="login_action">Iniciar sesión</string>
+    <string name="login_password_label">Contraseña</string>
+    <string name="login_title">Inicio de sesión</string>
+    <string name="login_user_label">Email</string>
+    <string name="welcome_subtitle">¿No tienes una cuenta? Contacta al administrador de tu empresa para que te dé de alta.</string>
+    <string name="welcome_title">Control total de tus vehículos, en un solo lugar.</string>
+</resources>
