@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -59,14 +59,15 @@ fun AssignedVehicleCard(
         Column(Modifier.fillMaxWidth()) {
             // Encabezado
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Igual que la tarjeta de Vehículos: carro en un círculo del color principal
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(dimens.radiusM))
-                        .background(colors.labelBackground),
+                        .clip(CircleShape)
+                        .background(colors.primary.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(AppIcons.Car, contentDescription = null, tint = colors.title, modifier = Modifier.size(24.dp))
+                    Icon(AppIcons.Car, contentDescription = null, tint = colors.primary, modifier = Modifier.size(26.dp))
                 }
                 Spacer(Modifier.width(dimens.spaceM))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

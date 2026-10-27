@@ -1,5 +1,14 @@
 package org.vicpoo.gasolineproject.feature.triprecording.presentation.active
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.SheetValue
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,7 +27,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -112,6 +120,7 @@ fun ActiveTripRoute(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActiveTripScreen(
     state: ActiveTripUiState,
@@ -125,35 +134,58 @@ fun ActiveTripScreen(
     val dimens = AppTheme.dimens
     val session = state.session
 
-    Box(Modifier.fillMaxSize().background(colors.background)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.background)) {
         if (state.hasTrip) {
-            LiveRouteMap(route = session.route, current = session.current, modifier = Modifier.fillMaxSize())
-
-            // Parte de arriba: regresar + aviso del GPS
-            Row(
-                modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(dimens.spaceM),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Surface(shape = CircleShape, color = colors.background, shadowElevation = 2.dp) {
-                    AppBackButton(onClick = onBack)
-                }
-                Spacer(Modifier.width(dimens.spaceS))
-                GpsBanner(
-                    gpsActive = session.gpsActive,
-                    isPaused = state.isPaused,
-                    hasPermission = session.hasLocationPermission,
-                    onRequestPermission = onRequestPermission,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            TripSheet(
-                state = state,
-                onEvent = onEvent,
-                onAddFuel = onAddFuel,
-                onEditFuel = onEditFuel,
-                modifier = Modifier.align(Alignment.BottomCenter),
+            // Hoja inferior de Material 3: se desliza hacia abajo para ver más mapa (queda visible
+            // la duración, distancia y fecha) y hacia arriba para ver los botones y las recargas.
+            val scaffoldState = rememberBottomSheetScaffoldState(
+                bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.Expanded),
             )
+            val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            val maxSheetHeight = maxHeight * 0.6f
+
+            BottomSheetScaffold(
+                scaffoldState = scaffoldState,
+                sheetPeekHeight = SHEET_PEEK_HEIGHT + navigationBarHeight,
+                sheetMaxWidth = dimens.maxContentWidthWide,
+                sheetShape = RoundedCornerShape(topStart = dimens.spaceL, topEnd = dimens.spaceL),
+                sheetContainerColor = colors.background,
+                sheetShadowElevation = 8.dp,
+                sheetDragHandle = { BottomSheetDefaults.DragHandle(color = colors.labelBackground) },
+                containerColor = colors.background,
+                sheetContent = {
+                    TripSheet(
+                        state = state,
+                        onEvent = onEvent,
+                        onAddFuel = onAddFuel,
+                        onEditFuel = onEditFuel,
+                        modifier = Modifier.heightIn(max = maxSheetHeight),
+                    )
+                },
+            ) { _ ->
+                // El mapa ocupa toda la pantalla (la hoja va encima); por eso no se usa el padding
+                Box(Modifier.fillMaxSize()) {
+                    LiveRouteMap(route = session.route, current = session.current, modifier = Modifier.fillMaxSize())
+
+                    // Parte de arriba: regresar + aviso del GPS
+                    Row(
+                        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(dimens.spaceM),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Surface(shape = CircleShape, color = colors.background, shadowElevation = 2.dp) {
+                            AppBackButton(onClick = onBack)
+                        }
+                        Spacer(Modifier.width(dimens.spaceS))
+                        GpsBanner(
+                            gpsActive = session.gpsActive,
+                            isPaused = state.isPaused,
+                            hasPermission = session.hasLocationPermission,
+                            onRequestPermission = onRequestPermission,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
         } else if (state.isReady) {
             Column(Modifier.fillMaxSize().safeDrawingPadding().padding(dimens.screenPadding)) {
                 AppBackButton(onClick = onBack)
@@ -231,7 +263,16 @@ private fun GpsBanner(
     }
 }
 
-/** Hoja inferior: estadísticas, botón de finalizar, "registrar recarga" y lista de recargas. */
+/**
+ * Alto de la hoja cuando se desliza hacia abajo: agarradera + duración, distancia y fecha.
+ * (Se le suma la barra de navegación del sistema.)
+ */
+private val SHEET_PEEK_HEIGHT = 100.dp
+
+/**
+ * Contenido de la hoja inferior: estadísticas (siempre visibles), pausa / finalizar,
+ * "registrar recarga" y lista de recargas. La agarradera la pone BottomSheetScaffold.
+ */
 @Composable
 private fun TripSheet(
     state: ActiveTripUiState,
@@ -240,91 +281,73 @@ private fun TripSheet(
     onEditFuel: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = AppTheme.colors
     val dimens = AppTheme.dimens
     val trip = state.session.trip ?: return
 
-    BoxWithConstraints(modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
-        val maxSheetHeight = maxHeight * 0.6f
-        Surface(
-            modifier = Modifier.fillMaxWidth().widthIn(max = dimens.maxContentWidthWide).heightIn(max = maxSheetHeight),
-            shape = RoundedCornerShape(topStart = dimens.spaceL, topEnd = dimens.spaceL),
-            color = colors.background,
-            shadowElevation = 8.dp,
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
+            .padding(start = dimens.screenPadding, end = dimens.screenPadding, bottom = dimens.spaceM),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Stat(stringResource(Res.string.active_trip_duration), TripFormat.duration(state.elapsedMillis))
+            Stat(stringResource(Res.string.active_trip_distance), TripFormat.km(trip.distanceMeters))
+            Stat(stringResource(Res.string.active_trip_date), TripFormat.dayMonth(trip.startedAt))
+        }
+        Spacer(Modifier.height(dimens.spaceM))
+
+        // Pausa / reanudar a la izquierda y el botón grande ■ de terminar (Figma)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.Top,
         ) {
-            Column(
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .navigationBarsPadding()
-                    .padding(horizontal = dimens.screenPadding, vertical = dimens.spaceM),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                // Agarradera
-                Box(
-                    Modifier
-                        .size(width = 40.dp, height = 4.dp)
-                        .background(colors.labelBackground, RoundedCornerShape(2.dp)),
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                PauseButton(
+                    isPaused = state.isPaused,
+                    isLoading = state.isChangingPause,
+                    onClick = {
+                        onEvent(if (state.isPaused) ActiveTripEvent.ResumeClicked else ActiveTripEvent.PauseClicked)
+                    },
                 )
-                Spacer(Modifier.height(dimens.spaceM))
+                Spacer(Modifier.height(dimens.spaceXs))
+                SecondaryText(
+                    stringResource(if (state.isPaused) Res.string.active_trip_resume else Res.string.active_trip_pause),
+                )
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                FinishButton(isLoading = state.isStopping, onClick = { onEvent(ActiveTripEvent.FinishClicked) })
+                Spacer(Modifier.height(dimens.spaceXs))
+                SecondaryText(stringResource(Res.string.active_trip_finish))
+            }
+        }
+        Spacer(Modifier.height(dimens.spaceM))
 
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                    Stat(stringResource(Res.string.active_trip_duration), TripFormat.duration(state.elapsedMillis))
-                    Stat(stringResource(Res.string.active_trip_distance), TripFormat.km(trip.distanceMeters))
-                    Stat(stringResource(Res.string.active_trip_date), TripFormat.dayMonth(trip.startedAt))
-                }
-                Spacer(Modifier.height(dimens.spaceM))
+        if (state.fuel.canAdd) {
+            PrimaryButton(
+                text = stringResource(Res.string.active_trip_add_fuel),
+                onClick = onAddFuel,
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = AppIcons.Fuel,
+            )
+            Spacer(Modifier.height(dimens.spaceM))
+        }
 
-                // Pausa / reanudar a la izquierda y el botón grande ■ de terminar (Figma)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        PauseButton(
-                            isPaused = state.isPaused,
-                            isLoading = state.isChangingPause,
-                            onClick = {
-                                onEvent(if (state.isPaused) ActiveTripEvent.ResumeClicked else ActiveTripEvent.PauseClicked)
-                            },
-                        )
-                        Spacer(Modifier.height(dimens.spaceXs))
-                        SecondaryText(
-                            stringResource(if (state.isPaused) Res.string.active_trip_resume else Res.string.active_trip_pause),
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        FinishButton(isLoading = state.isStopping, onClick = { onEvent(ActiveTripEvent.FinishClicked) })
-                        Spacer(Modifier.height(dimens.spaceXs))
-                        SecondaryText(stringResource(Res.string.active_trip_finish))
-                    }
-                }
-                Spacer(Modifier.height(dimens.spaceM))
-
-                if (state.fuel.canAdd) {
-                    PrimaryButton(
-                        text = stringResource(Res.string.active_trip_add_fuel),
-                        onClick = onAddFuel,
-                        modifier = Modifier.fillMaxWidth(),
-                        leadingIcon = AppIcons.Fuel,
-                    )
-                    Spacer(Modifier.height(dimens.spaceM))
-                }
-
-                if (state.fuelRecords.isEmpty()) {
-                    SecondaryText(stringResource(Res.string.active_trip_no_fuel), textAlign = TextAlign.Center)
-                } else {
-                    state.fuelRecords.forEach { record ->
-                        FuelRecordRow(
-                            record = record,
-                            canEdit = state.fuel.canEdit,
-                            canDelete = state.fuel.canDelete,
-                            onEdit = { onEditFuel(record.localId) },
-                            onDelete = { onEvent(ActiveTripEvent.DeleteClicked(record)) },
-                        )
-                        Spacer(Modifier.height(dimens.spaceS))
-                    }
-                }
+        if (state.fuelRecords.isEmpty()) {
+            SecondaryText(stringResource(Res.string.active_trip_no_fuel), textAlign = TextAlign.Center)
+        } else {
+            state.fuelRecords.forEach { record ->
+                FuelRecordRow(
+                    record = record,
+                    canEdit = state.fuel.canEdit,
+                    canDelete = state.fuel.canDelete,
+                    onEdit = { onEditFuel(record.localId) },
+                    onDelete = { onEvent(ActiveTripEvent.DeleteClicked(record)) },
+                )
+                Spacer(Modifier.height(dimens.spaceS))
             }
         }
     }

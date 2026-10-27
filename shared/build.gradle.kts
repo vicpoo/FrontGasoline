@@ -99,6 +99,8 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock) // API falsa para probar repositorios y sincronizadores
+            implementation(libs.okio.fakefilesystem) // archivos en memoria para el almacenamiento local
         }
     }
 }

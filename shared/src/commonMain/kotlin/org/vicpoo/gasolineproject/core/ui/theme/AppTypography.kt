@@ -15,16 +15,17 @@ import gasolineproject.shared.generated.resources.poppins_semibold
 import org.jetbrains.compose.resources.Font
 
 /**
- * Tamaños de la guía de enmaquetado (px de Figma = sp en Compose).
+ * Tamaños de texto de toda la app, basados en la escala de Material 3
+ * (headlineSmall, titleMedium, bodyLarge, bodyMedium, labelLarge, bodySmall).
  * Cambia aquí y se actualiza toda la app.
  */
 object AppTextSize {
-    val Title = 36.sp
-    val Subtitle = 24.sp
-    val Body = 18.sp
-    val BodySecondary = 18.sp
-    val Button = 18.sp
-    val Caption = 14.sp
+    val Title = 24.sp
+    val Subtitle = 18.sp
+    val Body = 15.sp
+    val BodySecondary = 14.sp
+    val Button = 15.sp
+    val Caption = 12.sp
 }
 
 @Immutable
@@ -55,37 +56,37 @@ fun appTypography(): AppTypography {
                 fontFamily = font,
                 fontWeight = FontWeight.Normal,
                 fontSize = AppTextSize.Title,
-                lineHeight = 44.sp,
+                lineHeight = 32.sp,
             ),
             subtitle = TextStyle(
                 fontFamily = font,
                 fontWeight = FontWeight.Normal,
                 fontSize = AppTextSize.Subtitle,
-                lineHeight = 30.sp,
+                lineHeight = 24.sp,
             ),
             body = TextStyle(
                 fontFamily = font,
                 fontWeight = FontWeight.Normal,
                 fontSize = AppTextSize.Body,
-                lineHeight = 24.sp,
+                lineHeight = 22.sp,
             ),
             bodySecondary = TextStyle(
                 fontFamily = font,
                 fontWeight = FontWeight.Normal,
                 fontSize = AppTextSize.BodySecondary,
-                lineHeight = 24.sp,
+                lineHeight = 20.sp,
             ),
             button = TextStyle(
                 fontFamily = font,
                 fontWeight = FontWeight.Normal,
                 fontSize = AppTextSize.Button,
-                lineHeight = 24.sp,
+                lineHeight = 20.sp,
             ),
             caption = TextStyle(
                 fontFamily = font,
                 fontWeight = FontWeight.Normal,
                 fontSize = AppTextSize.Caption,
-                lineHeight = 18.sp,
+                lineHeight = 16.sp,
             ),
         )
     }

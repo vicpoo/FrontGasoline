@@ -212,8 +212,9 @@ private suspend fun TripRecordingSync.outcomeFor(
     return when {
         record == null || record.syncState == RecordSyncState.SYNCED -> SendOutcome.Sent
         record.syncState == RecordSyncState.ERROR -> SendOutcome.Rejected(record.syncErrorMessage)
-        syncResult is AppResult.Failure && syncResult.error != AppError.NoConnection ->
-            SendOutcome.Rejected(null)
-        else -> SendOutcome.SavedOffline
+        // "Sin conexión" SOLO si de verdad falló la red; si no, se dice que hubo un error
+        // (ej. la API rechazó el viaje y por eso la recarga no se pudo mandar)
+        syncResult is AppResult.Failure && syncResult.error == AppError.NoConnection -> SendOutcome.SavedOffline
+        else -> SendOutcome.Rejected(record.syncErrorMessage)
     }
 }

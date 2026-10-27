@@ -16,6 +16,7 @@ import org.vicpoo.gasolineproject.core.rbac.Privileges
 import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.feature.trips.data.remote.TripsApi
+import org.vicpoo.gasolineproject.feature.trips.data.remote.ViajeDto
 import org.vicpoo.gasolineproject.feature.trips.domain.FuelLoad
 import org.vicpoo.gasolineproject.feature.trips.domain.Trip
 import org.vicpoo.gasolineproject.feature.trips.domain.TripStatus
@@ -76,9 +77,11 @@ class TripsRepositoryImpl(
         val companyId = session.companyId
         val operatorFilter = if (seeAll) null else session.employeeId
 
+        // El historial solo muestra viajes cerrados (finalizados o interrumpidos): un viaje en curso
+        // o en pausa todavía no termina y su ruta está incompleta. Ese se ve en "Registrar viaje".
         val trips = when (val result = safeApiCall { api.getTrips(companyId, operatorFilter) }) {
             is AppResult.Failure -> return result
-            is AppResult.Success -> result.data
+            is AppResult.Success -> result.data.filter { it.isClosed() }
         }
 
         val cached = cache.current().trips.associateBy { it.id }
@@ -153,3 +156,7 @@ private fun TripEntity.toDomain() = Trip(
     route = route.mapNotNull { pair -> if (pair.size >= 2) GeoPoint(pair[0], pair[1]) else null },
     pausedSeconds = pausedSeconds,
 )
+
+/** Cerrado = ya tiene fecha de fin y no está "enCurso" (la pausa también cuenta como en curso). */
+private fun ViajeDto.isClosed(): Boolean =
+    fechaFin != null && !estado.equals("enCurso", ignoreCase = true)
