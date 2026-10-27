@@ -15,7 +15,7 @@ import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.GeoMath
 import org.vicpoo.gasolineproject.core.common.GeoPoint
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.location.LocationFix
 import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.location.TrackingServiceController

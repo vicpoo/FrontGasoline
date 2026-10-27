@@ -5,7 +5,7 @@ import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 
 /**
  * Servicio de Firebase (declarado en el Manifest de androidApp):

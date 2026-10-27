@@ -8,6 +8,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.common.AppClock
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.common.SystemAppClock
 import org.vicpoo.gasolineproject.core.network.TokenProvider
 import org.vicpoo.gasolineproject.core.network.UnauthorizedHandler
@@ -36,9 +37,6 @@ import org.vicpoo.gasolineproject.core.sync.SyncAllPendingUseCase
 
 /** Dependencias propias de cada plataforma (carpetas, archivos, DataStore, GPS, cámara...). */
 expect val platformModule: Module
-
-/** Scope de toda la app: para sincronizar en segundo plano aunque la pantalla se cierre. */
-class AppScope(val scope: CoroutineScope)
 
 val coreModule = module {
     single {

@@ -3,7 +3,7 @@ package org.vicpoo.gasolineproject.core.sync
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.testing.FakeSessionReader
 import org.vicpoo.gasolineproject.testing.testSession
 import kotlin.test.Test

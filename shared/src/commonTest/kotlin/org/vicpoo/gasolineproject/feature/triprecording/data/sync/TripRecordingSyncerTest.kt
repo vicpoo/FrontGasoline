@@ -7,7 +7,7 @@ import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.data.JsonFileCache
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.AssignedVehicleEntity
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.RecordingSnapshot
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.TrackPointEntity

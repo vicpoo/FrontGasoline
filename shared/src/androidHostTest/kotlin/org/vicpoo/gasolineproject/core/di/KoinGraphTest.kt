@@ -16,6 +16,7 @@ import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.location.LocationFix
 import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.location.TrackingServiceController

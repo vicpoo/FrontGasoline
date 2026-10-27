@@ -21,7 +21,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.map
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.network.ApiRoutes
 import org.vicpoo.gasolineproject.core.network.safeApiCall
 import org.vicpoo.gasolineproject.core.session.SessionReader

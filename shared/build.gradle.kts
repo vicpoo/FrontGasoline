@@ -61,6 +61,9 @@ kotlin {
             implementation(libs.ktor.client.darwin)
         }
         commonMain.dependencies {
+            // Módulos de core
+            implementation(project(":core:common"))
+
             // UI
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)

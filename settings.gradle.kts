@@ -29,3 +29,6 @@ dependencyResolutionManagement {
 
 include(":androidApp")
 include(":shared")
+
+// Fase 2: módulos de core
+include(":core:common")

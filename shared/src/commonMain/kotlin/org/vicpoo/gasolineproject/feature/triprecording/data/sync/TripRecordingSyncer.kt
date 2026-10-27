@@ -7,7 +7,7 @@ import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.httpCode
 import org.vicpoo.gasolineproject.core.common.serverMessage
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.network.safeApiCall
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
@@ -347,7 +347,8 @@ class TripRecordingSyncer(
             }
             is AppResult.Failure -> {
                 // 409 "solo se puede finalizar un viaje en curso": ya estaba cerrado en la API
-                if (result.error is AppError.Server && result.error.code == 409) {
+                // AppError vive en :core:common: no se puede hacer smart cast de result.error desde otro módulo
+                if ((result.error as? AppError.Server)?.code == 409) {
                     store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null, syncErrorCode = null) }
                     Step.Done
                 } else {

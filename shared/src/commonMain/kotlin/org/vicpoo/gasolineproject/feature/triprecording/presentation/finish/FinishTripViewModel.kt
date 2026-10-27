@@ -11,7 +11,7 @@ import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.core.common.ValidationReason
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FinishTripField
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FinishTripResult

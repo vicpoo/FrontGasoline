@@ -6,7 +6,7 @@ import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.map
-import org.vicpoo.gasolineproject.core.di.AppScope
+import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.network.safeApiCall
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.core.session.SessionReader
