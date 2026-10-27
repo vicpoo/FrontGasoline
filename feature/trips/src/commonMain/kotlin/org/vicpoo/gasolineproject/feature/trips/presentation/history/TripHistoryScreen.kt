@@ -28,15 +28,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.trip_history_empty
-import gasolineproject.shared.generated.resources.trip_history_offline
-import gasolineproject.shared.generated.resources.trip_history_title
-import gasolineproject.shared.generated.resources.trip_km_value
-import gasolineproject.shared.generated.resources.trip_records_value
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.core.common.AppDates
+import org.vicpoo.gasolineproject.core.common.formatDecimal
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
 import org.vicpoo.gasolineproject.core.ui.components.EmptyView
 import org.vicpoo.gasolineproject.core.ui.components.ErrorText
@@ -48,7 +43,12 @@ import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.trips.domain.Trip
 import org.vicpoo.gasolineproject.feature.trips.presentation.common.OperatorHeader
-import org.vicpoo.gasolineproject.core.common.formatDecimal
+import org.vicpoo.gasolineproject.feature.trips.resources.Res
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_history_empty
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_history_offline
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_history_title
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_km_value
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_records_value
 
 @Composable
 fun TripHistoryRoute(

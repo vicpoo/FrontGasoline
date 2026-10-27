@@ -34,3 +34,6 @@ include(":shared")
 include(":core:common")
 include(":core:data")
 include(":core:ui")
+
+// Fase 2: módulos de features
+include(":feature:trips")

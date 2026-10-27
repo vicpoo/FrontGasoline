@@ -24,22 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.cd_close
-import gasolineproject.shared.generated.resources.trip_detail_amount
-import gasolineproject.shared.generated.resources.trip_detail_distance
-import gasolineproject.shared.generated.resources.trip_detail_end
-import gasolineproject.shared.generated.resources.trip_detail_final_mileage
-import gasolineproject.shared.generated.resources.trip_detail_liters
-import gasolineproject.shared.generated.resources.trip_detail_loads
-import gasolineproject.shared.generated.resources.trip_detail_no_loads
-import gasolineproject.shared.generated.resources.trip_detail_start
-import gasolineproject.shared.generated.resources.trip_detail_view_receipt
-import gasolineproject.shared.generated.resources.trip_not_found
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.vicpoo.gasolineproject.core.common.AppDates
+import org.vicpoo.gasolineproject.core.common.formatDecimal
 import org.vicpoo.gasolineproject.core.ui.components.AppBackButton
 import org.vicpoo.gasolineproject.core.ui.components.EmptyView
 import org.vicpoo.gasolineproject.core.ui.components.ImageViewerDialog
@@ -51,7 +40,18 @@ import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.trips.domain.FuelLoad
 import org.vicpoo.gasolineproject.feature.trips.domain.Trip
 import org.vicpoo.gasolineproject.feature.trips.presentation.common.OperatorHeader
-import org.vicpoo.gasolineproject.core.common.formatDecimal
+import org.vicpoo.gasolineproject.feature.trips.resources.Res
+import org.vicpoo.gasolineproject.feature.trips.resources.cd_close
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_amount
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_distance
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_end
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_final_mileage
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_liters
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_loads
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_no_loads
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_start
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_view_receipt
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_not_found
 
 @Composable
 fun TripDetailRoute(

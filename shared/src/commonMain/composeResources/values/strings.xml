@@ -36,21 +36,6 @@
     <string name="reservation_success_message">Tu solicitud para el %1$s ha sido enviada exitosamente al administrador.</string>
 
     <!-- Historial de viajes -->
-    <string name="trip_history_title">Historial</string>
-    <string name="trip_history_empty">Aún no hay viajes registrados.</string>
-    <string name="trip_history_offline">Sin conexión: estás viendo el último historial guardado.</string>
-    <string name="trip_km_value">%1$s km</string>
-    <string name="trip_records_value">%1$d registros</string>
-    <string name="trip_not_found">No se encontró el viaje.</string>
-    <string name="trip_detail_start">Inicio del viaje</string>
-    <string name="trip_detail_end">Final del viaje</string>
-    <string name="trip_detail_distance">Distancia total : %1$s km</string>
-    <string name="trip_detail_final_mileage">Kilometraje final : %1$s km</string>
-    <string name="trip_detail_loads">Cargas totales :</string>
-    <string name="trip_detail_no_loads">Este viaje no tiene cargas de combustible.</string>
-    <string name="trip_detail_amount">Monto : $%1$s</string>
-    <string name="trip_detail_liters">Litros : %1$sL</string>
-    <string name="trip_detail_view_receipt">Ver recibo</string>
 
     <!-- Perfil -->
     <string name="profile_update_license">Actualizar licencia de conducir</string>
