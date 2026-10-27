@@ -8,10 +8,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.cd_back
 import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.cd_back
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /** Botón circular gris de regresar (esquina superior izquierda en Figma). */

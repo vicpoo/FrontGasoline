@@ -2,10 +2,10 @@ package org.vicpoo.gasolineproject.core.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.car_hero_dark
-import gasolineproject.shared.generated.resources.car_hero_light
 import org.jetbrains.compose.resources.DrawableResource
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.car_hero_dark
+import org.vicpoo.gasolineproject.core.ui.resources.car_hero_light
 
 /**
  * ============================================================

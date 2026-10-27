@@ -7,9 +7,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.error_forbidden
 import org.jetbrains.compose.resources.stringResource
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.error_forbidden
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /** Pantalla para un destino al que el usuario ya no tiene acceso (RBAC en la navegación). */

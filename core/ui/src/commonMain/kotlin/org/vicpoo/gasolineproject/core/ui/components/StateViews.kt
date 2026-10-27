@@ -14,9 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.action_retry
 import org.jetbrains.compose.resources.stringResource
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.action_retry
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /** Pantalla completa de carga. */

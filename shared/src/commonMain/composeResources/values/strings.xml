@@ -93,8 +93,6 @@
     <string name="vehicle_list_offline">Sin conexión: estás viendo la última información guardada.</string>
     <string name="vehicle_list_pending">Cambios pendientes de sincronizar: %1$d</string>
     <string name="vehicle_plates_value">Placas: %1$s</string>
-    <string name="sync_pending">Pendiente</string>
-    <string name="sync_error">Error al sincronizar</string>
 
     <!-- Vehículos: estados -->
     <string name="vehicle_status_available">Disponible</string>
@@ -322,9 +320,6 @@
     <string name="fuel_not_found">No se encontró el registro de gasolina.</string>
 
     <!-- Accesibilidad -->
-    <string name="cd_back">Regresar</string>
-    <string name="cd_show_password">Mostrar contraseña</string>
-    <string name="cd_hide_password">Ocultar contraseña</string>
     <string name="cd_clear_search">Borrar búsqueda</string>
     <string name="cd_remove_photo">Quitar foto</string>
     <string name="cd_change_photo">Cambiar foto de perfil</string>
@@ -332,16 +327,4 @@
     <string name="cd_close">Cerrar</string>
 
     <!-- Errores -->
-    <string name="error_no_connection">Sin conexión con el servidor. Revisa tu internet e inténtalo de nuevo.</string>
-    <string name="error_unauthorized">Email o contraseña incorrectos.</string>
-    <string name="error_forbidden">No tienes permiso para realizar esta acción.</string>
-    <string name="error_not_found">No se encontró la información solicitada.</string>
-    <string name="error_no_company">Tu usuario no está ligado a una empresa, por eso no puede realizar esta acción desde la app.</string>
-    <string name="error_server">Ocurrió un error en el servidor. Inténtalo más tarde.</string>
-    <string name="error_unknown">Ocurrió un error inesperado.</string>
-    <string name="error_required">Este campo es obligatorio.</string>
-    <string name="error_invalid_format">El formato no es válido.</string>
-    <string name="error_out_of_range">El valor está fuera del rango permitido.</string>
-    <string name="error_invalid_file_type">Tipo de archivo no permitido.</string>
-    <string name="error_file_too_large">El archivo no debe pesar más de 5 MB.</string>
 </resources>

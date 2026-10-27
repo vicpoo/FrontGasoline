@@ -1,22 +1,22 @@
 package org.vicpoo.gasolineproject.core.ui.components
 
 import androidx.compose.runtime.Composable
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.error_file_too_large
-import gasolineproject.shared.generated.resources.error_forbidden
-import gasolineproject.shared.generated.resources.error_invalid_file_type
-import gasolineproject.shared.generated.resources.error_invalid_format
-import gasolineproject.shared.generated.resources.error_no_company
-import gasolineproject.shared.generated.resources.error_no_connection
-import gasolineproject.shared.generated.resources.error_not_found
-import gasolineproject.shared.generated.resources.error_out_of_range
-import gasolineproject.shared.generated.resources.error_required
-import gasolineproject.shared.generated.resources.error_server
-import gasolineproject.shared.generated.resources.error_unauthorized
-import gasolineproject.shared.generated.resources.error_unknown
 import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.ValidationReason
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.error_file_too_large
+import org.vicpoo.gasolineproject.core.ui.resources.error_forbidden
+import org.vicpoo.gasolineproject.core.ui.resources.error_invalid_file_type
+import org.vicpoo.gasolineproject.core.ui.resources.error_invalid_format
+import org.vicpoo.gasolineproject.core.ui.resources.error_no_company
+import org.vicpoo.gasolineproject.core.ui.resources.error_no_connection
+import org.vicpoo.gasolineproject.core.ui.resources.error_not_found
+import org.vicpoo.gasolineproject.core.ui.resources.error_out_of_range
+import org.vicpoo.gasolineproject.core.ui.resources.error_required
+import org.vicpoo.gasolineproject.core.ui.resources.error_server
+import org.vicpoo.gasolineproject.core.ui.resources.error_unauthorized
+import org.vicpoo.gasolineproject.core.ui.resources.error_unknown
 
 /** Traduce un AppError al texto que ve el usuario (strings en composeResources/values/strings.xml). */
 @Composable

@@ -7,12 +7,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.poppins_bold
-import gasolineproject.shared.generated.resources.poppins_medium
-import gasolineproject.shared.generated.resources.poppins_regular
-import gasolineproject.shared.generated.resources.poppins_semibold
 import org.jetbrains.compose.resources.Font
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.poppins_bold
+import org.vicpoo.gasolineproject.core.ui.resources.poppins_medium
+import org.vicpoo.gasolineproject.core.ui.resources.poppins_regular
+import org.vicpoo.gasolineproject.core.ui.resources.poppins_semibold
 
 /**
  * Tamaños de texto de toda la app, basados en la escala de Material 3

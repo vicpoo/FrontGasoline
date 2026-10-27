@@ -2,10 +2,10 @@ package org.vicpoo.gasolineproject.core.ui.components
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.sync_error
-import gasolineproject.shared.generated.resources.sync_pending
 import org.jetbrains.compose.resources.stringResource
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.sync_error
+import org.vicpoo.gasolineproject.core.ui.resources.sync_pending
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /*

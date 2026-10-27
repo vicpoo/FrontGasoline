@@ -19,11 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import gasolineproject.shared.generated.resources.Res
-import gasolineproject.shared.generated.resources.cd_hide_password
-import gasolineproject.shared.generated.resources.cd_show_password
 import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
+import org.vicpoo.gasolineproject.core.ui.resources.Res
+import org.vicpoo.gasolineproject.core.ui.resources.cd_hide_password
+import org.vicpoo.gasolineproject.core.ui.resources.cd_show_password
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 
 /**

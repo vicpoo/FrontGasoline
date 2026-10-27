@@ -64,6 +64,7 @@ kotlin {
             // Módulos de core
             implementation(project(":core:common"))
             implementation(project(":core:data"))
+            implementation(project(":core:ui"))
 
             // UI
             implementation(libs.compose.runtime)
