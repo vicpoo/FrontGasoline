@@ -1,7 +1,8 @@
 package org.vicpoo.gasolineproject.feature.reservations.di
 
+import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
-import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
@@ -41,7 +42,7 @@ private val COMPANY_RESERVATIONS_CACHE = named("companyReservationsCache")
 private val OUTBOX_CACHE = named("reservationOutboxCache")
 
 val reservationsModule = module {
-    single<ReservationApi> { KtorReservationApi(get()) }
+    singleOf(::KtorReservationApi) { bind<ReservationApi>() }
     single(MY_RESERVATIONS_CACHE) {
         JsonFileCache(get(), get(), "my_reservations.json", MyReservationsSnapshot.serializer(), get(), MyReservationsSnapshot())
     }
@@ -103,14 +104,5 @@ val reservationsModule = module {
     factoryOf(::ApproveReservationUseCase)
     factoryOf(::RejectReservationUseCase)
     viewModelOf(::CompanyReservationsViewModel)
-    viewModel { params ->
-        ReservationDetailViewModel(
-            reservationId = params.get(),
-            observeRequest = get(),
-            permissionChecker = get(),
-            getDetail = get(),
-            approveReservation = get(),
-            rejectReservation = get(),
-        )
-    }
+    viewModelOf(::ReservationDetailViewModel) // reservationId llega con parametersOf
 }

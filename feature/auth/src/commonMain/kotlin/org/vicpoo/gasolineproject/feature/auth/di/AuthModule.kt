@@ -1,6 +1,8 @@
 package org.vicpoo.gasolineproject.feature.auth.di
 
+import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -24,7 +26,8 @@ import org.vicpoo.gasolineproject.feature.auth.presentation.login.LoginViewModel
 
 val authModule = module {
     // Data
-    single<AuthApi> { KtorAuthApi(get()) }
+    singleOf(::KtorAuthApi) { bind<AuthApi>() }
+    // Explícito: recibe TODOS los LogoutListener de las features (getAll), eso no se resuelve por tipo
     single<AuthRepository> {
         AuthRepositoryImpl(
             api = get(),

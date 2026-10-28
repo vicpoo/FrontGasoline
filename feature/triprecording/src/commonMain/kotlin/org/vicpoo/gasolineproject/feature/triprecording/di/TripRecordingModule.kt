@@ -1,10 +1,11 @@
 package org.vicpoo.gasolineproject.feature.triprecording.di
 
+import org.koin.core.module.dsl.bind
+import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.factoryOf
-import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
-import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.data.JsonFileCache
 import org.vicpoo.gasolineproject.core.session.LogoutListener
@@ -22,38 +23,36 @@ import org.vicpoo.gasolineproject.feature.triprecording.data.remote.TripRecordin
 import org.vicpoo.gasolineproject.feature.triprecording.data.sync.TripRecordingSyncer
 import org.vicpoo.gasolineproject.feature.triprecording.domain.AssignedVehicleRepository
 import org.vicpoo.gasolineproject.feature.triprecording.domain.CheckLocationPermissionUseCase
-import org.vicpoo.gasolineproject.feature.triprecording.domain.LocationPermissionChangedUseCase
-import org.vicpoo.gasolineproject.feature.triprecording.domain.SyncPendingTripsUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.CostCenterRepository
 import org.vicpoo.gasolineproject.feature.triprecording.domain.DeleteFuelRecordUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FinishTripUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FinishTripValidator
-import org.vicpoo.gasolineproject.feature.triprecording.domain.PauseTripUseCase
-import org.vicpoo.gasolineproject.feature.triprecording.domain.ResumeTripUseCase
-import org.vicpoo.gasolineproject.feature.triprecording.domain.RetryFinishTripUseCase
-import org.vicpoo.gasolineproject.feature.triprecording.domain.StopTripUseCase
-import org.vicpoo.gasolineproject.feature.triprecording.domain.UndoStopTripUseCase
-import org.vicpoo.gasolineproject.feature.triprecording.presentation.finish.FinishTripViewModel
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecordRepository
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecordValidator
 import org.vicpoo.gasolineproject.feature.triprecording.domain.GetAssignedVehicleUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.GetFuelRecordUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.LocationPermissionChangedUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveAssignedVehiclesUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveCostCentersUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveFuelRecordsUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.PauseTripUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.RefreshAssignedVehiclesUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.RefreshCostCentersUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.ResumeTripUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.RetryFinishTripUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.RetryFuelRecordUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.SaveFuelRecordUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.StartTripUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.StopTripUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.SyncPendingTripsUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.TripRecordingSync
 import org.vicpoo.gasolineproject.feature.triprecording.domain.TripTracker
+import org.vicpoo.gasolineproject.feature.triprecording.domain.UndoStopTripUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.active.ActiveTripViewModel
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.assigned.AssignedVehiclesViewModel
-import org.vicpoo.gasolineproject.feature.triprecording.presentation.fuel.FuelRecordFormArgs
+import org.vicpoo.gasolineproject.feature.triprecording.presentation.finish.FinishTripViewModel
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.fuel.FuelRecordFormViewModel
-import org.vicpoo.gasolineproject.feature.triprecording.presentation.start.StartTripArgs
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.start.StartTripViewModel
 
 private val ASSIGNED_CACHE = named("assignedVehiclesCache")
@@ -62,7 +61,7 @@ private val RECORDING_CACHE = named("tripRecordingCache")
 
 val tripRecordingModule = module {
     // ---------------- Data ----------------
-    single<TripRecordingApi> { KtorTripRecordingApi(get()) }
+    singleOf(::KtorTripRecordingApi) { bind<TripRecordingApi>() }
 
     single(ASSIGNED_CACHE) {
         JsonFileCache(get(), get(), "assigned_vehicles.json", AssignedVehiclesSnapshot.serializer(), get(), AssignedVehiclesSnapshot())
@@ -82,31 +81,26 @@ val tripRecordingModule = module {
         )
     }
 
+    // Explícitos: reciben un caché con nombre (named), eso no se resuelve solo por tipo
     single { AssignedVehicleRepositoryImpl(api = get(), cache = get(ASSIGNED_CACHE), sessionReader = get()) }
     single<AssignedVehicleRepository> { get<AssignedVehicleRepositoryImpl>() }
 
     single { CostCenterRepositoryImpl(api = get(), cache = get(COST_CENTERS_CACHE), sessionReader = get()) }
     single<CostCenterRepository> { get<CostCenterRepositoryImpl>() }
 
-    single<FuelRecordRepository> { FuelRecordRepositoryImpl(store = get(), clock = get()) }
+    singleOf(::FuelRecordRepositoryImpl) { bind<FuelRecordRepository>() }
 
     // Una sola instancia: la usan los casos de uso (TripRecordingSync) y el trabajo en segundo plano (PendingSyncTask)
-    single { TripRecordingSyncer(store = get(), api = get(), appScope = get(), scheduler = get()) } bind PendingSyncTask::class
-    single<TripRecordingSync> { get<TripRecordingSyncer>() }
+    singleOf(::TripRecordingSyncer) {
+        bind<TripRecordingSync>()
+        bind<PendingSyncTask>()
+    }
 
     // Se crea al iniciar la app: si quedó un viaje en curso, el GPS se reanuda solo
-    single(createdAtStart = true) {
-        GpsTripTracker(
-            store = get(),
-            locationProvider = get(),
-            trackingService = get(),
-            sync = get(),
-            sessionReader = get(),
-            clock = get(),
-            appScope = get(),
-        )
+    singleOf(::GpsTripTracker) {
+        createdAtStart()
+        bind<TripTracker>()
     }
-    single<TripTracker> { get<GpsTripTracker>() }
 
     // Al cerrar sesión: se detiene el GPS y se borra todo lo guardado
     single<LogoutListener>(named("tripRecording")) {
@@ -151,25 +145,7 @@ val tripRecordingModule = module {
     viewModelOf(::AssignedVehiclesViewModel)
     viewModelOf(::ActiveTripViewModel)
     viewModelOf(::FinishTripViewModel)
-    viewModel { params ->
-        StartTripViewModel(
-            args = params.get<StartTripArgs>(),
-            getVehicle = get(),
-            observeCostCenters = get(),
-            refreshCostCenters = get(),
-            startTrip = get(),
-            hasLocationPermission = get(),
-            locationPermissionChanged = get(),
-        )
-    }
-    viewModel { params ->
-        FuelRecordFormViewModel(
-            args = params.get<FuelRecordFormArgs>(),
-            getRecord = get(),
-            observeCostCenters = get(),
-            observeTracking = get(),
-            saveRecord = get(),
-            retryRecord = get(),
-        )
-    }
+    // StartTripArgs / FuelRecordFormArgs llegan con parametersOf y Koin los toma por tipo
+    viewModelOf(::StartTripViewModel)
+    viewModelOf(::FuelRecordFormViewModel)
 }

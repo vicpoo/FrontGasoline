@@ -1,7 +1,8 @@
 package org.vicpoo.gasolineproject.feature.trips.di
 
+import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
-import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
@@ -15,7 +16,6 @@ import org.vicpoo.gasolineproject.feature.trips.domain.ObserveTripUseCase
 import org.vicpoo.gasolineproject.feature.trips.domain.ObserveTripsUseCase
 import org.vicpoo.gasolineproject.feature.trips.domain.RefreshTripsUseCase
 import org.vicpoo.gasolineproject.feature.trips.domain.TripsRepository
-import org.vicpoo.gasolineproject.feature.trips.presentation.detail.TripDetailArgs
 import org.vicpoo.gasolineproject.feature.trips.presentation.detail.TripDetailViewModel
 import org.vicpoo.gasolineproject.feature.trips.presentation.history.TripHistoryViewModel
 
@@ -23,7 +23,7 @@ private val TRIPS_CACHE = named("tripsCache")
 
 val tripsModule = module {
     // Data
-    single<TripsApi> { KtorTripsApi(get()) }
+    singleOf(::KtorTripsApi) { bind<TripsApi>() }
     single(TRIPS_CACHE) {
         JsonFileCache(
             fileSystem = get(),
@@ -57,5 +57,5 @@ val tripsModule = module {
 
     // Presentation
     viewModelOf(::TripHistoryViewModel)
-    viewModel { params -> TripDetailViewModel(args = params.get<TripDetailArgs>(), observeTrip = get()) }
+    viewModelOf(::TripDetailViewModel) // TripDetailArgs llega con parametersOf
 }

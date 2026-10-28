@@ -13,7 +13,6 @@ import kotlinx.coroutines.sync.withLock
 import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
-import org.vicpoo.gasolineproject.core.common.GeoMath
 import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.location.LocationFix
@@ -62,8 +61,12 @@ class GpsTripTracker(
     private var gpsJob: Job? = null
     private var heartbeatJob: Job? = null
     private var lastFixMillis: Long = 0L
-    private var lastRoutePoint: GeoPoint? = null
-    private var lastRoutePointMillis: Long = 0L
+
+    /** Decide qué lecturas cuentan para la ruta y cuánta distancia suman. */
+    private val routeFilter = RouteFilter()
+
+    /** Traduce el resultado del envío de "Registrar Viaje" a lo que ve el usuario. */
+    private val reporter = FinishSendReporter(store, sync)
 
     /** Último viaje que se guardó en "Registrar Viaje" (para "Reintentar"). */
     private var lastFinishedLocalId: String? = null
@@ -76,7 +79,7 @@ class GpsTripTracker(
     private suspend fun restore() = mutex.withLock {
         val active = store.current().activeTrip ?: return@withLock
         val route = store.readRoute(active.localId)
-        lastRoutePoint = route.lastOrNull()
+        routeFilter.reset(from = route.lastOrNull())
         state.value = TrackingSession(
             trip = active.toDomain(),
             route = route,
@@ -116,8 +119,7 @@ class GpsTripTracker(
             )
             store.update { it.copy(trips = it.trips + entity) }
 
-            lastRoutePoint = null
-            lastRoutePointMillis = 0L
+            routeFilter.reset()
             state.value = TrackingSession(
                 trip = entity.toDomain(),
                 route = emptyList(),
@@ -163,8 +165,7 @@ class GpsTripTracker(
             ?: return@withLock AppResult.Failure(AppError.NotFound)
 
         // Lo que se movió durante la pausa no se suma a la distancia
-        lastRoutePoint = null
-        lastRoutePointMillis = 0L
+        routeFilter.reset()
         state.update { it.copy(trip = updated.toDomain()) }
         startTracking()
         sync.requestSync()
@@ -202,8 +203,7 @@ class GpsTripTracker(
 
         state.update { it.copy(trip = updated.toDomain()) }
         if (updated.phase() == TripPhase.RUNNING) {
-            lastRoutePoint = null
-            lastRoutePointMillis = 0L
+            routeFilter.reset()
             startTracking()
         }
         AppResult.Success(updated.toDomain())
@@ -259,17 +259,7 @@ class GpsTripTracker(
     }
 
     /** Sincroniza y traduce lo que pasó con el viaje a un [SendOutcome]. */
-    private suspend fun sendAndReport(localId: String): SendOutcome {
-        val result = sync.sync()
-        val trip = store.current().trips.firstOrNull { it.localId == localId }
-        return when {
-            trip == null -> SendOutcome.Sent // ya se envió todo y se borró del teléfono
-            trip.syncErrorMessage != null -> SendOutcome.Rejected(trip.syncErrorMessage)
-            trip.closedOnServer -> SendOutcome.Sent // falta solo la foto: se sube sola después
-            result is AppResult.Failure && result.error != AppError.NoConnection -> SendOutcome.Rejected(null)
-            else -> SendOutcome.SavedOffline
-        }
-    }
+    private suspend fun sendAndReport(localId: String): SendOutcome = reporter.report(localId)
 
     private suspend fun closeOpenPause(tripLocalId: String, nowMillis: Long): TripEntity? =
         store.updateTrip(tripLocalId) { entity ->
@@ -330,22 +320,9 @@ class GpsTripTracker(
         lastFixMillis = clock.nowMillis()
         state.update { it.copy(current = fix.point, gpsActive = true) }
 
-        // Lecturas con mucho error no cuentan para la ruta ni la distancia
-        val accurate = (fix.accuracyMeters ?: 0.0) <= MAX_ACCURACY_M
-        if (!accurate) return@withLock
+        // Lecturas imprecisas, ruido estando detenido o saltos imposibles no cuentan (ver RouteFilter)
+        val added = routeFilter.accept(fix) ?: return@withLock
 
-        val previous = lastRoutePoint
-        var added = 0.0
-        if (previous != null) {
-            val meters = GeoMath.distanceMeters(previous, fix.point)
-            if (meters < MIN_STEP_M) return@withLock // ruido estando detenido
-            val seconds = ((fix.timeMillis - lastRoutePointMillis).coerceAtLeast(1L)) / 1000.0
-            if (meters / seconds > MAX_SPEED_MPS) return@withLock // salto imposible del GPS
-            added = meters
-        }
-
-        lastRoutePoint = fix.point
-        lastRoutePointMillis = fix.timeMillis
         store.appendPoint(
             trip.localId,
             TrackPointEntity(
@@ -385,8 +362,5 @@ class GpsTripTracker(
         const val GPS_TIMEOUT_MS = 30_000L
         const val SYNC_EVERY_TICKS = 12 // 12 x 5 s = cada minuto
         const val STALE_FIX_MS = 2 * 60_000L
-        const val MAX_ACCURACY_M = 50.0 // igual que el filtro de la API
-        const val MIN_STEP_M = 3.0
-        const val MAX_SPEED_MPS = 70.0 // ~250 km/h
     }
 }

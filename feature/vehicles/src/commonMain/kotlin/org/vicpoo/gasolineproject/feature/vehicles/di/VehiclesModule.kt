@@ -1,10 +1,10 @@
 package org.vicpoo.gasolineproject.feature.vehicles.di
 
+import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
-import org.koin.core.module.dsl.viewModel
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.core.qualifier.named
-import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.session.LogoutListener
 import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
@@ -24,24 +24,22 @@ import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.ObserveVehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.RefreshVehiclesUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.SaveVehicleUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleFormValidator
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.detail.VehicleDetailArgs
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.detail.VehicleDetailViewModel
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.form.VehicleFormArgs
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.form.VehicleFormViewModel
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehicleListArgs
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehicleListViewModel
 
 val vehiclesModule = module {
-    // Data
-    single<VehicleApi> { KtorVehicleApi(get()) }
-    single<VehicleLocalDataSource> { JsonFileVehicleLocalDataSource(fileSystem = get(), directories = get(), json = get()) }
+    // Data (autowire: Koin pasa cada parámetro del constructor por su tipo)
+    singleOf(::KtorVehicleApi) { bind<VehicleApi>() }
+    singleOf(::JsonFileVehicleLocalDataSource) { bind<VehicleLocalDataSource>() }
     // También se registra como PendingSyncTask para la sincronización en segundo plano
-    single { VehicleSyncer(local = get(), api = get(), scheduler = get()) } bind PendingSyncTask::class
-    single<VehicleRepository> {
-        OfflineFirstVehicleRepository(local = get(), api = get(), syncer = get(), sessionReader = get(), appScope = get())
+    singleOf(::VehicleSyncer) { bind<PendingSyncTask>() }
+    // Una sola instancia expuesta por sus tres interfaces (ISP: hay quien solo lee o solo escribe)
+    singleOf(::OfflineFirstVehicleRepository) {
+        bind<VehicleRepository>()
+        bind<VehicleReader>()
+        bind<VehicleWriter>()
     }
-    single<VehicleReader> { get<VehicleRepository>() }
-    single<VehicleWriter> { get<VehicleRepository>() }
 
     // Al cerrar sesión se borran los vehículos guardados en el teléfono
     single<LogoutListener>(named("vehicles")) {
@@ -58,33 +56,8 @@ val vehiclesModule = module {
     factoryOf(::SaveVehicleUseCase)
     factoryOf(::DeleteVehicleUseCase)
 
-    // Presentation
-    viewModel { params ->
-        VehicleListViewModel(
-            args = params.get<VehicleListArgs>(),
-            observeVehicles = get(),
-            observePendingSync = get(),
-            refreshVehicles = get(),
-            permissionChecker = get(),
-            connectivity = get(),
-            lastRefresh = get(),
-        )
-    }
-    viewModel { params ->
-        VehicleDetailViewModel(
-            args = params.get<VehicleDetailArgs>(),
-            observeVehicle = get(),
-            deleteVehicle = get(),
-            requestVehicle = get(),
-            permissionChecker = get(),
-        )
-    }
-    viewModel { params ->
-        VehicleFormViewModel(
-            args = params.get<VehicleFormArgs>(),
-            observeVehicle = get(),
-            saveVehicle = get(),
-            validator = get(),
-        )
-    }
+    // Presentation: los Args llegan con parametersOf(...) desde la pantalla y Koin los toma por tipo
+    viewModelOf(::VehicleListViewModel)
+    viewModelOf(::VehicleDetailViewModel)
+    viewModelOf(::VehicleFormViewModel)
 }

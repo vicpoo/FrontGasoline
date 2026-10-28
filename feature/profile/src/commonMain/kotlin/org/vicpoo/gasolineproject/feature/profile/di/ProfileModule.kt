@@ -1,6 +1,8 @@
 package org.vicpoo.gasolineproject.feature.profile.di
 
+import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.feature.profile.data.ProfileRepositoryImpl
@@ -16,8 +18,8 @@ import org.vicpoo.gasolineproject.feature.profile.presentation.editname.EditName
 
 val profileModule = module {
     // Data
-    single<ProfileApi> { KtorProfileApi(get()) }
-    single<ProfileRepository> { ProfileRepositoryImpl(api = get(), sessionReader = get(), sessionWriter = get()) }
+    singleOf(::KtorProfileApi) { bind<ProfileApi>() }
+    singleOf(::ProfileRepositoryImpl) { bind<ProfileRepository>() }
 
     // Domain
     factoryOf(::ObserveProfileUseCase)
