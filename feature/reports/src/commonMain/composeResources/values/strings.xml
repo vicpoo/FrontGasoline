@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Reportes de la flota (privilegio auditoria.ver) -->
+    <string name="reports_title">Reportes</string>
+    <string name="reports_offline">Sin conexión: ves el último reporte guardado. Para descargar el PDF o el Excel necesitas internet.</string>
+    <string name="reports_other_filters">Este reporte es de otros filtros. Se actualizará cuando vuelva la conexión.</string>
+    <string name="reports_empty">No hay vehículos con datos en este periodo.</string>
+    <string name="reports_generated_at">Generado el %1$s a las %2$s</string>
+
+    <!-- Filtros -->
+    <string name="reports_period_this_month">Este mes</string>
+    <string name="reports_period_last_month">Mes pasado</string>
+    <string name="reports_period_last_3_months">Últimos 3 meses</string>
+    <string name="reports_period_this_year">Este año</string>
+    <string name="reports_period_all_time">Todo</string>
+    <string name="reports_range">Del %1$s al %2$s</string>
+    <string name="reports_range_all_time">Todo el historial</string>
+    <string name="reports_vehicle_label">Vehículo</string>
+    <string name="reports_vehicle_all">Toda la flota</string>
+
+    <!-- Resumen -->
+    <string name="reports_summary_title">Resumen</string>
+    <string name="reports_active_vehicles">%1$d de %2$d vehículos con actividad</string>
+    <string name="reports_stat_km">Km recorridos</string>
+    <string name="reports_stat_trips">Viajes</string>
+    <string name="reports_stat_loads">Cargas</string>
+    <string name="reports_stat_liters">Litros</string>
+    <string name="reports_stat_spent">Gasto total</string>
+    <string name="reports_stat_efficiency">Rendimiento</string>
+    <string name="reports_stat_cost_per_km">Costo por km</string>
+    <string name="reports_stat_price_per_liter">Precio promedio</string>
+
+    <!-- Unidades -->
+    <string name="reports_value_km">%1$s km</string>
+    <string name="reports_value_liters">%1$s L</string>
+    <string name="reports_value_km_per_liter">%1$s km/L</string>
+    <string name="reports_value_per_km">%1$s/km</string>
+    <string name="reports_value_per_liter">%1$s/L</string>
+
+    <!-- Descargas -->
+    <string name="reports_download_pdf">Descargar PDF</string>
+    <string name="reports_download_excel">Descargar Excel</string>
+    <string name="reports_download_hint">El servidor genera el archivo; después eliges dónde guardarlo o con quién compartirlo.</string>
+    <string name="reports_download_error">No se pudo descargar el reporte: %1$s</string>
+
+    <!-- Por vehículo -->
+    <string name="reports_vehicles_title">Por vehículo</string>
+    <string name="reports_vehicle_details">%1$s viajes · %2$s · %3$s · %4$s</string>
+    <string name="reports_vehicle_last_trip">Último viaje: %1$s</string>
+    <string name="reports_vehicle_no_trips">Sin viajes en el periodo</string>
+    <string name="reports_status_available">Disponible</string>
+    <string name="reports_status_busy">Ocupado</string>
+    <string name="reports_status_maintenance">En mantenimiento</string>
+    <string name="reports_status_retired">Dado de baja</string>
+</resources>

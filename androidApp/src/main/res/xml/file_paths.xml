@@ -2,4 +2,6 @@
 <paths>
     <!-- Fotos tomadas con la cámara (se borran después de leerlas) -->
     <cache-path name="camera" path="camera/" />
+    <!-- Reportes PDF / Excel descargados de la API para compartirlos -->
+    <cache-path name="reports" path="reports/" />
 </paths>

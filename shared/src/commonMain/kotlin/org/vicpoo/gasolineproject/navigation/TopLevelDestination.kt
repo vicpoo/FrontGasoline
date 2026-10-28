@@ -8,6 +8,7 @@ import gasolineproject.shared.generated.resources.nav_home
 import gasolineproject.shared.generated.resources.nav_requests
 import gasolineproject.shared.generated.resources.nav_trips
 import gasolineproject.shared.generated.resources.nav_history
+import gasolineproject.shared.generated.resources.nav_reports
 import org.jetbrains.compose.resources.StringResource
 import org.vicpoo.gasolineproject.core.rbac.AccessRule
 import org.vicpoo.gasolineproject.core.rbac.AppAccess
@@ -16,6 +17,8 @@ import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.Profil
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsGraph
 import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.ProfileGraph
+import org.vicpoo.gasolineproject.feature.reports.presentation.navigation.ReportsDestination
+import org.vicpoo.gasolineproject.feature.reports.presentation.navigation.ReportsGraph
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.TripRecordingDestination
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.TripRecordingGraph
 import org.vicpoo.gasolineproject.feature.trips.presentation.navigation.TripHistoryDestination
@@ -89,6 +92,15 @@ enum class TopLevelDestination(
         label = Res.string.nav_history,
         icon = { AppIcons.History },
         access = AppAccess.TRIP_HISTORY,
+    ),
+
+    /** Gráfica: reportes de la flota (km, cargas y gasto; PDF / Excel). Módulo de auditoría. */
+    REPORTS(
+        graph = ReportsGraph,
+        start = ReportsDestination.Fleet,
+        label = Res.string.nav_reports,
+        icon = { AppIcons.Chart },
+        access = AppAccess.REPORTS,
     ),
 
     /** Persona: perfil (todos lo tienen). */

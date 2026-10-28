@@ -12,6 +12,7 @@ import org.vicpoo.gasolineproject.core.push.pushModule
 import org.vicpoo.gasolineproject.core.rbac.rbacUiModule
 import org.vicpoo.gasolineproject.feature.auth.di.authModule
 import org.vicpoo.gasolineproject.feature.profile.di.profileModule
+import org.vicpoo.gasolineproject.feature.reports.di.reportsModule
 import org.vicpoo.gasolineproject.feature.reservations.di.reservationsModule
 import org.vicpoo.gasolineproject.feature.triprecording.di.tripRecordingModule
 import org.vicpoo.gasolineproject.feature.trips.di.tripsModule
@@ -43,6 +44,7 @@ private val featureModules = listOf(
     reservationsModule,
     tripsModule,
     tripRecordingModule,
+    reportsModule,
 )
 
 val appModules = infrastructureModules + featureModules + navigationModule

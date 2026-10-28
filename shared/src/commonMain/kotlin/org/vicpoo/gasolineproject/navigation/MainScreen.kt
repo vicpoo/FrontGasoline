@@ -29,6 +29,7 @@ import org.vicpoo.gasolineproject.core.ui.components.LoadingView
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseRoute
 import org.vicpoo.gasolineproject.feature.auth.presentation.license.RequireLicense
 import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.profileGraph
+import org.vicpoo.gasolineproject.feature.reports.presentation.navigation.reportsGraph
 import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBell
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.MyReservationsDestination
@@ -106,6 +107,7 @@ fun MainScreen(
             vehiclesGraph(navController)
             companyReservationsGraph(navController)
             tripHistoryGraph(navController)
+            reportsGraph()
             profileGraph(
                 navController = navController,
                 onLoggedOut = onLoggedOut,

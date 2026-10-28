@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.core.rbac
 
+import org.vicpoo.gasolineproject.core.rbac.Privileges.AUDITORIA_VER
 import org.vicpoo.gasolineproject.core.rbac.Privileges.CARGA_EDITAR
 import org.vicpoo.gasolineproject.core.rbac.Privileges.CARGA_REGISTRAR
 import org.vicpoo.gasolineproject.core.rbac.Privileges.CARRO_CREAR
@@ -44,6 +45,12 @@ object AppAccess {
 
     /** Historial de viajes (propios o de todos). */
     val TRIP_HISTORY = AccessRule.anyOf(VIAJE_VER_PROPIOS, VIAJE_VER_TODOS)
+
+    /**
+     * Pestaña Reportes (km, cargas y gasto por carro; PDF y Excel). Es parte del módulo de
+     * auditoría de la API, por eso usa el mismo privilegio auditoria.ver.
+     */
+    val REPORTS = AccessRule.anyOf(AUDITORIA_VER)
 
     /** Perfil: todos. */
     val PROFILE = AccessRule.Everyone

@@ -38,6 +38,7 @@ import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseViewM
 import org.vicpoo.gasolineproject.feature.auth.presentation.login.LoginViewModel
 import org.vicpoo.gasolineproject.feature.profile.presentation.ProfileViewModel
 import org.vicpoo.gasolineproject.feature.profile.presentation.editname.EditNameViewModel
+import org.vicpoo.gasolineproject.feature.reports.presentation.ReportsViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBellViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.company.CompanyReservationsViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.detail.ReservationDetailViewModel
@@ -137,8 +138,8 @@ class KoinGraphTest {
             // vehicles, triprecording, push y la cola de solicitudes de reservas.
             // Si cambia el número, revisa que no se haya perdido un `bind`.
             assertEquals(4, app.koin.getAll<PendingSyncTask>().size)
-            // lastRefresh, push, reservations, tripRecording, trips y vehicles.
-            assertEquals(6, app.koin.getAll<LogoutListener>().size)
+            // lastRefresh, push, reports, reservations, tripRecording, trips y vehicles.
+            assertEquals(7, app.koin.getAll<LogoutListener>().size)
         } finally {
             app.close()
         }
@@ -182,6 +183,9 @@ class KoinGraphTest {
         koin.get<FinishTripViewModel>()
         koin.get<StartTripViewModel> { parametersOf(StartTripArgs(reservationId = "res-1")) }
         koin.get<FuelRecordFormViewModel> { parametersOf(FuelRecordFormArgs(recordId = null)) }
+
+        // reports
+        koin.get<ReportsViewModel>()
     }
 
     private object NoLocationProvider : LocationProvider {

@@ -63,4 +63,9 @@ object ApiRoutes {
     const val VEHICLES = "carros"
     fun vehicle(id: String) = "carros/$id"
     fun vehiclePhoto(id: String) = "carros/$id/foto"
+
+    // Reportes de la flota (ReportesController, privilegio auditoria.ver)
+    const val FLEET_REPORT = "reportes/flota"
+    const val FLEET_REPORT_PDF = "reportes/flota/pdf"
+    const val FLEET_REPORT_EXCEL = "reportes/flota/excel"
 }

@@ -52,6 +52,7 @@ kotlin {
             implementation(project(":feature:trips"))
             implementation(project(":feature:triprecording"))
             implementation(project(":feature:vehicles"))
+            implementation(project(":feature:reports"))
 
             // UI (App.kt, MainScreen y los textos de las pestañas)
             implementation(libs.compose.runtime)
