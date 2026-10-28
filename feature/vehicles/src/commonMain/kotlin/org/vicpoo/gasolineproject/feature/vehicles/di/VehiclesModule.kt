@@ -66,6 +66,8 @@ val vehiclesModule = module {
             observePendingSync = get(),
             refreshVehicles = get(),
             permissionChecker = get(),
+            connectivity = get(),
+            lastRefresh = get(),
         )
     }
     viewModel { params ->

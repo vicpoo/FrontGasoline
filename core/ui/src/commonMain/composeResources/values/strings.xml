@@ -19,4 +19,8 @@
     <string name="sync_error">Error al sincronizar</string>
     <string name="sync_pending">Pendiente</string>
     <string name="action_retry">Reintentar</string>
+    <string name="updated_just_now">Actualizado hace un momento</string>
+    <string name="updated_minutes_ago">Actualizado hace %1$d min</string>
+    <string name="updated_hours_ago">Actualizado hace %1$d h</string>
+    <string name="updated_days_ago">Actualizado hace %1$d días</string>
 </resources>

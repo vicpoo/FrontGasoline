@@ -1,73 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Textos de shared: solo las pestañas de la navegación principal. Cada módulo tiene los suyos. -->
 <resources>
-    <!-- Bienvenida -->
-
-    <!-- Login -->
-
-    <!-- Licencia -->
-
-    <!-- Navegación principal -->
-    <string name="nav_vehicles">Vehículos</string>
-    <string name="nav_account">Perfil</string>
-    <string name="nav_history">Historial</string>
-
-    <!-- Solicitud de reserva -->
-
-    <!-- Historial de viajes -->
-
-    <!-- Perfil -->
-
-    <!-- Editar nombre -->
-
-    <!-- Acciones comunes -->
-    <string name="action_back">Atrás</string>
-    <string name="action_next">Siguiente</string>
-    <string name="action_change">Cambiar</string>
-
-    <!-- Vehículos: lista -->
-
-    <!-- Vehículos: estados -->
-
-    <!-- Vehículos: campos -->
-
-    <!-- Vehículos: ejemplos (placeholders de Figma) -->
-
-    <!-- Vehículos: detalle -->
-
-    <!-- Vehículos: formulario por pasos -->
-    <string name="vehicle_form_step_label">Paso %1$d de %2$d</string>
-    <string name="vehicle_form_no_photo">Sin foto</string>
-    <string name="vehicle_step_review_title">Revisa la información</string>
-    <string name="vehicle_step_review_subtitle">Confirma que todo esté correcto. Toca "Cambiar" para corregir una sección.</string>
-    <string name="vehicle_form_done">Listo</string>
-
-    <!-- Registrar viaje: carros asignados -->
-    <string name="nav_register">Registrar</string>
-    <string name="assigned_pending_trips">Viajes pendientes de enviar: %1$d</string>
-
-    <!-- Iniciar viaje -->
-
-    <!-- Viaje en curso -->
-    <string name="profile_my_requests">Mis solicitudes</string>
     <string name="nav_home">Inicio</string>
     <string name="nav_trips">Viajes</string>
     <string name="nav_fleet">Gestión de carros</string>
     <string name="nav_requests">Solicitudes</string>
-    <string name="requests_requester">Solicitó: %1$s</string>
-    <string name="requests_notifications">Mis solicitudes</string>
-    <string name="request_detail_info">Detalles</string>
-    <string name="request_detail_requester">Solicitante</string>
-    <string name="request_detail_status">Estado</string>
-    <string name="request_detail_same_car_note">Al aceptarla, las demás solicitudes pendientes de este mismo carro se rechazan solas.</string>
-    <string name="active_trip_finished_title">¡Viaje finalizado!</string>
-    <string name="active_trip_finished_message">Tu viaje se envió correctamente.</string>
-    <string name="active_trip_finished_offline_title">Viaje guardado</string>
-    <string name="active_trip_finished_offline_message">No hay conexión. El viaje quedó guardado en el teléfono y se enviará automáticamente cuando vuelva la señal.</string>
-    <string name="active_trip_finished_error_title">¡Error al enviar el viaje!</string>
-
-    <!-- Registro de gasolina -->
-
-    <!-- Accesibilidad -->
-
-    <!-- Errores -->
+    <string name="nav_history">Historial</string>
+    <string name="nav_account">Perfil</string>
 </resources>

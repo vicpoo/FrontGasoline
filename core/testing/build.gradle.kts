@@ -1,29 +1,17 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 /*
- * :core:testing — fakes y ayudas para pruebas (sesión, permisos, API falsa con MockEngine,
+ * :core:testing — fakes y ayudas para pruebas (sesión, permisos, red, API falsa con MockEngine,
  * archivos en memoria, dispatcher Main de pruebas). Solo se usa desde commonTest:
  *     commonTest.dependencies { implementation(project(":core:testing")) }
  */
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidMultiplatformLibrary)
+    id("gasoline.kmp.library")
 }
 
 kotlin {
-    iosArm64()
-    iosSimulatorArm64()
-
     androidLibrary {
         namespace = "org.vicpoo.gasolineproject.core.testing"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
-
-        compilations.configureEach {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_11)
-            }
-        }
     }
 
     sourceSets {

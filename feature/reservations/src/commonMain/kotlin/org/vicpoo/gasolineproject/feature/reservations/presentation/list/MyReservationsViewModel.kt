@@ -1,7 +1,5 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.list
 
-import org.vicpoo.gasolineproject.core.push.PushEvents
-import org.vicpoo.gasolineproject.core.push.PushType
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +10,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.data.LastRefreshStore
+import org.vicpoo.gasolineproject.core.network.ConnectivityMonitor
+import org.vicpoo.gasolineproject.core.network.reconnections
+import org.vicpoo.gasolineproject.core.push.PushEvents
+import org.vicpoo.gasolineproject.core.push.PushType
 import org.vicpoo.gasolineproject.feature.reservations.domain.MarkReservationUpdatesSeenUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.ObserveMyReservationsUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.RefreshMyReservationsUseCase
@@ -24,6 +27,8 @@ data class MyReservationsUiState(
     /** Sin conexión: se muestra la última copia guardada. */
     val isOffline: Boolean = false,
     val error: AppError? = null,
+    /** Cuándo se trajo de la API la copia que se ve (para "Actualizado hace X"). */
+    val lastUpdatedAtMillis: Long? = null,
 )
 
 sealed interface MyReservationsEvent {
@@ -36,6 +41,9 @@ class MyReservationsViewModel(
     private val refreshRequests: RefreshMyReservationsUseCase,
     private val markUpdatesSeen: MarkReservationUpdatesSeenUseCase,
     pushEvents: PushEvents,
+    /** Se recarga sola al volver la red y marca "sin conexión" en cuanto se pierde. */
+    private val connectivity: ConnectivityMonitor,
+    private val lastRefresh: LastRefreshStore,
 ) : ViewModel() {
 
     private data class LoadState(
@@ -55,17 +63,24 @@ class MyReservationsViewModel(
             pushEvents.received.collect { if (it.type == PushType.REQUEST_RESULT) refresh(initial = true) }
         }
         viewModelScope.launch {
-            combine(observeRequests(), loading) { requests, load ->
+            combine(
+                observeRequests(),
+                loading,
+                connectivity.isOnline,
+                lastRefresh.observe(REFRESH_KEY),
+            ) { requests, load, online, lastUpdated ->
                 MyReservationsUiState(
                     requests = requests,
                     isInitialLoading = !load.firstLoadDone && requests.isEmpty(),
                     isRefreshing = load.refreshing,
-                    isOffline = load.offline,
+                    isOffline = load.offline || !online,
                     error = load.error,
+                    lastUpdatedAtMillis = lastUpdated,
                 )
             }.collect { _state.value = it }
         }
         refresh(initial = true)
+        viewModelScope.launch { connectivity.reconnections().collect { refresh(initial = true) } }
         // Al abrir la campana, las respuestas quedan como vistas (el badge vuelve a 0)
         viewModelScope.launch { markUpdatesSeen() }
     }
@@ -85,6 +100,7 @@ class MyReservationsViewModel(
         viewModelScope.launch {
             val result = refreshRequests()
             val failure = (result as? AppResult.Failure)?.error
+            if (failure == null) lastRefresh.markNow(REFRESH_KEY)
             loading.value = LoadState(
                 firstLoadDone = true,
                 refreshing = false,
@@ -92,5 +108,10 @@ class MyReservationsViewModel(
                 error = failure?.takeIf { it != AppError.NoConnection },
             )
         }
+    }
+
+    private companion object {
+        /** Llave de "Actualizado hace X" de esta lista. */
+        const val REFRESH_KEY = "reservations.mine"
     }
 }

@@ -41,8 +41,10 @@ import org.vicpoo.gasolineproject.feature.reservations.resources.requests_reason
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_approved
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_cancelled
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_finished
+import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_not_sent
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_pending
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_rejected
+import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_send_failed
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_status_unknown
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_unknown_requester
 import org.vicpoo.gasolineproject.feature.reservations.resources.requests_unknown_vehicle
@@ -110,8 +112,10 @@ fun ReservationCard(
             Spacer(Modifier.height(dimens.spaceS))
             StatusPill(request.status)
 
-            // Si la rechazaron o cancelaron con motivo, se muestra debajo
-            if (request.status == ReservationStatus.REJECTED || request.status == ReservationStatus.CANCELLED) {
+            // Si la rechazaron, cancelaron o no se pudo enviar, se muestra el motivo debajo
+            if (request.status == ReservationStatus.REJECTED || request.status == ReservationStatus.CANCELLED ||
+                request.status == ReservationStatus.SEND_FAILED
+            ) {
                 request.resolutionReason?.takeIf { it.isNotBlank() }?.let {
                     Spacer(Modifier.height(dimens.spaceXs))
                     SecondaryText(stringResource(Res.string.requests_reason, it))
@@ -146,7 +150,11 @@ fun StatusBadge(status: ReservationStatus) {
         Text(
             text = text,
             style = AppTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
-            color = if (status == ReservationStatus.CANCELLED || status == ReservationStatus.UNKNOWN) content else container,
+            color = if (status == ReservationStatus.CANCELLED || status == ReservationStatus.UNKNOWN || status == ReservationStatus.NOT_SENT) {
+                content
+            } else {
+                container
+            },
             modifier = Modifier.padding(horizontal = AppTheme.dimens.spaceM, vertical = AppTheme.dimens.spaceXs),
         )
     }
@@ -162,6 +170,8 @@ private fun statusColors(status: ReservationStatus): Triple<String, Color, Color
         ReservationStatus.CANCELLED -> Triple(stringResource(Res.string.requests_status_cancelled), colors.labelBackground, colors.textSecondary)
         ReservationStatus.FINISHED -> Triple(stringResource(Res.string.requests_status_finished), colors.secondary, colors.onSecondary)
         ReservationStatus.UNKNOWN -> Triple(stringResource(Res.string.requests_status_unknown), colors.labelBackground, colors.textSecondary)
+        ReservationStatus.NOT_SENT -> Triple(stringResource(Res.string.requests_status_not_sent), colors.labelBackground, colors.textSecondary)
+        ReservationStatus.SEND_FAILED -> Triple(stringResource(Res.string.requests_status_send_failed), colors.danger, colors.onDanger)
     }
 }
 
@@ -177,6 +187,8 @@ fun StatusPill(status: ReservationStatus) {
         ReservationStatus.CANCELLED -> Triple(stringResource(Res.string.requests_status_cancelled), colors.labelBackground, colors.onLabel)
         ReservationStatus.FINISHED -> Triple(stringResource(Res.string.requests_status_finished), colors.secondary, colors.onSecondary)
         ReservationStatus.UNKNOWN -> Triple(stringResource(Res.string.requests_status_unknown), colors.labelBackground, colors.onLabel)
+        ReservationStatus.NOT_SENT -> Triple(stringResource(Res.string.requests_status_not_sent), colors.labelBackground, colors.onLabel)
+        ReservationStatus.SEND_FAILED -> Triple(stringResource(Res.string.requests_status_send_failed), colors.danger, colors.onDanger)
     }
     StatusBar(text = text, container = container, content = content, radius = dimens.radiusS)
 }

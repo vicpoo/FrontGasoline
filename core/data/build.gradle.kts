@@ -1,34 +1,23 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 /*
  * :core:data — infraestructura de datos compartida, sin UI:
- * red (Ktor + safeApiCall), sesión (DataStore), RBAC (privilegios), caché JSON,
+ * red (Ktor + safeApiCall), conectividad, sesión (DataStore), RBAC (privilegios), caché JSON,
  * servicios de plataforma (directorios, GPS, compresión de imágenes), push y
- * sincronización offline-first (PendingSyncTask, WorkManager).
+ * sincronización offline-first (PendingSyncTask, WorkManager en Android, al abrir / reconectar en iOS).
  * También define los módulos de Koin de infraestructura y el platformModule.
  */
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidMultiplatformLibrary)
+    id("gasoline.kmp.library")
     alias(libs.plugins.kotlinSerialization)
 }
 
 kotlin {
-    iosArm64()
-    iosSimulatorArm64()
-
     androidLibrary {
         namespace = "org.vicpoo.gasolineproject.core.data"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
+        // Pruebas en la JVM: ./gradlew <módulo>:testAndroidHostTest
         withHostTestBuilder {}
-
-        compilations.configureEach {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_11)
-            }
-        }
     }
 
     sourceSets {

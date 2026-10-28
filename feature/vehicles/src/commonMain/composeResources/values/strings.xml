@@ -84,4 +84,6 @@
     <string name="action_yes">Sí</string>
     <string name="cd_close">Cerrar</string>
     <string name="cd_remove_photo">Quitar foto</string>
+    <string name="reservation_queued_title">¡Solicitud guardada!</string>
+    <string name="reservation_queued_message">Estás sin conexión. Tu solicitud para el %1$s se enviará sola en cuanto vuelva el internet; puedes ver cómo va en la campana.</string>
 </resources>

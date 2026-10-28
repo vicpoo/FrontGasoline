@@ -98,6 +98,9 @@ okio-fakefilesystem = { module = "com.squareup.okio:okio-fakefilesystem", versio
 # Mapas (MapLibre, sin API key)
 maplibre-compose = { module = "org.maplibre.compose:maplibre-compose", version.ref = "maplibre-compose" }
 
+# Para build-logic (plugins de convención)
+kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 androidMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }

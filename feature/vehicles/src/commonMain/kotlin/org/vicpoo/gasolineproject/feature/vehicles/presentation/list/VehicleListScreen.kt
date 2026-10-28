@@ -158,7 +158,7 @@ private fun SyncBanner(state: VehicleListUiState) {
         else -> null
     } ?: return
     Spacer(Modifier.height(AppTheme.dimens.spaceS))
-    OfflineBanner(text)
+    OfflineBanner(text, lastUpdatedAtMillis = state.lastUpdatedAtMillis.takeIf { state.isOffline })
 }
 
 /** Adaptativo: 1 columna en teléfono, 2-3 en tablet. */

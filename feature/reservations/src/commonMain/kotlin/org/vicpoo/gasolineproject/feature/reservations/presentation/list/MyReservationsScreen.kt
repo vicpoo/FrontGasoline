@@ -117,7 +117,7 @@ fun MyReservationsScreen(
 
             if (state.isOffline) {
                 Spacer(Modifier.height(dimens.spaceS))
-                OfflineBanner(stringResource(Res.string.requests_offline))
+                OfflineBanner(stringResource(Res.string.requests_offline), lastUpdatedAtMillis = state.lastUpdatedAtMillis)
             }
             state.error?.let {
                 Spacer(Modifier.height(dimens.spaceS))

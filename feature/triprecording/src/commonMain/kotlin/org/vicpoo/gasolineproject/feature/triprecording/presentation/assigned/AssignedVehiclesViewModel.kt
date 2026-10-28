@@ -10,6 +10,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.data.LastRefreshStore
+import org.vicpoo.gasolineproject.core.network.ConnectivityMonitor
+import org.vicpoo.gasolineproject.core.network.reconnections
 import org.vicpoo.gasolineproject.feature.triprecording.domain.AssignedVehicle
 import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveAssignedVehiclesUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveTrackingUseCase
@@ -25,6 +28,8 @@ data class AssignedVehiclesUiState(
     val isRefreshing: Boolean = false,
     val isOffline: Boolean = false,
     val error: AppError? = null,
+    /** Cuándo se trajo de la API la copia que se ve (para "Actualizado hace X"). */
+    val lastUpdatedAtMillis: Long? = null,
 )
 
 sealed interface AssignedVehiclesEvent {
@@ -38,6 +43,9 @@ class AssignedVehiclesViewModel(
     private val refreshVehicles: RefreshAssignedVehiclesUseCase,
     private val refreshCostCenters: RefreshCostCentersUseCase,
     private val syncPendingTrips: SyncPendingTripsUseCase,
+    /** Se recarga sola al volver la red y marca "sin conexión" en cuanto se pierde. */
+    private val connectivity: ConnectivityMonitor,
+    private val lastRefresh: LastRefreshStore,
 ) : ViewModel() {
 
     private val loading = MutableStateFlow(LoadState())
@@ -53,19 +61,27 @@ class AssignedVehiclesViewModel(
 
     init {
         viewModelScope.launch {
-            combine(observeVehicles(), observeTracking(), loading) { vehicles, tracking, load ->
+            combine(
+                observeVehicles(),
+                observeTracking(),
+                loading,
+                connectivity.isOnline,
+                lastRefresh.observe(REFRESH_KEY),
+            ) { vehicles, tracking, load, online, lastUpdated ->
                 AssignedVehiclesUiState(
                     vehicles = vehicles,
                     activeTrip = tracking.trip,
                     isInitialLoading = !load.firstLoadDone && vehicles.isEmpty(),
                     isRefreshing = load.refreshing,
-                    isOffline = load.offline,
+                    isOffline = load.offline || !online,
                     error = load.error,
+                    lastUpdatedAtMillis = lastUpdated,
                 )
             }.collect { _state.value = it }
         }
         refresh(initial = true)
         syncPendingTrips() // si quedó algo pendiente de otro día, se manda ahora
+        viewModelScope.launch { connectivity.reconnections().collect { refresh(initial = true) } }
     }
 
     fun onEvent(event: AssignedVehiclesEvent) {
@@ -81,6 +97,7 @@ class AssignedVehiclesViewModel(
             // Los centros de costo se guardan ya para poder iniciar un viaje sin red
             launch { refreshCostCenters() }
             val result = refreshVehicles()
+            if (result is AppResult.Success) lastRefresh.markNow(REFRESH_KEY)
             loading.update {
                 LoadState(
                     firstLoadDone = true,
@@ -90,5 +107,10 @@ class AssignedVehiclesViewModel(
                 )
             }
         }
+    }
+
+    private companion object {
+        /** Llave de "Actualizado hace X" de esta lista. */
+        const val REFRESH_KEY = "triprecording.assigned"
     }
 }

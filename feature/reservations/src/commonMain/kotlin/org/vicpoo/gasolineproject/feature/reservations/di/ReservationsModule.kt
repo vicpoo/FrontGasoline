@@ -8,12 +8,16 @@ import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.data.JsonFileCache
 import org.vicpoo.gasolineproject.core.session.LogoutListener
+import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.feature.reservations.api.VehicleRequester
 import org.vicpoo.gasolineproject.feature.reservations.data.ReservationRepositoryImpl
 import org.vicpoo.gasolineproject.feature.reservations.data.local.CompanyReservationsSnapshot
 import org.vicpoo.gasolineproject.feature.reservations.data.local.MyReservationsSnapshot
+import org.vicpoo.gasolineproject.feature.reservations.data.local.ReservationOutbox
+import org.vicpoo.gasolineproject.feature.reservations.data.local.ReservationOutboxSnapshot
 import org.vicpoo.gasolineproject.feature.reservations.data.remote.KtorReservationApi
 import org.vicpoo.gasolineproject.feature.reservations.data.remote.ReservationApi
+import org.vicpoo.gasolineproject.feature.reservations.data.sync.ReservationOutboxSyncer
 import org.vicpoo.gasolineproject.feature.reservations.domain.ApproveReservationUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.GetReservationDetailUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.MarkReservationUpdatesSeenUseCase
@@ -34,6 +38,7 @@ import org.vicpoo.gasolineproject.feature.reservations.presentation.list.MyReser
 
 private val MY_RESERVATIONS_CACHE = named("myReservationsCache")
 private val COMPANY_RESERVATIONS_CACHE = named("companyReservationsCache")
+private val OUTBOX_CACHE = named("reservationOutboxCache")
 
 val reservationsModule = module {
     single<ReservationApi> { KtorReservationApi(get()) }
@@ -43,14 +48,33 @@ val reservationsModule = module {
     single(COMPANY_RESERVATIONS_CACHE) {
         JsonFileCache(get(), get(), "company_reservations.json", CompanyReservationsSnapshot.serializer(), get(), CompanyReservationsSnapshot())
     }
+    // Solicitudes hechas sin red, en su propio archivo
+    single(OUTBOX_CACHE) {
+        JsonFileCache(get(), get(), "reservation_outbox.json", ReservationOutboxSnapshot.serializer(), get(), ReservationOutboxSnapshot())
+    }
+    single { ReservationOutbox(get(OUTBOX_CACHE)) }
     single<ReservationRepository> {
         ReservationRepositoryImpl(
             api = get(),
             sessionReader = get(),
             cache = get(MY_RESERVATIONS_CACHE),
             companyCache = get(COMPANY_RESERVATIONS_CACHE),
+            outbox = get(),
+            clock = get(),
+            scheduler = get(),
         )
     }
+    // Envía la cola en segundo plano (WorkManager / al volver la red); al enviar, recarga "Mis solicitudes"
+    single {
+        val repository = get<ReservationRepository>()
+        ReservationOutboxSyncer(
+            outbox = get(),
+            api = get(),
+            sessionReader = get(),
+            scheduler = get(),
+            onSent = { repository.refreshMine() },
+        )
+    } bind PendingSyncTask::class
 
     // Al cerrar sesión se borran las solicitudes guardadas en el teléfono
     single<LogoutListener>(named("reservations")) {

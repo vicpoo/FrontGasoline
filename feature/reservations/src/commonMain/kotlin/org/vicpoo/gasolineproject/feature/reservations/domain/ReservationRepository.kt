@@ -2,10 +2,12 @@ package org.vicpoo.gasolineproject.feature.reservations.domain
 
 import kotlinx.coroutines.flow.Flow
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.feature.reservations.api.RequestOutcome
+import org.vicpoo.gasolineproject.feature.reservations.api.RequestedVehicle
 
 interface ReservationRepository {
-    /** Solicitar un carro. Requiere conexión: la cola de confirmación vive en el servidor. */
-    suspend fun requestVehicle(vehicleServerId: String, reason: String): AppResult<Unit>
+    /** Solicitar un carro. Sin conexión queda en cola en el teléfono y se envía sola ([RequestOutcome.QUEUED]). */
+    suspend fun requestVehicle(vehicle: RequestedVehicle, reason: String): AppResult<RequestOutcome>
 
     /** Mis solicitudes guardadas en el teléfono (offline-first), de la más reciente a la más antigua. */
     fun observeMine(): Flow<List<ReservationRequest>>

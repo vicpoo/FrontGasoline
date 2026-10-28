@@ -78,6 +78,8 @@ import org.vicpoo.gasolineproject.feature.vehicles.resources.action_yes
 import org.vicpoo.gasolineproject.feature.vehicles.resources.cd_close
 import org.vicpoo.gasolineproject.feature.vehicles.resources.reservation_error_message
 import org.vicpoo.gasolineproject.feature.vehicles.resources.reservation_error_title
+import org.vicpoo.gasolineproject.feature.vehicles.resources.reservation_queued_message
+import org.vicpoo.gasolineproject.feature.vehicles.resources.reservation_queued_title
 import org.vicpoo.gasolineproject.feature.vehicles.resources.reservation_reason_hint
 import org.vicpoo.gasolineproject.feature.vehicles.resources.reservation_reason_label
 import org.vicpoo.gasolineproject.feature.vehicles.resources.reservation_request_button
@@ -185,6 +187,17 @@ fun VehicleDetailScreen(
             type = ResultType.Success,
             title = stringResource(Res.string.reservation_success_title),
             message = stringResource(Res.string.reservation_success_message, vehicleName),
+            buttonText = stringResource(Res.string.action_understood),
+            onButtonClick = { onEvent(VehicleDetailEvent.RequestResultDismissed) },
+            onDismiss = { onEvent(VehicleDetailEvent.RequestResultDismissed) },
+        )
+    }
+    // Sin conexión: quedó en cola y se enviará sola
+    if (state.requestQueued) {
+        ResultDialog(
+            type = ResultType.Success,
+            title = stringResource(Res.string.reservation_queued_title),
+            message = stringResource(Res.string.reservation_queued_message, vehicleName),
             buttonText = stringResource(Res.string.action_understood),
             onButtonClick = { onEvent(VehicleDetailEvent.RequestResultDismissed) },
             onDismiss = { onEvent(VehicleDetailEvent.RequestResultDismissed) },

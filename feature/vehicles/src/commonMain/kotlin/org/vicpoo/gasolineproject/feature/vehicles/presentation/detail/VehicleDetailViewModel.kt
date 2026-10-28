@@ -1,6 +1,5 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.detail
 
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMode
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
@@ -18,11 +17,15 @@ import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.ValidationReason
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.rbac.Privileges
+import org.vicpoo.gasolineproject.feature.reservations.api.RequestOutcome
+import org.vicpoo.gasolineproject.feature.reservations.api.RequestedVehicle
 import org.vicpoo.gasolineproject.feature.reservations.api.VehicleRequester
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
+import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehiclePhoto
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleStatus
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.DeleteVehicleUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.ObserveVehicleUseCase
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMode
 
 /** Argumentos de la pantalla (se pasan con Koin parametersOf). */
 data class VehicleDetailArgs(
@@ -49,6 +52,8 @@ data class VehicleDetailUiState(
     val isSendingRequest: Boolean = false,
     val requestError: AppError? = null,
     val requestSent: Boolean = false,
+    /** Sin conexión: la solicitud quedó guardada y se enviará sola. */
+    val requestQueued: Boolean = false,
 )
 
 sealed interface VehicleDetailEvent {
@@ -116,7 +121,7 @@ class VehicleDetailViewModel(
             }
             VehicleDetailEvent.RequestDismissed -> local.update { it.copy(showRequestDialog = false) }
             VehicleDetailEvent.SendRequest -> sendRequest()
-            VehicleDetailEvent.RequestResultDismissed -> local.update { it.copy(requestError = null, requestSent = false) }
+            VehicleDetailEvent.RequestResultDismissed -> local.update { it.copy(requestError = null, requestSent = false, requestQueued = false) }
         }
     }
 
@@ -124,10 +129,22 @@ class VehicleDetailViewModel(
         if (local.value.isSendingRequest) return
         viewModelScope.launch {
             local.update { it.copy(isSendingRequest = true, requestError = null) }
-            val result = requestVehicle(state.value.vehicle?.serverId, local.value.requestReason)
+            val vehicle = state.value.vehicle
+            val requested = RequestedVehicle(
+                serverId = vehicle?.serverId,
+                title = vehicle?.brandAndModel,
+                plates = vehicle?.plates,
+                photoUrl = (vehicle?.photo as? VehiclePhoto.Remote)?.url,
+            )
+            val result = requestVehicle(requested, local.value.requestReason)
             local.update {
                 when (result) {
-                    is AppResult.Success -> it.copy(isSendingRequest = false, showRequestDialog = false, requestSent = true)
+                    is AppResult.Success -> it.copy(
+                        isSendingRequest = false,
+                        showRequestDialog = false,
+                        requestSent = result.data == RequestOutcome.SENT,
+                        requestQueued = result.data == RequestOutcome.QUEUED,
+                    )
                     is AppResult.Failure -> {
                         val error = result.error
                         if (error is AppError.Validation) {

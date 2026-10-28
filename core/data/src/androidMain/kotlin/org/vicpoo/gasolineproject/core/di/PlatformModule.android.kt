@@ -5,6 +5,8 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.location.AndroidLocationProvider
+import org.vicpoo.gasolineproject.core.network.AndroidConnectivityMonitor
+import org.vicpoo.gasolineproject.core.network.ConnectivityMonitor
 import org.vicpoo.gasolineproject.core.location.AndroidTrackingServiceController
 import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.location.TrackingServiceController
@@ -21,6 +23,7 @@ import org.vicpoo.gasolineproject.core.sync.WorkManagerSyncScheduler
 actual val platformModule: Module = module {
     single { AppDirectories(filesDir = androidContext().filesDir.absolutePath) }
     single<FileSystem> { FileSystem.SYSTEM }
+    single<ConnectivityMonitor> { AndroidConnectivityMonitor(androidContext()) }
     single {
         val directories = get<AppDirectories>()
         createDataStore { "${directories.filesDir}/$DATASTORE_FILE_NAME" }

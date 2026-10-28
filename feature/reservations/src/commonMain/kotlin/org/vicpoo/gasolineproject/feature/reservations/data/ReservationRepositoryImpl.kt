@@ -1,18 +1,28 @@
 package org.vicpoo.gasolineproject.feature.reservations.data
 
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.data.JsonFileCache
 import org.vicpoo.gasolineproject.core.network.safeApiCall
 import org.vicpoo.gasolineproject.core.session.SessionReader
+import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
+import org.vicpoo.gasolineproject.core.sync.SyncRejection
+import org.vicpoo.gasolineproject.feature.reservations.api.RequestOutcome
+import org.vicpoo.gasolineproject.feature.reservations.api.RequestedVehicle
 import org.vicpoo.gasolineproject.feature.reservations.data.local.CompanyReservationsSnapshot
 import org.vicpoo.gasolineproject.feature.reservations.data.local.MyReservationsSnapshot
+import org.vicpoo.gasolineproject.feature.reservations.data.local.OutgoingRequestEntity
+import org.vicpoo.gasolineproject.feature.reservations.data.local.ReservationOutbox
 import org.vicpoo.gasolineproject.feature.reservations.data.local.ReservationRequestEntity
 import org.vicpoo.gasolineproject.feature.reservations.data.remote.ApproveReservationRequestDto
 import org.vicpoo.gasolineproject.feature.reservations.data.remote.CreateReservationRequestDto
@@ -28,7 +38,8 @@ import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationStatus
 
 /**
  * Solicitudes de reserva:
- * - Enviar una solicitud con su motivo (requiere red).
+ * - Enviar una solicitud con su motivo. Sin red se guarda en [outbox] y se envía sola después
+ *   (ReservationOutboxSyncer); mientras tanto aparece en "Mis solicitudes" como "Por enviar".
  * - "Mis solicitudes" (campana) y "Solicitudes de la empresa" (llave) offline-first: se guardan
  *   en el teléfono con el solicitante y el carro (la API ya los manda en cada solicitud).
  * - Detalle, aceptar y rechazar requieren conexión; al decidir se vuelve a leer la lista porque
@@ -39,13 +50,18 @@ class ReservationRepositoryImpl(
     private val sessionReader: SessionReader,
     private val cache: JsonFileCache<MyReservationsSnapshot>,
     private val companyCache: JsonFileCache<CompanyReservationsSnapshot>,
+    private val outbox: ReservationOutbox,
+    private val clock: AppClock,
+    private val scheduler: BackgroundSyncScheduler,
 ) : ReservationRepository {
 
-    override suspend fun requestVehicle(vehicleServerId: String, reason: String): AppResult<Unit> {
+    @OptIn(ExperimentalUuidApi::class)
+    override suspend fun requestVehicle(vehicle: RequestedVehicle, reason: String): AppResult<RequestOutcome> {
+        val vehicleServerId = vehicle.serverId ?: return AppResult.Failure(AppError.NotFound)
         val session = sessionReader.current() ?: return AppResult.Failure(AppError.Unauthorized)
         val employeeId = session.employeeId ?: return AppResult.Failure(AppError.NoCompany)
         val companyId = session.companyId ?: return AppResult.Failure(AppError.NoCompany)
-        return safeApiCall {
+        val result = safeApiCall {
             api.create(
                 CreateReservationRequestDto(
                     empresaId = companyId,
@@ -55,15 +71,37 @@ class ReservationRepositoryImpl(
                 ),
             )
         }
+        return when (result) {
+            is AppResult.Success -> AppResult.Success(RequestOutcome.SENT)
+            is AppResult.Failure -> {
+                if (result.error != AppError.NoConnection) return result
+                // Sin red: se guarda y se envía sola en cuanto vuelva la conexión
+                outbox.enqueue(
+                    OutgoingRequestEntity(
+                        localId = "out-${Uuid.random()}",
+                        vehicleServerId = vehicleServerId,
+                        vehicleTitle = vehicle.title,
+                        plates = vehicle.plates,
+                        photoUrl = vehicle.photoUrl,
+                        reason = reason,
+                        createdAt = clock.nowLocalIso(),
+                    ),
+                )
+                scheduler.requestWhenOnline()
+                AppResult.Success(RequestOutcome.QUEUED)
+            }
+        }
     }
 
     // ---------------- Mis solicitudes (campana) ----------------
 
     override fun observeMine(): Flow<List<ReservationRequest>> =
-        cache.data.map { snapshot ->
-            snapshot.requests
-                .map { it.toDomain() }
-                .sortedByDescending { it.requestedAt.orEmpty() }
+        combine(cache.data, outbox.items) { snapshot, pending ->
+            // Las que esperan la red van primero: son las más recientes
+            pending.sortedByDescending { it.createdAt }.map { it.toDomain() } +
+                snapshot.requests
+                    .map { it.toDomain() }
+                    .sortedByDescending { it.requestedAt.orEmpty() }
         }
 
     override suspend fun refreshMine(): AppResult<Unit> {
@@ -163,6 +201,7 @@ class ReservationRepositoryImpl(
     override suspend fun clear() {
         cache.clear()
         companyCache.clear()
+        outbox.clear()
     }
 
     /**
@@ -221,6 +260,20 @@ private fun ReservationRequestEntity.toDomain() = ReservationRequest(
     requesterId = requesterId,
     requesterName = requesterName,
     requesterPhotoUrl = requesterPhotoUrl,
+)
+
+/** Solicitud en cola: "Por enviar", o "No se pudo enviar" (con el mensaje de la API) si la rechazó. */
+private fun OutgoingRequestEntity.toDomain() = ReservationRequest(
+    id = localId,
+    vehicleId = vehicleServerId,
+    vehicleTitle = vehicleTitle,
+    plates = plates,
+    photoUrl = photoUrl,
+    status = if (SyncRejection.isPermanent(errorCode)) ReservationStatus.SEND_FAILED else ReservationStatus.NOT_SENT,
+    requestedAt = createdAt,
+    resolvedAt = null,
+    resolutionReason = errorMessage,
+    requestReason = reason,
 )
 
 private fun ReservationDetailDto.toDomain(): ReservationDetail {

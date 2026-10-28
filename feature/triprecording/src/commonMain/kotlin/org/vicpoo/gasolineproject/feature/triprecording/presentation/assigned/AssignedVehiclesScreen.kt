@@ -88,7 +88,7 @@ fun AssignedVehiclesScreen(
 
             if (state.isOffline) {
                 Spacer(Modifier.height(dimens.spaceS))
-                OfflineBanner(stringResource(Res.string.assigned_offline))
+                OfflineBanner(stringResource(Res.string.assigned_offline), lastUpdatedAtMillis = state.lastUpdatedAtMillis)
             }
             state.error?.let {
                 Spacer(Modifier.height(dimens.spaceS))

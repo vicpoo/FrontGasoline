@@ -1,7 +1,5 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.company
 
-import org.vicpoo.gasolineproject.core.push.PushEvents
-import org.vicpoo.gasolineproject.core.push.PushType
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +10,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.data.LastRefreshStore
+import org.vicpoo.gasolineproject.core.network.ConnectivityMonitor
+import org.vicpoo.gasolineproject.core.network.reconnections
+import org.vicpoo.gasolineproject.core.push.PushEvents
+import org.vicpoo.gasolineproject.core.push.PushType
 import org.vicpoo.gasolineproject.feature.reservations.domain.ObserveCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.RefreshCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRequest
@@ -28,6 +31,8 @@ data class CompanyReservationsUiState(
     val isRefreshing: Boolean = false,
     val isOffline: Boolean = false,
     val error: AppError? = null,
+    /** Cuándo se trajo de la API la copia que se ve (para "Actualizado hace X"). */
+    val lastUpdatedAtMillis: Long? = null,
 )
 
 sealed interface CompanyReservationsEvent {
@@ -43,6 +48,9 @@ class CompanyReservationsViewModel(
     observeRequests: ObserveCompanyReservationsUseCase,
     private val refreshRequests: RefreshCompanyReservationsUseCase,
     pushEvents: PushEvents,
+    /** Se recarga sola al volver la red y marca "sin conexión" en cuanto se pierde. */
+    private val connectivity: ConnectivityMonitor,
+    private val lastRefresh: LastRefreshStore,
 ) : ViewModel() {
 
     private data class LoadState(
@@ -63,7 +71,13 @@ class CompanyReservationsViewModel(
             pushEvents.received.collect { if (it.type == PushType.NEW_REQUEST) refresh(initial = true) }
         }
         viewModelScope.launch {
-            combine(observeRequests(), loading, filter) { requests, load, selected ->
+            combine(
+                observeRequests(),
+                loading,
+                filter,
+                connectivity.isOnline,
+                lastRefresh.observe(REFRESH_KEY),
+            ) { requests, load, selected, online, lastUpdated ->
                 CompanyReservationsUiState(
                     requests = when (selected) {
                         CompanyReservationsFilter.PENDING -> requests.filter { it.status == ReservationStatus.PENDING }
@@ -73,12 +87,14 @@ class CompanyReservationsViewModel(
                     pendingCount = requests.count { it.status == ReservationStatus.PENDING },
                     isInitialLoading = !load.firstLoadDone && requests.isEmpty(),
                     isRefreshing = load.refreshing,
-                    isOffline = load.offline,
+                    isOffline = load.offline || !online,
                     error = load.error,
+                    lastUpdatedAtMillis = lastUpdated,
                 )
             }.collect { _state.value = it }
         }
         refresh(initial = true)
+        viewModelScope.launch { connectivity.reconnections().collect { refresh(initial = true) } }
     }
 
     fun onEvent(event: CompanyReservationsEvent) {
@@ -96,6 +112,7 @@ class CompanyReservationsViewModel(
         loading.update { it.copy(refreshing = !initial, error = null) }
         viewModelScope.launch {
             val failure = (refreshRequests() as? AppResult.Failure)?.error
+            if (failure == null) lastRefresh.markNow(REFRESH_KEY)
             loading.value = LoadState(
                 firstLoadDone = true,
                 refreshing = false,
@@ -103,5 +120,10 @@ class CompanyReservationsViewModel(
                 error = failure?.takeIf { it != AppError.NoConnection },
             )
         }
+    }
+
+    private companion object {
+        /** Llave de "Actualizado hace X" de esta lista. */
+        const val REFRESH_KEY = "reservations.company"
     }
 }

@@ -1,7 +1,15 @@
 package org.vicpoo.gasolineproject.feature.reservations.domain
 
 /** Estado de una solicitud de reserva (enum EstadoSolicitudReserva de APIGasoline). */
-enum class ReservationStatus { PENDING, APPROVED, REJECTED, CANCELLED, FINISHED, UNKNOWN }
+enum class ReservationStatus {
+    PENDING, APPROVED, REJECTED, CANCELLED, FINISHED, UNKNOWN,
+
+    /** Solo en el teléfono: se pidió sin red y espera a enviarse. */
+    NOT_SENT,
+
+    /** Solo en el teléfono: la API la rechazó al enviarla (el motivo va en resolutionReason). */
+    SEND_FAILED,
+}
 
 /**
  * Una solicitud de vehículo (tarjeta de "Solicitudes" y de la campana).

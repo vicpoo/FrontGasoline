@@ -87,7 +87,7 @@ fun TripHistoryScreen(
             ScreenHeader(title = stringResource(Res.string.trip_history_title))
             if (state.isOffline) {
                 Spacer(Modifier.height(dimens.spaceS))
-                OfflineBanner(stringResource(Res.string.trip_history_offline))
+                OfflineBanner(stringResource(Res.string.trip_history_offline), lastUpdatedAtMillis = state.lastUpdatedAtMillis)
             }
             state.error?.let {
                 Spacer(Modifier.height(dimens.spaceS))

@@ -5,6 +5,9 @@ import okio.FileSystem
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.core.location.IosLocationProvider
+import org.vicpoo.gasolineproject.core.network.ConnectivityMonitor
+import org.vicpoo.gasolineproject.core.network.IosConnectivityMonitor
+import org.vicpoo.gasolineproject.core.sync.SyncAllPendingUseCase
 import org.vicpoo.gasolineproject.core.location.IosTrackingServiceController
 import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.location.TrackingServiceController
@@ -24,6 +27,7 @@ import platform.Foundation.NSUserDomainMask
 actual val platformModule: Module = module {
     single { AppDirectories(filesDir = iosDocumentsPath()) }
     single<FileSystem> { FileSystem.SYSTEM }
+    single<ConnectivityMonitor> { IosConnectivityMonitor() }
     single {
         val directories = get<AppDirectories>()
         createDataStore { "${directories.filesDir}/$DATASTORE_FILE_NAME" }
@@ -32,7 +36,9 @@ actual val platformModule: Module = module {
     single<LocationProvider> { IosLocationProvider() }
     single<ImageCompressor> { IosImageCompressor() }
     single<TrackingServiceController> { IosTrackingServiceController() }
-    single<BackgroundSyncScheduler> { IosSyncScheduler() }
+    single<BackgroundSyncScheduler> {
+        IosSyncScheduler(appScope = get(), connectivity = get(), syncAll = { get<SyncAllPendingUseCase>() })
+    }
     single<PushTokenProvider> { IosPushTokenProvider() }
 }
 

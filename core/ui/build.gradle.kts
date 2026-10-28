@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 /*
  * :core:ui — sistema de diseño y piezas de Compose compartidas:
  * tema (colores, tipografía Poppins, imágenes), componentes, íconos, diseño adaptativo,
@@ -7,16 +5,10 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
  * Sus textos e imágenes viven en sus propios recursos (Res interno de este módulo).
  */
 plugins {
-    alias(libs.plugins.kotlinMultiplatform)
-    alias(libs.plugins.androidMultiplatformLibrary)
-    alias(libs.plugins.composeMultiplatform)
-    alias(libs.plugins.composeCompiler)
+    id("gasoline.kmp.compose")
 }
 
 kotlin {
-    iosArm64()
-    iosSimulatorArm64()
-
     androidLibrary {
         namespace = "org.vicpoo.gasolineproject.core.ui"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -25,13 +17,8 @@ kotlin {
         // Necesario para Compose Resources (fuentes, imágenes, textos) en AGP 8.x
         experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
 
+        // Pruebas en la JVM: ./gradlew <módulo>:testAndroidHostTest
         withHostTestBuilder {}
-
-        compilations.configureEach {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_11)
-            }
-        }
     }
 
     sourceSets {
@@ -64,7 +51,6 @@ kotlin {
 }
 
 compose.resources {
-    // Solo los archivos de este módulo usan su Res; las features tienen el suyo
     publicResClass = false
     generateResClass = always
     packageOfResClass = "org.vicpoo.gasolineproject.core.ui.resources"

@@ -20,6 +20,7 @@ import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.location.LocationFix
 import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.location.TrackingServiceController
+import org.vicpoo.gasolineproject.core.network.ConnectivityMonitor
 import org.vicpoo.gasolineproject.core.platform.AppDirectories
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
 import org.vicpoo.gasolineproject.core.push.PushTokenProvider
@@ -61,6 +62,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMod
 import org.vicpoo.gasolineproject.navigation.MainViewModel
 import org.vicpoo.gasolineproject.navigation.StartViewModel
 import org.vicpoo.gasolineproject.testing.FakeApiServer
+import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.RecordingSyncScheduler
 import java.nio.file.Files
 import kotlin.test.AfterTest
@@ -86,6 +88,7 @@ class KoinGraphTest {
     private val testPlatformModule = module {
         single { AppDirectories(filesDir = filesDir) }
         single<FileSystem> { FileSystem.SYSTEM }
+        single<ConnectivityMonitor> { FakeConnectivityMonitor() }
         single { createDataStore { "$filesDir/$DATASTORE_FILE_NAME" } }
         single<LocationProvider> { NoLocationProvider }
         single<ImageCompressor> { ImageCompressor { it } }
@@ -131,10 +134,11 @@ class KoinGraphTest {
             modules(testModules())
         }
         try {
-            // vehicles, triprecording y push. Si cambia el número, revisa que no se haya perdido un `bind`.
-            assertEquals(3, app.koin.getAll<PendingSyncTask>().size)
-            // push, reservations, tripRecording, trips y vehicles.
-            assertEquals(5, app.koin.getAll<LogoutListener>().size)
+            // vehicles, triprecording, push y la cola de solicitudes de reservas.
+            // Si cambia el número, revisa que no se haya perdido un `bind`.
+            assertEquals(4, app.koin.getAll<PendingSyncTask>().size)
+            // lastRefresh, push, reservations, tripRecording, trips y vehicles.
+            assertEquals(6, app.koin.getAll<LogoutListener>().size)
         } finally {
             app.close()
         }

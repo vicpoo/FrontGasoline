@@ -1,6 +1,8 @@
 rootProject.name = "GasolineProject"
 
 pluginManagement {
+    // Plugins de convención: gasoline.kmp.library, gasoline.kmp.compose, gasoline.kmp.feature
+    includeBuild("build-logic")
     repositories {
         google {
             mavenContent {

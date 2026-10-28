@@ -5,7 +5,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import org.koin.core.module.Module
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.core.data.DataStoreLastRefreshStore
+import org.vicpoo.gasolineproject.core.data.LastRefreshStore
+import org.vicpoo.gasolineproject.core.session.LogoutListener
 import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.common.SystemAppClock
@@ -45,6 +49,13 @@ val coreModule = module {
     }
     single { AppScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
     single<AppClock> { SystemAppClock() }
+
+    // "Actualizado hace X" de cada lista; se borra al cerrar sesión
+    single<LastRefreshStore> { DataStoreLastRefreshStore(dataStore = get(), clock = get()) }
+    single<LogoutListener>(named("lastRefresh")) {
+        val store = get<LastRefreshStore>()
+        LogoutListener { store.clear() }
+    }
 }
 
 val sessionModule = module {
@@ -81,6 +92,6 @@ val syncModule = module {
     // Todas las features registradas con `bind PendingSyncTask::class`
     factory { SyncAllPendingUseCase(getAll<PendingSyncTask>()) }
     single(createdAtStart = true) {
-        BackgroundSyncCoordinator(sessionReader = get(), scheduler = get(), appScope = get())
+        BackgroundSyncCoordinator(sessionReader = get(), scheduler = get(), connectivity = get(), appScope = get())
     }
 }
