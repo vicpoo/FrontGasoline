@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -48,6 +49,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.core.location.rememberLocationPermission
+import org.vicpoo.gasolineproject.core.ui.adaptive.LocalWindowWidth
+import org.vicpoo.gasolineproject.core.ui.adaptive.WindowWidth
+import org.vicpoo.gasolineproject.core.ui.adaptive.isLandscapePhone
 import org.vicpoo.gasolineproject.core.ui.components.AppBackButton
 import org.vicpoo.gasolineproject.core.ui.components.ConfirmDialog
 import org.vicpoo.gasolineproject.core.ui.components.EmptyView
@@ -132,10 +136,28 @@ fun ActiveTripScreen(
 ) {
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
-    val session = state.session
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.background)) {
-        if (state.hasTrip) {
+        if (state.hasTrip && (isLandscapePhone || LocalWindowWidth.current == WindowWidth.Expanded)) {
+            // Teléfono acostado o tablet: la hoja inferior taparía casi todo el mapa.
+            // Mapa a la izquierda y panel fijo con los datos, botones y recargas a la derecha.
+            Row(Modifier.fillMaxSize()) {
+                TripMap(state = state, onBack = onBack, onRequestPermission = onRequestPermission, modifier = Modifier.weight(1f))
+                Surface(
+                    color = colors.background,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.width(SIDE_PANEL_WIDTH).fillMaxHeight(),
+                ) {
+                    TripSheet(
+                        state = state,
+                        onEvent = onEvent,
+                        onAddFuel = onAddFuel,
+                        onEditFuel = onEditFuel,
+                        modifier = Modifier.statusBarsPadding().padding(top = dimens.spaceM),
+                    )
+                }
+            }
+        } else if (state.hasTrip) {
             // Hoja inferior de Material 3: se desliza hacia abajo para ver más mapa (queda visible
             // la duración, distancia y fecha) y hacia arriba para ver los botones y las recargas.
             val scaffoldState = rememberBottomSheetScaffoldState(
@@ -164,27 +186,7 @@ fun ActiveTripScreen(
                 },
             ) { _ ->
                 // El mapa ocupa toda la pantalla (la hoja va encima); por eso no se usa el padding
-                Box(Modifier.fillMaxSize()) {
-                    LiveRouteMap(route = session.route, current = session.current, modifier = Modifier.fillMaxSize())
-
-                    // Parte de arriba: regresar + aviso del GPS
-                    Row(
-                        modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(dimens.spaceM),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Surface(shape = CircleShape, color = colors.background, shadowElevation = 2.dp) {
-                            AppBackButton(onClick = onBack)
-                        }
-                        Spacer(Modifier.width(dimens.spaceS))
-                        GpsBanner(
-                            gpsActive = session.gpsActive,
-                            isPaused = state.isPaused,
-                            hasPermission = session.hasLocationPermission,
-                            onRequestPermission = onRequestPermission,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
+                TripMap(state = state, onBack = onBack, onRequestPermission = onRequestPermission, modifier = Modifier.fillMaxSize())
             }
         } else if (state.isReady) {
             Column(Modifier.fillMaxSize().safeDrawingPadding().padding(dimens.screenPadding)) {
@@ -226,6 +228,43 @@ fun ActiveTripScreen(
             onDismiss = { onEvent(ActiveTripEvent.DeleteDismissed) },
             isLoading = state.isDeleting,
         )
+    }
+}
+
+/** Ancho del panel de controles cuando el mapa va a la izquierda (teléfono acostado / tablet). */
+private val SIDE_PANEL_WIDTH = 380.dp
+
+/** Mapa con la ruta + arriba el botón de regresar y el aviso del GPS. */
+@Composable
+private fun TripMap(
+    state: ActiveTripUiState,
+    onBack: () -> Unit,
+    onRequestPermission: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = AppTheme.colors
+    val dimens = AppTheme.dimens
+    val session = state.session
+    Box(modifier.fillMaxHeight()) {
+        LiveRouteMap(route = session.route, current = session.current, modifier = Modifier.fillMaxSize())
+
+        // Parte de arriba: regresar + aviso del GPS
+        Row(
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(dimens.spaceM),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Surface(shape = CircleShape, color = colors.background, shadowElevation = 2.dp) {
+                AppBackButton(onClick = onBack)
+            }
+            Spacer(Modifier.width(dimens.spaceS))
+            GpsBanner(
+                gpsActive = session.gpsActive,
+                isPaused = state.isPaused,
+                hasPermission = session.hasLocationPermission,
+                onRequestPermission = onRequestPermission,
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 

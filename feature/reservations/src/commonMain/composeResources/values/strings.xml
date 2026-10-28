@@ -56,4 +56,5 @@
     <string name="cd_close">Cerrar</string>
     <string name="requests_status_not_sent">Por enviar (sin conexión)</string>
     <string name="requests_status_send_failed">No se pudo enviar</string>
+    <string name="requests_select_hint">Elige una solicitud para ver su detalle y aceptarla o rechazarla.</string>
 </resources>

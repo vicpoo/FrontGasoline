@@ -1,17 +1,26 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
+import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.navigation.privilegedComposable
 import org.vicpoo.gasolineproject.core.rbac.AppAccess
+import org.vicpoo.gasolineproject.core.ui.adaptive.ListDetailLayout
+import org.vicpoo.gasolineproject.core.ui.adaptive.showsListAndDetail
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.detail.VehicleDetailRoute
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.form.VehicleFormRoute
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehicleListRoute
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMode
+import org.vicpoo.gasolineproject.feature.vehicles.resources.Res
+import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_select_hint
 
 // ======================= Pestaña Inicio (casa): carros para solicitar =======================
 
@@ -44,11 +53,36 @@ fun NavGraphBuilder.catalogGraph(
     navigation<CatalogGraph>(startDestination = CatalogDestination.List) {
 
         privilegedComposable<CatalogDestination.List>(AppAccess.VEHICLE_LIST) {
-            VehicleListRoute(
-                mode = VehiclesMode.CATALOG,
-                onVehicleClick = { id -> navController.navigate(CatalogDestination.Detail(id)) },
-                onAddVehicle = {},
-                topEndAction = topEndAction,
+            // Tablet horizontal: lista y detalle lado a lado; teléfono: se navega al detalle
+            var selected by rememberSaveable { mutableStateOf<String?>(null) }
+            val twoPanes = showsListAndDetail
+            ListDetailLayout(
+                selectedId = selected,
+                emptyDetailText = stringResource(Res.string.vehicle_select_hint),
+                detailAccess = AppAccess.VEHICLE_DETAIL,
+                onOpenSinglePane = { id ->
+                    selected = null
+                    navController.navigate(CatalogDestination.Detail(id))
+                },
+                onCloseDetail = { selected = null },
+                list = {
+                    VehicleListRoute(
+                        mode = VehiclesMode.CATALOG,
+                        onVehicleClick = { id ->
+                            if (twoPanes) selected = id else navController.navigate(CatalogDestination.Detail(id))
+                        },
+                        onAddVehicle = {},
+                        topEndAction = topEndAction,
+                    )
+                },
+                detail = { id ->
+                    VehicleDetailRoute(
+                        vehicleId = id,
+                        mode = VehiclesMode.CATALOG,
+                        onBack = { selected = null },
+                        onEdit = {},
+                    )
+                },
             )
         }
 
@@ -96,10 +130,36 @@ fun NavGraphBuilder.vehiclesGraph(navController: NavHostController) {
     navigation<VehiclesGraph>(startDestination = VehiclesDestination.List) {
 
         privilegedComposable<VehiclesDestination.List>(AppAccess.VEHICLE_LIST) {
-            VehicleListRoute(
-                mode = VehiclesMode.FLEET,
-                onVehicleClick = { id -> navController.navigate(VehiclesDestination.Detail(id)) },
-                onAddVehicle = { navController.navigate(VehiclesDestination.Form()) },
+            // Tablet horizontal: lista y detalle lado a lado; teléfono: se navega al detalle
+            var selected by rememberSaveable { mutableStateOf<String?>(null) }
+            val twoPanes = showsListAndDetail
+            ListDetailLayout(
+                selectedId = selected,
+                emptyDetailText = stringResource(Res.string.vehicle_select_hint),
+                detailAccess = AppAccess.VEHICLE_DETAIL,
+                onOpenSinglePane = { id ->
+                    selected = null
+                    navController.navigate(VehiclesDestination.Detail(id))
+                },
+                onCloseDetail = { selected = null },
+                list = {
+                    VehicleListRoute(
+                        mode = VehiclesMode.FLEET,
+                        onVehicleClick = { id ->
+                            if (twoPanes) selected = id else navController.navigate(VehiclesDestination.Detail(id))
+                        },
+                        onAddVehicle = { navController.navigate(VehiclesDestination.Form()) },
+                    )
+                },
+                detail = { id ->
+                    VehicleDetailRoute(
+                        vehicleId = id,
+                        mode = VehiclesMode.FLEET,
+                        // Al eliminarlo (o cerrar) se limpia el panel
+                        onBack = { selected = null },
+                        onEdit = { vehicleId -> navController.navigate(VehiclesDestination.Form(vehicleId)) },
+                    )
+                },
             )
         }
 
