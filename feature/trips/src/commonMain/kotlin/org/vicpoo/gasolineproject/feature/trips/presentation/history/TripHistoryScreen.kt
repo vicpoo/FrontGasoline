@@ -13,15 +13,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +71,12 @@ fun TripHistoryRoute(
         viewModel.refreshSilently()
         onPauseOrDispose { }
     }
-    TripHistoryScreen(state = state, onRefresh = viewModel::refresh, onTripClick = onTripClick)
+    TripHistoryScreen(
+        state = state,
+        onRefresh = viewModel::refresh,
+        onLoadMore = viewModel::loadMore,
+        onTripClick = onTripClick,
+    )
 }
 
 /** Figma: "Historial" — tarjetas con operador, fecha, km, duración, registros y mapa. */
@@ -71,9 +85,24 @@ fun TripHistoryRoute(
 fun TripHistoryScreen(
     state: TripHistoryUiState,
     onRefresh: () -> Unit,
+    onLoadMore: () -> Unit,
     onTripClick: (String) -> Unit,
 ) {
     val dimens = AppTheme.dimens
+    val gridState = rememberLazyGridState()
+    // Al llegar al final de lo que se ve, se piden los 4 siguientes
+    val currentOnLoadMore by rememberUpdatedState(onLoadMore)
+    LaunchedEffect(gridState, state.hasMore) {
+        if (!state.hasMore) return@LaunchedEffect
+        snapshotFlow {
+            val info = gridState.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull()?.index ?: -1
+            info.totalItemsCount > 0 && last >= info.totalItemsCount - 2
+        }
+            .distinctUntilChanged()
+            .filter { it }
+            .collect { currentOnLoadMore() }
+    }
     Box(
         modifier = Modifier.fillMaxSize().background(AppTheme.colors.background).statusBarsPadding(),
         contentAlignment = Alignment.TopCenter,
@@ -104,6 +133,7 @@ fun TripHistoryScreen(
                     state.isInitialLoading -> LoadingView()
                     state.trips.isEmpty() -> EmptyView(stringResource(Res.string.trip_history_empty))
                     else -> LazyVerticalGrid(
+                        state = gridState,
                         columns = GridCells.Adaptive(minSize = 320.dp),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = dimens.spaceL),
@@ -112,6 +142,18 @@ fun TripHistoryScreen(
                     ) {
                         items(state.trips, key = { it.id }) { trip ->
                             TripCard(trip = trip, onClick = { onTripClick(trip.id) })
+                        }
+                        // Indicador mientras faltan viajes por mostrar
+                        if (state.hasMore) {
+                            item(key = "loading_more", span = { GridItemSpan(maxLineSpan) }) {
+                                Box(Modifier.fillMaxWidth().padding(vertical = dimens.spaceM), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        color = AppTheme.colors.primary,
+                                        strokeWidth = 3.dp,
+                                    )
+                                }
+                            }
                         }
                     }
                 }

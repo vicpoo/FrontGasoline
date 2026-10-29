@@ -21,6 +21,7 @@ import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.location.TrackingServiceController
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.core.session.SessionReader
+import org.vicpoo.gasolineproject.core.sync.SyncRejection
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.PauseEntity
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.TrackPointEntity
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.TripEntity
@@ -39,8 +40,8 @@ import kotlin.uuid.Uuid
 /**
  * Después de guardar "Registrar Viaje": sincroniza y le dice al usuario qué pasó.
  * - Enviado: la API ya lo tiene (o solo falta la foto, que se sube sola después).
- * - Guardado sin red: se enviará solo cuando vuelva la conexión.
- * - Rechazado: la API no lo aceptó (ej. kilometraje menor al registrado), con su mensaje.
+ * - Guardado en el teléfono: sin red o el servidor no respondió; se enviará solo después.
+ * - Rechazado: la API no lo aceptó (4xx, ej. kilometraje menor al registrado), con su mensaje.
  */
 internal class FinishSendReporter(
     private val store: TripRecordingLocalStore,
@@ -51,9 +52,17 @@ internal class FinishSendReporter(
         val trip = store.current().trips.firstOrNull { it.localId == localId }
         return when {
             trip == null -> SendOutcome.Sent // ya se envió todo y se borró del teléfono
-            trip.syncErrorMessage != null -> SendOutcome.Rejected(trip.syncErrorMessage)
             trip.closedOnServer -> SendOutcome.Sent // falta solo la foto: se sube sola después
-            result is AppResult.Failure && result.error != AppError.NoConnection -> SendOutcome.Rejected(null)
+            // Solo un rechazo DEFINITIVO (4xx: el dato está mal) regresa al usuario a corregir
+            trip.syncErrorMessage != null && SyncRejection.isPermanent(trip.syncErrorCode) ->
+                SendOutcome.Rejected(trip.syncErrorMessage)
+            // Sin internet: quedó guardado y se envía solo al volver la red
+            result is AppResult.Failure && result.error == AppError.NoConnection -> SendOutcome.SavedOffline
+            // Hay internet pero el servidor falló (5xx, respuesta ilegible...): también quedó guardado,
+            // pero NO se le dice al usuario que no tiene internet
+            trip.syncErrorMessage != null || result is AppResult.Failure ->
+                SendOutcome.SavedServerError(trip.syncErrorMessage)
+            // Todo se mandó menos el cierre (ej. sesión vencida): se termina en segundo plano
             else -> SendOutcome.SavedOffline
         }
     }

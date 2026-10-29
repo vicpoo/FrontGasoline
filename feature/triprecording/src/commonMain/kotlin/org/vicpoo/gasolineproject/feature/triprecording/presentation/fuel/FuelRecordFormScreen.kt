@@ -261,7 +261,7 @@ private fun SaveResultDialog(
             onDismiss = close,
         )
         // Sin red: quedó guardado; "Reintentar" vuelve a intentar y cerrar el diálogo regresa al viaje
-        SendOutcome.SavedOffline -> ResultDialog(
+        SendOutcome.SavedOffline, is SendOutcome.SavedServerError -> ResultDialog(
             type = ResultType.Error,
             title = stringResource(Res.string.fuel_error_title),
             message = stringResource(Res.string.fuel_error_message),

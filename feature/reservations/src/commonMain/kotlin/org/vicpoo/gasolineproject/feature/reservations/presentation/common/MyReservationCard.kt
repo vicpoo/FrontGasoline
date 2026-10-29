@@ -120,7 +120,7 @@ fun MyReservationCard(request: ReservationRequest, onClick: (() -> Unit)? = null
 }
 
 /** Qué título lleva la respuesta según el estado (null = no se muestra). */
-private fun resolutionTitle(status: ReservationStatus): StringResource? = when (status) {
+internal fun resolutionTitle(status: ReservationStatus): StringResource? = when (status) {
     ReservationStatus.REJECTED -> Res.string.requests_rejection_title
     ReservationStatus.CANCELLED -> Res.string.requests_cancellation_title
     ReservationStatus.SEND_FAILED -> Res.string.requests_send_failed_title
@@ -130,7 +130,7 @@ private fun resolutionTitle(status: ReservationStatus): StringResource? = when (
 
 /** Placas en una etiqueta gris (como los labels de la guía). */
 @Composable
-private fun PlatesTag(plates: String) {
+internal fun PlatesTag(plates: String) {
     Text(
         text = plates,
         style = AppTheme.typography.caption.copy(fontWeight = FontWeight.Medium, letterSpacing = 1.sp),
@@ -175,7 +175,7 @@ fun Overline(text: String, modifier: Modifier = Modifier) {
 
 /** Recuadro con la respuesta (rojo con advertencia si la rechazaron; azul si es una nota de aprobación). */
 @Composable
-private fun ResolutionBox(title: String, message: String, tone: Color, showWarning: Boolean) {
+internal fun ResolutionBox(title: String, message: String, tone: Color, showWarning: Boolean) {
     val dimens = AppTheme.dimens
     val background = tone.copy(alpha = if (AppTheme.colors.isDark) 0.18f else 0.07f)
     Surface(

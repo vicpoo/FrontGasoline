@@ -31,6 +31,9 @@
     <string name="request_detail_resolved_at">Fecha de respuesta</string>
     <string name="request_detail_resolved_by">Resolvió</string>
     <string name="request_detail_title">Detalle de la solicitud</string>
+    <string name="request_detail_requester">Solicitante</string>
+    <string name="request_detail_license_attached">Adjunta</string>
+    <string name="request_detail_license_none">Sin licencia</string>
     <string name="request_detail_vehicle">Vehículo</string>
     <string name="request_detail_view_license">Ver licencia</string>
     <string name="request_detail_year">Año</string>

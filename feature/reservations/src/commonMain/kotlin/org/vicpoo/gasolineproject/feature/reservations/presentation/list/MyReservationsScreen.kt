@@ -49,6 +49,7 @@ import org.vicpoo.gasolineproject.core.ui.components.OfflineBanner
 import org.vicpoo.gasolineproject.core.ui.components.TitleText
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
+import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationStatus
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.MyReservationCard
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.Overline
 import org.vicpoo.gasolineproject.feature.reservations.resources.Res
@@ -79,6 +80,7 @@ private const val AUTO_REFRESH_MS = 30_000L
 @Composable
 fun MyReservationsRoute(
     onBack: () -> Unit,
+    onRequestClick: (String) -> Unit,
     viewModel: MyReservationsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -92,7 +94,7 @@ fun MyReservationsRoute(
             }
         }
     }
-    MyReservationsScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack)
+    MyReservationsScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, onRequestClick = onRequestClick)
 }
 
 /**
@@ -105,6 +107,7 @@ fun MyReservationsScreen(
     state: MyReservationsUiState,
     onEvent: (MyReservationsEvent) -> Unit,
     onBack: () -> Unit,
+    onRequestClick: (String) -> Unit,
 ) {
     val dimens = AppTheme.dimens
     Box(
@@ -158,7 +161,11 @@ fun MyReservationsScreen(
                             item(key = "month_${group.key}", span = { GridItemSpan(maxLineSpan) }) {
                                 MonthHeader(group, Modifier.padding(top = if (index == 0) 0.dp else dimens.spaceS))
                             }
-                            items(group.requests, key = { it.id }) { request -> MyReservationCard(request) }
+                            items(group.requests, key = { it.id }) { request ->
+                                // Las que aún no llegan a la API (sin red / no se pudieron enviar) no tienen detalle
+                                val sent = request.status != ReservationStatus.NOT_SENT && request.status != ReservationStatus.SEND_FAILED
+                                MyReservationCard(request, onClick = if (sent) ({ onRequestClick(request.id) }) else null)
+                            }
                         }
                     }
                 }

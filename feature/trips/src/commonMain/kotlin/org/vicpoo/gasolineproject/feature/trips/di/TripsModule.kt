@@ -12,6 +12,7 @@ import org.vicpoo.gasolineproject.feature.trips.data.TripsRepositoryImpl
 import org.vicpoo.gasolineproject.feature.trips.data.TripsSnapshot
 import org.vicpoo.gasolineproject.feature.trips.data.remote.KtorTripsApi
 import org.vicpoo.gasolineproject.feature.trips.data.remote.TripsApi
+import org.vicpoo.gasolineproject.feature.trips.domain.LoadTripDetailsUseCase
 import org.vicpoo.gasolineproject.feature.trips.domain.ObserveTripUseCase
 import org.vicpoo.gasolineproject.feature.trips.domain.ObserveTripsUseCase
 import org.vicpoo.gasolineproject.feature.trips.domain.RefreshTripsUseCase
@@ -54,6 +55,7 @@ val tripsModule = module {
     factoryOf(::ObserveTripsUseCase)
     factoryOf(::ObserveTripUseCase)
     factoryOf(::RefreshTripsUseCase)
+    factoryOf(::LoadTripDetailsUseCase)
 
     // Presentation
     viewModelOf(::TripHistoryViewModel)

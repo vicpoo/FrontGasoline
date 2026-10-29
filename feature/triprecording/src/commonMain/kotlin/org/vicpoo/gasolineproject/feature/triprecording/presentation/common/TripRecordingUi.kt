@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -56,9 +57,13 @@ fun AssignedVehicleCard(
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
     AppCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
-        Column(Modifier.fillMaxWidth()) {
+        // Margen interno parejo: el encabezado queda centrado en la tarjeta (antes iba pegado arriba)
+        Column(Modifier.fillMaxWidth().padding(dimens.spaceS)) {
             // Encabezado
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = dimens.spaceXs),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 // Igual que la tarjeta de Vehículos: carro en un círculo del color principal
                 Box(
                     modifier = Modifier
@@ -91,7 +96,7 @@ fun AssignedVehicleCard(
 
             // El botón abajo, a todo lo ancho de la tarjeta
             if (action != null) {
-                Spacer(Modifier.height(dimens.spaceL))
+                Spacer(Modifier.height(dimens.spaceM))
                 Box(Modifier.fillMaxWidth()) { action() }
             }
         }

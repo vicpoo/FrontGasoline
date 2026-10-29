@@ -1,26 +1,37 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.detail
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,7 +46,6 @@ import org.vicpoo.gasolineproject.core.ui.components.AppImage
 import org.vicpoo.gasolineproject.core.ui.components.AppScreen
 import org.vicpoo.gasolineproject.core.ui.components.AppTextButton
 import org.vicpoo.gasolineproject.core.ui.components.AppTextField
-import org.vicpoo.gasolineproject.core.ui.components.BodyText
 import org.vicpoo.gasolineproject.core.ui.components.ConfirmDialog
 import org.vicpoo.gasolineproject.core.ui.components.ErrorView
 import org.vicpoo.gasolineproject.core.ui.components.ImageViewerDialog
@@ -46,15 +56,19 @@ import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
 import org.vicpoo.gasolineproject.core.ui.components.ResultDialog
 import org.vicpoo.gasolineproject.core.ui.components.ResultType
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
-import org.vicpoo.gasolineproject.core.ui.components.SubtitleText
-import org.vicpoo.gasolineproject.core.ui.components.TitleText
 import org.vicpoo.gasolineproject.core.ui.components.UserAvatar
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
-import org.vicpoo.gasolineproject.feature.reservations.presentation.common.StatusBadge
+import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRequest
+import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationStatus
+import org.vicpoo.gasolineproject.feature.reservations.presentation.common.Overline
+import org.vicpoo.gasolineproject.feature.reservations.presentation.common.PlatesTag
+import org.vicpoo.gasolineproject.feature.reservations.presentation.common.ResolutionBox
+import org.vicpoo.gasolineproject.feature.reservations.presentation.common.StatusDotBadge
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDate
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDateTime
+import org.vicpoo.gasolineproject.feature.reservations.presentation.common.resolutionTitle
 import org.vicpoo.gasolineproject.feature.reservations.resources.Res
 import org.vicpoo.gasolineproject.feature.reservations.resources.action_cancel
 import org.vicpoo.gasolineproject.feature.reservations.resources.action_no
@@ -73,15 +87,15 @@ import org.vicpoo.gasolineproject.feature.reservations.resources.company_request
 import org.vicpoo.gasolineproject.feature.reservations.resources.company_requests_rejected_title
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_color
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license
+import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_attached
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_missing
+import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_none
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_uploaded
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_mileage
-import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_no_reason
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_offline
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_plates
-import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_reason
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_requested_at
-import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_resolution_reason
+import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_requester
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_resolved_at
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_resolved_by
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_title
@@ -95,6 +109,8 @@ import org.vicpoo.gasolineproject.feature.reservations.resources.requests_unknow
 fun ReservationDetailRoute(
     reservationId: String,
     onBack: () -> Unit,
+    /** false desde "Mis solicitudes": solo se consulta (sin Aceptar / Rechazar). */
+    allowDecision: Boolean = true,
     viewModel: ReservationDetailViewModel = koinViewModel(key = "reservation-detail-$reservationId") {
         parametersOf(reservationId)
     },
@@ -106,26 +122,42 @@ fun ReservationDetailRoute(
         if (state.decision != null) onBack()
     }
 
-    ReservationDetailScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack)
+    ReservationDetailScreen(state = state, onEvent = viewModel::onEvent, onBack = onBack, allowDecision = allowDecision)
 }
 
-/** Detalle de la solicitud: quién la pide (foto y licencia), el motivo, el carro y Aceptar / Rechazar. */
+/**
+ * Detalle de la solicitud, en tarjetas:
+ * 1. Solicitante (foto, nombre y estado) y cuándo la pidió.
+ * 2. Motivo del rechazo / cancelación (si aplica).
+ * 3. Vehículo (foto y datos).
+ * 4. Licencia de conducir del solicitante.
+ * 5. Quién la resolvió y cuándo.
+ * Abajo, Aceptar / Rechazar (solo pendientes, con privilegio y si [allowDecision]).
+ */
 @Composable
 fun ReservationDetailScreen(
     state: ReservationDetailUiState,
     onEvent: (ReservationDetailEvent) -> Unit,
     onBack: () -> Unit,
+    allowDecision: Boolean = true,
 ) {
     val dimens = AppTheme.dimens
     val request = state.current
 
     AppScreen(maxContentWidth = dimens.maxContentWidth) {
+        // Flecha y título en una sola línea
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppBackButton(onClick = onBack)
             Spacer(Modifier.width(dimens.spaceM))
-            TitleText(stringResource(Res.string.request_detail_title))
+            Text(
+                text = stringResource(Res.string.request_detail_title),
+                style = AppTheme.typography.title,
+                color = AppTheme.colors.title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        Spacer(Modifier.height(dimens.spaceM))
+        Spacer(Modifier.height(dimens.spaceL))
 
         if (state.isOffline) {
             OfflineBanner(stringResource(Res.string.request_detail_offline))
@@ -138,30 +170,27 @@ fun ReservationDetailScreen(
                 message = state.error?.asText().orEmpty(),
                 onRetry = { onEvent(ReservationDetailEvent.Retry) },
             )
-            else -> {
-                RequesterSection(state)
-                Spacer(Modifier.height(dimens.spaceL))
+            else -> Column(verticalArrangement = Arrangement.spacedBy(dimens.spaceM)) {
+                RequesterCard(request)
 
-                // Motivo de la solicitud
-                SubtitleText(stringResource(Res.string.request_detail_reason))
-                Spacer(Modifier.height(dimens.spaceXs))
-                BodyText(request.requestReason?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.request_detail_no_reason))
-                Spacer(Modifier.height(dimens.spaceS))
-                formatDateTime(request.requestedAt)?.let {
-                    InfoRow(stringResource(Res.string.request_detail_requested_at), it, showDivider = false)
+                // Si la rechazaron o cancelaron, el motivo va justo debajo
+                request.resolutionReason?.takeIf { it.isNotBlank() }?.let { answer ->
+                    resolutionTitle(request.status)?.let { titleRes ->
+                        ResolutionBox(
+                            title = stringResource(titleRes),
+                            message = answer,
+                            tone = if (request.status == ReservationStatus.APPROVED) AppTheme.colors.primary else AppTheme.colors.danger,
+                            showWarning = request.status != ReservationStatus.APPROVED,
+                        )
+                    }
                 }
-                Spacer(Modifier.height(dimens.spaceL))
 
-                LicenseSection(state, onEvent)
-                Spacer(Modifier.height(dimens.spaceL))
+                VehicleCard(state)
+                LicenseCard(state, onEvent)
+                ResolverCard(state)
 
-                VehicleSection(state)
-                Spacer(Modifier.height(dimens.spaceL))
-
-                ResolutionSection(state)
-
-                if (state.canDecide) {
-                    Spacer(Modifier.height(dimens.spaceL))
+                if (allowDecision && state.canDecide) {
+                    Spacer(Modifier.height(dimens.spaceS))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
                         if (state.canReject) {
                             AppButton(
@@ -181,7 +210,7 @@ fun ReservationDetailScreen(
                         }
                     }
                 }
-                Spacer(Modifier.height(dimens.spaceXl))
+                Spacer(Modifier.height(dimens.spaceL))
             }
         }
     }
@@ -189,98 +218,249 @@ fun ReservationDetailScreen(
     Dialogs(state = state, onEvent = onEvent)
 }
 
-/** Arriba y centrado: foto grande, nombre y una etiqueta chica con el estado. */
+// ---------------- 1. Solicitante ----------------
+
+/** Foto con insignia del estado, "SOLICITANTE", nombre y estado; abajo la fecha en que la pidió. */
 @Composable
-private fun RequesterSection(state: ReservationDetailUiState) {
-    val request = state.current ?: return
+private fun RequesterCard(request: ReservationRequest) {
+    val dimens = AppTheme.dimens
     val name = request.requesterName?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.requests_unknown_requester)
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        UserAvatar(photoUrl = request.requesterPhotoUrl, size = 96.dp, contentDescription = name)
-        Spacer(Modifier.height(AppTheme.dimens.spaceM))
-        SubtitleText(name, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(AppTheme.dimens.spaceS))
-        StatusBadge(request.status)
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(dimens.spaceS)) {
+            PersonRow(
+                photoUrl = request.requesterPhotoUrl,
+                label = stringResource(Res.string.request_detail_requester),
+                name = name,
+                badge = statusIcon(request.status),
+            ) {
+                Spacer(Modifier.height(dimens.spaceXs))
+                StatusDotBadge(request.status)
+            }
+            formatDateTime(request.requestedAt)?.let {
+                CardDivider()
+                DateRow(stringResource(Res.string.request_detail_requested_at), it)
+            }
+        }
     }
 }
 
-/** Licencia del solicitante (el confirmador la revisa antes de prestar el carro). */
+/** Insignia sobre la foto: ✓ aprobada, ✕ rechazada / cancelada (null = sin insignia). */
 @Composable
-private fun LicenseSection(state: ReservationDetailUiState, onEvent: (ReservationDetailEvent) -> Unit) {
-    val dimens = AppTheme.dimens
-    val detail = state.detail
-    SubtitleText(stringResource(Res.string.request_detail_license))
-    Spacer(Modifier.height(dimens.spaceXs))
-    when {
-        detail == null -> if (state.isLoading) LoadingView(Modifier.height(80.dp)) else SecondaryText("—")
-        !detail.requesterHasLicense -> SecondaryText(stringResource(Res.string.request_detail_license_missing))
-        else -> {
-            AppCard(modifier = Modifier.fillMaxWidth(), onClick = { onEvent(ReservationDetailEvent.LicenseClicked) }) {
-                Column(Modifier.fillMaxWidth()) {
-                    AppImage(
-                        model = detail.requesterLicenseUrl,
-                        contentDescription = stringResource(Res.string.request_detail_license),
-                        contentScale = ContentScale.Crop,
-                        fallbackIcon = AppIcons.FileDocument,
-                        modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(dimens.radius)),
-                    )
-                    Spacer(Modifier.height(dimens.spaceXs))
-                    formatDate(detail.requesterLicenseUploadedAt)?.let {
-                        SecondaryText(stringResource(Res.string.request_detail_license_uploaded, it))
+private fun statusIcon(status: ReservationStatus): Pair<ImageVector, Color>? {
+    val colors = AppTheme.colors
+    return when (status) {
+        ReservationStatus.APPROVED, ReservationStatus.FINISHED -> AppIcons.BadgeCheck to colors.primary
+        ReservationStatus.REJECTED, ReservationStatus.CANCELLED -> AppIcons.BadgeX to colors.danger
+        else -> null
+    }
+}
+
+/** Foto redonda (con insignia opcional) + etiqueta en mayúsculas + nombre en una línea. */
+@Composable
+private fun PersonRow(
+    photoUrl: String?,
+    label: String,
+    name: String,
+    badge: Pair<ImageVector, Color>? = null,
+    below: @Composable () -> Unit = {},
+) {
+    val colors = AppTheme.colors
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box {
+            UserAvatar(photoUrl = photoUrl, size = 64.dp, contentDescription = name)
+            badge?.let { (icon, tint) ->
+                Surface(
+                    shape = CircleShape,
+                    color = colors.background,
+                    modifier = Modifier.align(Alignment.BottomEnd).size(22.dp),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
                     }
-                    AppTextButton(
-                        text = stringResource(Res.string.request_detail_view_license),
-                        onClick = { onEvent(ReservationDetailEvent.LicenseClicked) },
-                    )
+                }
+            }
+        }
+        Spacer(Modifier.width(AppTheme.dimens.spaceM))
+        Column(Modifier.weight(1f)) {
+            Overline(label)
+            Text(
+                text = name,
+                style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
+                color = colors.title,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            below()
+        }
+    }
+}
+
+// ---------------- 3. Vehículo ----------------
+
+@Composable
+private fun VehicleCard(state: ReservationDetailUiState) {
+    val dimens = AppTheme.dimens
+    val request = state.current ?: return
+    val detail = state.detail
+    val title = request.vehicleTitle?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.requests_unknown_vehicle)
+
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth()) {
+            AppImage(
+                model = request.photoUrl,
+                contentDescription = title,
+                contentScale = ContentScale.Crop,
+                fallbackIcon = AppIcons.Car,
+                modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(dimens.radius)),
+            )
+            Column(Modifier.fillMaxWidth().padding(horizontal = dimens.spaceS, vertical = dimens.spaceM)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Overline(stringResource(Res.string.request_detail_vehicle))
+                        Text(
+                            text = title,
+                            style = AppTheme.typography.title.copy(fontWeight = FontWeight.SemiBold),
+                            color = AppTheme.colors.title,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    request.plates?.takeIf { it.isNotBlank() }?.let {
+                        Spacer(Modifier.width(dimens.spaceS))
+                        PlatesTag(it)
+                    }
+                }
+                Spacer(Modifier.height(dimens.spaceS))
+                request.plates?.let { InfoRow(stringResource(Res.string.request_detail_plates), it) }
+                detail?.vehicleYear?.let { InfoRow(stringResource(Res.string.request_detail_year), it.toString()) }
+                detail?.vehicleColor?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(Res.string.request_detail_color), it) }
+                detail?.vehicleMileageKm?.let {
+                    InfoRow(stringResource(Res.string.request_detail_mileage), "${formatKm(it)} km", showDivider = false)
                 }
             }
         }
     }
 }
 
-@Composable
-private fun VehicleSection(state: ReservationDetailUiState) {
-    val dimens = AppTheme.dimens
-    val request = state.current ?: return
-    val detail = state.detail
-    val title = request.vehicleTitle ?: stringResource(Res.string.requests_unknown_vehicle)
+// ---------------- 4. Licencia ----------------
 
-    SubtitleText(stringResource(Res.string.request_detail_vehicle))
-    Spacer(Modifier.height(dimens.spaceS))
-    AppImage(
-        model = request.photoUrl,
-        contentDescription = title,
-        contentScale = ContentScale.Crop,
-        fallbackIcon = AppIcons.Car,
-        modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(dimens.radius)),
-    )
-    Spacer(Modifier.height(dimens.spaceS))
-    BodyText(title)
-    request.plates?.let { InfoRow(stringResource(Res.string.request_detail_plates), it) }
-    detail?.vehicleYear?.let { InfoRow(stringResource(Res.string.request_detail_year), it.toString()) }
-    detail?.vehicleColor?.takeIf { it.isNotBlank() }?.let { InfoRow(stringResource(Res.string.request_detail_color), it) }
-    detail?.vehicleMileageKm?.let { InfoRow(stringResource(Res.string.request_detail_mileage), "${formatKm(it)} km", showDivider = false) }
+/** Licencia del solicitante (el confirmador la revisa antes de prestar el carro). */
+@Composable
+private fun LicenseCard(state: ReservationDetailUiState, onEvent: (ReservationDetailEvent) -> Unit) {
+    val dimens = AppTheme.dimens
+    val colors = AppTheme.colors
+    val detail = state.detail
+    val hasLicense = detail?.requesterHasLicense == true
+
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(dimens.spaceS)) {
+            // Encabezado: ícono + título + etiqueta "Adjunta" / "Sin licencia"
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(AppIcons.Badge, contentDescription = null, tint = colors.title, modifier = Modifier.size(22.dp))
+                Spacer(Modifier.width(dimens.spaceS))
+                Text(
+                    text = stringResource(Res.string.request_detail_license),
+                    style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                if (detail != null) {
+                    Overline(
+                        text = stringResource(
+                            if (hasLicense) Res.string.request_detail_license_attached else Res.string.request_detail_license_none,
+                        ),
+                        modifier = Modifier
+                            .background(colors.labelBackground, RoundedCornerShape(dimens.radius))
+                            .padding(horizontal = dimens.spaceS, vertical = 2.dp),
+                    )
+                }
+            }
+            Spacer(Modifier.height(dimens.spaceM))
+
+            when {
+                detail == null -> if (state.isLoading) LoadingView(Modifier.height(120.dp)) else SecondaryText("—")
+                !hasLicense -> SecondaryText(stringResource(Res.string.request_detail_license_missing))
+                else -> {
+                    AppImage(
+                        model = detail.requesterLicenseUrl,
+                        contentDescription = stringResource(Res.string.request_detail_license),
+                        contentScale = ContentScale.Crop,
+                        fallbackIcon = AppIcons.FileDocument,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(RoundedCornerShape(dimens.radius))
+                            .clickable { onEvent(ReservationDetailEvent.LicenseClicked) },
+                    )
+                    Spacer(Modifier.height(dimens.spaceS))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = formatDate(detail.requesterLicenseUploadedAt)
+                                ?.let { stringResource(Res.string.request_detail_license_uploaded, it) }
+                                .orEmpty(),
+                            style = AppTheme.typography.bodySecondary,
+                            color = colors.textSecondary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        AppTextButton(
+                            text = stringResource(Res.string.request_detail_view_license),
+                            onClick = { onEvent(ReservationDetailEvent.LicenseClicked) },
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
-/** Quién y cuándo la aceptó / rechazó (solo si ya se resolvió). */
+// ---------------- 5. Quién resolvió ----------------
+
+/** "RESOLVIÓ" con la foto y el nombre; abajo la fecha de respuesta (solo si ya se resolvió). */
 @Composable
-private fun ResolutionSection(state: ReservationDetailUiState) {
+private fun ResolverCard(state: ReservationDetailUiState) {
     val request = state.current ?: return
     val detail = state.detail
     val resolvedAt = formatDateTime(request.resolvedAt)
-    if (resolvedAt == null && detail?.confirmerName == null) return
+    val name = detail?.confirmerName?.takeIf { it.isNotBlank() }
+    if (resolvedAt == null && name == null) return
 
-    Column(Modifier.fillMaxWidth()) {
-        detail?.confirmerName?.let { name ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                UserAvatar(photoUrl = detail.confirmerPhotoUrl, size = 36.dp, contentDescription = name)
-                Spacer(Modifier.width(AppTheme.dimens.spaceS))
-                InfoRow(stringResource(Res.string.request_detail_resolved_by), name, modifier = Modifier.weight(1f))
+    AppCard(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.fillMaxWidth().padding(AppTheme.dimens.spaceS)) {
+            if (name != null) {
+                PersonRow(
+                    photoUrl = detail?.confirmerPhotoUrl,
+                    label = stringResource(Res.string.request_detail_resolved_by),
+                    name = name,
+                )
+            }
+            if (resolvedAt != null) {
+                if (name != null) CardDivider()
+                DateRow(stringResource(Res.string.request_detail_resolved_at), resolvedAt)
             }
         }
-        resolvedAt?.let { InfoRow(stringResource(Res.string.request_detail_resolved_at), it) }
-        request.resolutionReason?.takeIf { it.isNotBlank() }?.let {
-            InfoRow(stringResource(Res.string.request_detail_resolution_reason), it, showDivider = false)
-        }
+    }
+}
+
+// ---------------- Piezas comunes ----------------
+
+@Composable
+private fun CardDivider() {
+    Spacer(Modifier.height(AppTheme.dimens.spaceM))
+    HorizontalDivider(thickness = 1.dp, color = AppTheme.colors.divider)
+    Spacer(Modifier.height(AppTheme.dimens.spaceM))
+}
+
+/** "Fecha de respuesta ............ 📅 26/10/2026 16:02" */
+@Composable
+private fun DateRow(label: String, value: String) {
+    val colors = AppTheme.colors
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = AppTheme.typography.bodySecondary, color = colors.textSecondary, modifier = Modifier.weight(1f))
+        Icon(AppIcons.Calendar, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(AppTheme.dimens.spaceS))
+        Text(value, style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.title)
     }
 }
 

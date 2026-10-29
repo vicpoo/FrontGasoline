@@ -45,6 +45,9 @@ interface TripsRepository {
     fun observeTrips(): Flow<List<Trip>>
     fun observeTrip(id: String): Flow<Trip?>
     suspend fun refresh(): AppResult<Unit>
+
+    /** Cargas y ruta de esos viajes (el historial las pide de 4 en 4). */
+    suspend fun loadDetails(tripIds: List<String>): AppResult<Unit>
 }
 
 class ObserveTripsUseCase(private val repository: TripsRepository) {
@@ -57,4 +60,8 @@ class ObserveTripUseCase(private val repository: TripsRepository) {
 
 class RefreshTripsUseCase(private val repository: TripsRepository) {
     suspend operator fun invoke(): AppResult<Unit> = repository.refresh()
+}
+
+class LoadTripDetailsUseCase(private val repository: TripsRepository) {
+    suspend operator fun invoke(tripIds: List<String>): AppResult<Unit> = repository.loadDetails(tripIds)
 }

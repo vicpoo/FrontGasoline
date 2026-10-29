@@ -53,6 +53,9 @@
     <string name="finish_trip_route">Ruta</string>
     <string name="finish_trip_success_message">Tu viaje se envió exitosamente al administrador.</string>
     <string name="finish_trip_success_title">¡Viaje registrado!</string>
+    <string name="finish_trip_saved_offline_title">¡Viaje guardado!</string>
+    <string name="finish_trip_saved_server_error_message">El servidor no pudo recibir tu viaje en este momento (%1$s). Quedó guardado en el teléfono y se volverá a enviar automáticamente.</string>
+    <string name="finish_trip_saved_offline_message">No hay conexión con el servidor en este momento. Tu viaje quedó guardado en el teléfono y se enviará automáticamente cuando vuelva la conexión.</string>
     <string name="finish_trip_title">Registrar Viaje</string>
     <string name="finish_trip_upload_photo">Tomar foto del odómetro</string>
     <string name="fuel_add_title">Agregar Registro de gasolina</string>

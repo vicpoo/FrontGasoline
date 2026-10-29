@@ -160,8 +160,12 @@ class ReservationRepositoryImpl(
                 .sortedByDescending { it.requestedAt.orEmpty() }
         }
 
+    /** La busca en las de la empresa y, si no está, en las propias (el detalle se abre desde ambas listas). */
     override fun observeCompanyRequest(reservationId: String): Flow<ReservationRequest?> =
-        companyCache.data.map { snapshot -> snapshot.requests.firstOrNull { it.id == reservationId }?.toDomain() }
+        combine(companyCache.data, cache.data) { company, mine ->
+            (company.requests.firstOrNull { it.id == reservationId } ?: mine.requests.firstOrNull { it.id == reservationId })
+                ?.toDomain()
+        }
 
     override suspend fun refreshCompany(): AppResult<Unit> {
         val requests = when (val result = safeApiCall { api.getCompany() }) {

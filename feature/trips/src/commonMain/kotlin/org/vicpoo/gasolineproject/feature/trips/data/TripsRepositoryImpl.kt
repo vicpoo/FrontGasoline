@@ -6,6 +6,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
+import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.AppDates
 import org.vicpoo.gasolineproject.core.common.getOrNull
@@ -41,6 +42,11 @@ data class TripEntity(
     /** Ruta como pares [lat, lng]. */
     val route: List<List<Double>> = emptyList(),
     val pausedSeconds: Long = 0,
+    /**
+     * true cuando ya se descargaron sus cargas y su ruta en esta actualización.
+     * El historial las pide por bloques de 4 conforme el usuario baja (ver loadDetails).
+     */
+    val detailsLoaded: Boolean = false,
 )
 
 @Serializable
@@ -54,7 +60,8 @@ data class FuelLoadEntity(
 /**
  * Historial de viajes offline-first:
  * - La UI lee del caché (JSON en el teléfono).
- * - refresh() descarga viajes (ya traen quién manejó), las cargas de cada viaje y las rutas.
+ * - refresh() descarga SOLO la lista de viajes (ya traen quién manejó): 1 petición.
+ * - loadDetails() descarga cargas y ruta por bloques (los 4 que se ven, luego los siguientes).
  * - RBAC: con viaje.ver_todos se ven los viajes de toda la empresa; si no, solo los propios.
  *   Las cargas se piden por viaje (?viajeId=) porque así las permite la API a quien solo ve sus viajes.
  */
@@ -86,58 +93,74 @@ class TripsRepositoryImpl(
 
         val cached = cache.current().trips.associateBy { it.id }
 
-        // Cargas de cada viaje (en paralelo). Si una falla se queda la guardada.
-        val loadsByTrip = coroutineScope {
-            trips.map { trip ->
-                async {
-                    val loads = safeApiCall { api.getFuelLoads(trip.viajeId) }.getOrNull()?.map {
-                        FuelLoadEntity(it.cargaCombustibleId, it.litros, it.monto, it.fotoComprobanteUrl)
-                    }
-                    trip.viajeId to (loads ?: cached[trip.viajeId]?.fuelLoads.orEmpty())
-                }
-            }.awaitAll().toMap()
-        }
-
-        // Rutas: se reutiliza la guardada SOLO si el viaje ya estaba terminado cuando se guardó.
-        // Si estaba en curso, la ruta guardada está incompleta y se vuelve a descargar.
-        val routes = coroutineScope {
-            trips.map { trip ->
-                async {
-                    val previous = cached[trip.viajeId]
-                    val cached = previous?.route?.takeIf { previous.endedAt != null && trip.fechaFin != null }
-                    if (!cached.isNullOrEmpty()) {
-                        trip.viajeId to cached
-                    } else {
-                        val map = safeApiCall { api.getRouteMap(trip.viajeId) }.getOrNull()
-                        trip.viajeId to map?.coordenadas.orEmpty().map { listOf(it.latitud, it.longitud) }
-                    }
-                }
-            }.awaitAll().toMap()
-        }
-
+        // Solo la lista (1 petición). Las cargas y la ruta de cada viaje NO se piden aquí:
+        // se piden por bloques con loadDetails() cuando el viaje aparece en pantalla.
+        // Mientras tanto se muestran las guardadas (si había).
         val entities = trips
             .sortedByDescending { AppDates.sortKey(it.fechaInicio) }
             .map { trip ->
                 val operator = trip.operador
                 val isMine = trip.empleadoOperadorId == session.employeeId
+                val previous = cached[trip.viajeId]
+                // La ruta guardada solo sirve si el viaje ya estaba terminado cuando se guardó
+                val keptRoute = previous?.route?.takeIf { previous.endedAt != null && trip.fechaFin != null }.orEmpty()
                 TripEntity(
                     id = trip.viajeId,
                     operatorName = operator?.nombreCompleto
-                        ?: if (isMine) session.name ?: session.email else cached[trip.viajeId]?.operatorName.orEmpty(),
-                    operatorPhotoUrl = operator?.fotoPerfilUrl ?: if (isMine) session.photoUrl else cached[trip.viajeId]?.operatorPhotoUrl,
+                        ?: if (isMine) session.name ?: session.email else previous?.operatorName.orEmpty(),
+                    operatorPhotoUrl = operator?.fotoPerfilUrl ?: if (isMine) session.photoUrl else previous?.operatorPhotoUrl,
                     startedAt = trip.fechaInicio,
                     endedAt = trip.fechaFin,
                     distanceKm = trip.distanciaRecorrida,
                     finalMileageKm = trip.kilometrajeFinal,
                     status = trip.estado,
-                    fuelLoads = loadsByTrip[trip.viajeId].orEmpty(),
-                    route = routes[trip.viajeId].orEmpty(),
+                    fuelLoads = previous?.fuelLoads.orEmpty(),
+                    route = keptRoute,
                     pausedSeconds = trip.segundosEnPausa,
+                    // Se vuelven a pedir (las cargas pudieron corregirse); la ruta guardada se reutiliza
+                    detailsLoaded = false,
                 )
             }
 
         cache.save(TripsSnapshot(entities))
         return AppResult.Success(Unit)
+    }
+
+    /**
+     * Descarga las cargas y la ruta SOLO de [tripIds] (un bloque de 4 del historial, o el viaje
+     * que se abrió en el detalle). Los que ya se descargaron en esta actualización se saltan.
+     * Si una petición falla se queda lo guardado.
+     */
+    override suspend fun loadDetails(tripIds: List<String>): AppResult<Unit> {
+        val current = cache.current().trips
+        val pending = current.filter { it.id in tripIds && !it.detailsLoaded }
+        if (pending.isEmpty()) return AppResult.Success(Unit)
+
+        var noConnection = false
+        val loaded = coroutineScope {
+            pending.map { trip ->
+                async {
+                    val loadsResult = safeApiCall { api.getFuelLoads(trip.id) }
+                    if (loadsResult is AppResult.Failure && loadsResult.error == AppError.NoConnection) noConnection = true
+                    val loads = loadsResult.getOrNull()?.map {
+                        FuelLoadEntity(it.cargaCombustibleId, it.litros, it.monto, it.fotoComprobanteUrl)
+                    }
+                    // La ruta de un viaje terminado no cambia: si ya se tiene, no se vuelve a pedir
+                    val route = trip.route.takeIf { it.isNotEmpty() && trip.endedAt != null }
+                        ?: safeApiCall { api.getRouteMap(trip.id) }.getOrNull()
+                            ?.coordenadas?.map { listOf(it.latitud, it.longitud) }
+                    trip.copy(
+                        fuelLoads = loads ?: trip.fuelLoads,
+                        route = route ?: trip.route,
+                        detailsLoaded = loads != null,
+                    )
+                }
+            }.awaitAll()
+        }.associateBy { it.id }
+
+        // Se vuelve a leer el caché: pudo cambiar mientras se descargaba
+        cache.save(TripsSnapshot(cache.current().trips.map { loaded[it.id] ?: it }))
+        return if (noConnection) AppResult.Failure(AppError.NoConnection) else AppResult.Success(Unit)
     }
 
     suspend fun clear() = cache.clear()

@@ -58,13 +58,11 @@ import org.vicpoo.gasolineproject.feature.triprecording.domain.FinishTripField
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FinishTripValidator
 import org.vicpoo.gasolineproject.feature.triprecording.domain.SendOutcome
 import org.vicpoo.gasolineproject.feature.triprecording.resources.Res
-import org.vicpoo.gasolineproject.feature.triprecording.resources.action_retry
 import org.vicpoo.gasolineproject.feature.triprecording.resources.action_save
 import org.vicpoo.gasolineproject.feature.triprecording.resources.action_understood
 import org.vicpoo.gasolineproject.feature.triprecording.resources.cd_close
 import org.vicpoo.gasolineproject.feature.triprecording.resources.cd_remove_photo
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_change_photo
-import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_error_message
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_error_title
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_final_mileage
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_final_mileage_hint
@@ -77,6 +75,9 @@ import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_ph
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_photo_sheet_title
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_rejected_message
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_route
+import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_saved_offline_message
+import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_saved_server_error_message
+import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_saved_offline_title
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_success_message
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_success_title
 import org.vicpoo.gasolineproject.feature.triprecording.resources.finish_trip_title
@@ -293,12 +294,25 @@ private fun SaveResultDialog(state: FinishTripUiState, onEvent: (FinishTripEvent
             onButtonClick = dismiss,
             onDismiss = dismiss,
         )
+        // Sin internet o el servidor no respondió: NO es un error, el viaje quedó guardado
         SendOutcome.SavedOffline -> ResultDialog(
-            type = ResultType.Error,
-            title = stringResource(Res.string.finish_trip_error_title),
-            message = stringResource(Res.string.finish_trip_error_message),
-            buttonText = stringResource(Res.string.action_retry),
-            onButtonClick = { onEvent(FinishTripEvent.Retry) },
+            type = ResultType.Success,
+            title = stringResource(Res.string.finish_trip_saved_offline_title),
+            message = stringResource(Res.string.finish_trip_saved_offline_message),
+            buttonText = stringResource(Res.string.action_understood),
+            onButtonClick = dismiss,
+            onDismiss = dismiss,
+        )
+        // Hay internet pero el servidor falló: se dice tal cual (no "sin conexión")
+        is SendOutcome.SavedServerError -> ResultDialog(
+            type = ResultType.Success,
+            title = stringResource(Res.string.finish_trip_saved_offline_title),
+            message = stringResource(
+                Res.string.finish_trip_saved_server_error_message,
+                outcome.message ?: AppError.Server(0, null).asText(),
+            ),
+            buttonText = stringResource(Res.string.action_understood),
+            onButtonClick = dismiss,
             onDismiss = dismiss,
         )
         is SendOutcome.Rejected -> ResultDialog(

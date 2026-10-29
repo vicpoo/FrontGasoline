@@ -120,6 +120,12 @@ sealed interface SendOutcome {
     /** Sin conexión: quedó guardado en el teléfono y se enviará solo después. */
     data object SavedOffline : SendOutcome
 
+    /**
+     * SÍ hay internet, pero el servidor falló o no respondió (5xx, timeout, respuesta que no se
+     * pudo leer...). Quedó guardado en el teléfono y se reintenta solo. [message] = lo que dijo la API.
+     */
+    data class SavedServerError(val message: String?) : SendOutcome
+
     /** El servidor lo rechazó (ej. litros mayores al tanque). Queda guardado con el mensaje. */
     data class Rejected(val message: String?) : SendOutcome
 }
