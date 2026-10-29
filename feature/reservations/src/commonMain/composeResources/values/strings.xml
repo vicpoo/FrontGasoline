@@ -40,11 +40,11 @@
     <string name="requests_my_reason">Para: %1$s</string>
     <string name="requests_offline">Sin conexión: se muestran las últimas solicitudes guardadas.</string>
     <string name="requests_reason">Motivo: %1$s</string>
-    <string name="requests_status_approved">Aprobado</string>
-    <string name="requests_status_cancelled">Cancelado</string>
-    <string name="requests_status_finished">Finalizado</string>
+    <string name="requests_status_approved">Aprobada</string>
+    <string name="requests_status_cancelled">Cancelada</string>
+    <string name="requests_status_finished">Finalizada</string>
     <string name="requests_status_pending">Pendiente</string>
-    <string name="requests_status_rejected">Denegado</string>
+    <string name="requests_status_rejected">Denegada</string>
     <string name="requests_status_unknown">Sin estado</string>
     <string name="requests_title">Solicitudes</string>
     <string name="requests_unknown_requester">un empleado</string>
@@ -57,4 +57,29 @@
     <string name="requests_status_not_sent">Por enviar (sin conexión)</string>
     <string name="requests_status_send_failed">No se pudo enviar</string>
     <string name="requests_select_hint">Elige una solicitud para ver su detalle y aceptarla o rechazarla.</string>
+    <!-- Mis solicitudes (campana) -->
+    <string name="requests_filter_all">Todas</string>
+    <string name="requests_filter_pending">Pendientes</string>
+    <string name="requests_filter_approved">Aprobadas</string>
+    <string name="requests_filter_rejected">Denegadas</string>
+    <string name="requests_empty_filter">No hay solicitudes con este filtro.</string>
+    <string name="requests_requested_on">Solicitada el</string>
+    <string name="requests_reason_label">Motivo</string>
+    <string name="requests_rejection_title">Motivo de rechazo</string>
+    <string name="requests_cancellation_title">Motivo de cancelación</string>
+    <string name="requests_send_failed_title">No se pudo enviar</string>
+    <string name="requests_approval_note_title">Comentario</string>
+    <string name="requests_no_date">Sin fecha</string>
+    <string name="month_1">Enero</string>
+    <string name="month_2">Febrero</string>
+    <string name="month_3">Marzo</string>
+    <string name="month_4">Abril</string>
+    <string name="month_5">Mayo</string>
+    <string name="month_6">Junio</string>
+    <string name="month_7">Julio</string>
+    <string name="month_8">Agosto</string>
+    <string name="month_9">Septiembre</string>
+    <string name="month_10">Octubre</string>
+    <string name="month_11">Noviembre</string>
+    <string name="month_12">Diciembre</string>
 </resources>

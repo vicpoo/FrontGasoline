@@ -338,6 +338,55 @@ object AppIcons {
     /** Bomba de gasolina (recargas). */
     val Fuel: ImageVector get() = DesignIcons.PetrolPump
 
+    // ---------------- Información ----------------
+
+    /** Calendario (fechas: "Solicitada el ..."). */
+    val Calendar: ImageVector by lazy {
+        lineIcon("Calendar") {
+            strokePath {
+                moveTo(6f, 5f)
+                lineTo(18f, 5f)
+                quadTo(20f, 5f, 20f, 7f)
+                lineTo(20f, 18f)
+                quadTo(20f, 20f, 18f, 20f)
+                lineTo(6f, 20f)
+                quadTo(4f, 20f, 4f, 18f)
+                lineTo(4f, 7f)
+                quadTo(4f, 5f, 6f, 5f)
+                close()
+            }
+            strokePath {
+                moveTo(4f, 10f)
+                lineTo(20f, 10f)
+                moveTo(8f, 3f)
+                lineTo(8f, 7f)
+                moveTo(16f, 3f)
+                lineTo(16f, 7f)
+            }
+        }
+    }
+
+    /** Triángulo de advertencia (motivo de rechazo, avisos). */
+    val Warning: ImageVector by lazy {
+        lineIcon("Warning") {
+            strokePath {
+                moveTo(10.3f, 4.2f)
+                quadTo(12f, 1.6f, 13.7f, 4.2f)
+                lineTo(21.2f, 17.3f)
+                quadTo(22.6f, 20f, 19.6f, 20f)
+                lineTo(4.4f, 20f)
+                quadTo(1.4f, 20f, 2.8f, 17.3f)
+                close()
+            }
+            strokePath {
+                moveTo(12f, 9f)
+                lineTo(12f, 13f)
+                moveTo(12f, 16.5f)
+                lineTo(12f, 16.6f)
+            }
+        }
+    }
+
     // ---------------- Diseño (SVG de Figma, ver DesignIcons) ----------------
 
     /** Pestaña Inicio: carros para solicitar. */

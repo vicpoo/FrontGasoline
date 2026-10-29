@@ -22,6 +22,11 @@ import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRequest
 
 data class MyReservationsUiState(
     val requests: List<ReservationRequest> = emptyList(),
+    /** Chip seleccionado y cuántas solicitudes hay en cada uno. */
+    val filter: MyReservationsFilter = MyReservationsFilter.ALL,
+    val counts: Map<MyReservationsFilter, Int> = emptyMap(),
+    /** Solicitudes del filtro agrupadas por mes. */
+    val groups: List<ReservationMonthGroup> = emptyList(),
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     /** Sin conexión: se muestra la última copia guardada. */
@@ -33,6 +38,7 @@ data class MyReservationsUiState(
 
 sealed interface MyReservationsEvent {
     data object Refresh : MyReservationsEvent
+    data class FilterSelected(val filter: MyReservationsFilter) : MyReservationsEvent
 }
 
 /** Campana de Inicio: las solicitudes que envió el usuario y su estado (solo para ver cómo van). */
@@ -54,6 +60,7 @@ class MyReservationsViewModel(
     )
 
     private val loading = MutableStateFlow(LoadState())
+    private val filter = MutableStateFlow(MyReservationsFilter.ALL)
     private val _state = MutableStateFlow(MyReservationsUiState())
     val state: StateFlow<MyReservationsUiState> = _state.asStateFlow()
 
@@ -68,9 +75,13 @@ class MyReservationsViewModel(
                 loading,
                 connectivity.isOnline,
                 lastRefresh.observe(REFRESH_KEY),
-            ) { requests, load, online, lastUpdated ->
+                filter,
+            ) { requests, load, online, lastUpdated, selected ->
                 MyReservationsUiState(
                     requests = requests,
+                    filter = selected,
+                    counts = MyReservationsGrouping.counts(requests),
+                    groups = MyReservationsGrouping.group(requests, selected),
                     isInitialLoading = !load.firstLoadDone && requests.isEmpty(),
                     isRefreshing = load.refreshing,
                     isOffline = load.offline || !online,
@@ -88,6 +99,7 @@ class MyReservationsViewModel(
     fun onEvent(event: MyReservationsEvent) {
         when (event) {
             MyReservationsEvent.Refresh -> refresh(initial = false)
+            is MyReservationsEvent.FilterSelected -> filter.value = event.filter
         }
     }
 
