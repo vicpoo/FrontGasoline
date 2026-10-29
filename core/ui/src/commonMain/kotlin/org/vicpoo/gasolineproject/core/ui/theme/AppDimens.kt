@@ -14,8 +14,13 @@ data class AppDimens(
     val spaceL: Dp = 24.dp,
     val spaceXl: Dp = 32.dp,
     val spaceXxl: Dp = 48.dp,
-    val radiusS: Dp = 8.dp,
-    val radiusM: Dp = 12.dp,
+    /**
+     * Radio ÚNICO de las esquinas de los componentes base: tarjetas, botones, campos de texto,
+     * dropdowns, labels, banners, imágenes y mapas. No uses otro valor en esos componentes.
+     */
+    val radius: Dp = 12.dp,
+    /** Ventanas de diálogo (más redondas para distinguirlas del contenido). */
+    val radiusDialog: Dp = 24.dp,
     val buttonHeight: Dp = 52.dp,
     val iconButtonSize: Dp = 40.dp,
     val iconSize: Dp = 24.dp,

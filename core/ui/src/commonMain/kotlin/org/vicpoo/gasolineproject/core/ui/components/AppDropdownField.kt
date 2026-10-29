@@ -64,7 +64,7 @@ fun AppDropdownField(
             label = { Text(label ?: placeholder) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             supportingText = supportingContent,
-            shape = RoundedCornerShape(AppTheme.dimens.radiusS),
+            shape = RoundedCornerShape(AppTheme.dimens.radius),
             colors = appOutlinedFieldColors(),
             modifier = Modifier
                 .fillMaxWidth()

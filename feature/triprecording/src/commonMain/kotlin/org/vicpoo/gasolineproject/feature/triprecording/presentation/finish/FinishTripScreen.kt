@@ -213,7 +213,7 @@ private fun OdometerPhotoSection(state: FinishTripUiState, onEvent: (FinishTripE
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .clip(RoundedCornerShape(dimens.radiusM)),
+                    .clip(RoundedCornerShape(dimens.radius)),
             )
             Surface(
                 shape = CircleShape,
@@ -249,7 +249,7 @@ private fun RouteSection(state: FinishTripUiState) {
         modifier = Modifier
             .fillMaxWidth()
             .height(220.dp)
-            .clip(RoundedCornerShape(dimens.radiusM))
+            .clip(RoundedCornerShape(dimens.radius))
             .background(colors.labelBackground),
     ) {
         // Con el teclado abierto el mapa (GL) se quita: en Android, redimensionarlo junto con el teclado

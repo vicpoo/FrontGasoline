@@ -47,7 +47,7 @@ fun PhotoPickerBox(
 ) {
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
-    val shape = RoundedCornerShape(dimens.radiusM)
+    val shape = RoundedCornerShape(dimens.radius)
 
     if (photoModel == null) {
         Box(
@@ -63,7 +63,7 @@ fun PhotoPickerBox(
                             width = 2.dp.toPx(),
                             pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 12f)),
                         ),
-                        cornerRadius = CornerRadius(dimens.radiusM.toPx()),
+                        cornerRadius = CornerRadius(dimens.radius.toPx()),
                     )
                 }
                 .clickable(onClick = onPick),

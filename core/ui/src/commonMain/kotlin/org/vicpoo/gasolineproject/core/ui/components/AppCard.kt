@@ -20,7 +20,7 @@ fun AppCard(
 ) {
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
-    val shape = RoundedCornerShape(dimens.radiusM)
+    val shape = RoundedCornerShape(dimens.radius)
     val border = BorderStroke(1.dp, colors.divider)
 
     if (onClick != null) {

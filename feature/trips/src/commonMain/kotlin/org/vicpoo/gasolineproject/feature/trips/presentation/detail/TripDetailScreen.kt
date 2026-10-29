@@ -173,7 +173,7 @@ private fun FuelLoadCard(load: FuelLoad, onViewReceipt: () -> Unit) {
     val colors = AppTheme.colors
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(dimens.radiusM),
+        shape = RoundedCornerShape(dimens.radius),
         color = colors.primary,
         contentColor = colors.onPrimary,
     ) {

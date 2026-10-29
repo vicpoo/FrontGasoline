@@ -216,7 +216,7 @@ private fun ReceiptSection(state: FuelRecordFormUiState, onEvent: (FuelRecordFor
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(220.dp)
-                    .clip(RoundedCornerShape(dimens.radiusM)),
+                    .clip(RoundedCornerShape(dimens.radius)),
             )
             Surface(
                 shape = CircleShape,

@@ -104,7 +104,7 @@ fun AppTextField(
         visualTransformation = if (isPassword && !passwordVisible) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
-        shape = RoundedCornerShape(AppTheme.dimens.radiusS),
+        shape = RoundedCornerShape(AppTheme.dimens.radius),
         colors = appOutlinedFieldColors(),
     )
 }

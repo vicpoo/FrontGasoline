@@ -461,10 +461,11 @@ private fun MiniStat(label: String, value: String) {
 private fun VehicleStatusChip(vehicle: VehicleStats) {
     val colors = AppTheme.colors
     val (text, container, content) = when {
-        vehicle.retired -> Triple(Res.string.reports_status_retired, colors.danger, colors.onDanger)
-        vehicle.status == VehicleStatus.AVAILABLE -> Triple(Res.string.reports_status_available, colors.confirm, colors.onConfirm)
-        vehicle.status == VehicleStatus.BUSY -> Triple(Res.string.reports_status_busy, colors.primary, colors.onPrimary)
-        vehicle.status == VehicleStatus.MAINTENANCE -> Triple(Res.string.reports_status_maintenance, colors.secondary, colors.onSecondary)
+        // Mismos colores que los estados en la pestaña de vehículos (VehicleUi)
+        vehicle.retired -> Triple(Res.string.reports_status_retired, colors.labelBackground, colors.onLabel)
+        vehicle.status == VehicleStatus.AVAILABLE -> Triple(Res.string.reports_status_available, colors.primary, colors.onPrimary)
+        vehicle.status == VehicleStatus.BUSY -> Triple(Res.string.reports_status_busy, colors.secondary, colors.onSecondary)
+        vehicle.status == VehicleStatus.MAINTENANCE -> Triple(Res.string.reports_status_maintenance, colors.danger, colors.onDanger)
         else -> return
     }
     StatusChip(text = stringResource(text), containerColor = container, contentColor = content)

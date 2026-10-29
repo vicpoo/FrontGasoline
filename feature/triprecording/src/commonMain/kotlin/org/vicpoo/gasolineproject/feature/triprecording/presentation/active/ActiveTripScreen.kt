@@ -287,7 +287,7 @@ private fun GpsBanner(
     }
     Surface(
         modifier = modifier.then(if (!hasPermission) Modifier.clickable(onClick = onRequestPermission) else Modifier),
-        shape = RoundedCornerShape(dimens.radiusM),
+        shape = RoundedCornerShape(dimens.radius),
         color = container,
         shadowElevation = 2.dp,
     ) {
@@ -471,7 +471,7 @@ private fun FuelRecordRow(
     val dimens = AppTheme.dimens
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(dimens.radiusM),
+        shape = RoundedCornerShape(dimens.radius),
         color = colors.labelBackground,
     ) {
         Column(Modifier.padding(start = dimens.spaceM, end = dimens.spaceXs, top = dimens.spaceXs, bottom = dimens.spaceS)) {

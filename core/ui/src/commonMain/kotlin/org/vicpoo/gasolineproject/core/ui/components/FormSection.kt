@@ -54,7 +54,7 @@ import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 fun ReviewCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(AppTheme.dimens.radiusM * 2),
+        shape = RoundedCornerShape(AppTheme.dimens.radius),
         color = AppTheme.colors.background,
         border = BorderStroke(1.dp, AppTheme.colors.divider),
     ) {
@@ -93,7 +93,7 @@ fun ReviewRow(
             Spacer(Modifier.width(dimens.spaceM))
             Surface(
                 onClick = onAction,
-                shape = RoundedCornerShape(dimens.radiusM),
+                shape = RoundedCornerShape(dimens.radius),
                 color = colors.labelBackground,
                 contentColor = colors.onLabel,
             ) {
@@ -198,7 +198,7 @@ fun EditSheet(
                     color = colors.title,
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(dimens.radiusS))
+                        .clip(RoundedCornerShape(dimens.radius))
                         .clickable(enabled = !isSaving, onClick = onCancel)
                         .padding(vertical = dimens.spaceS),
                 )

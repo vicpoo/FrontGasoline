@@ -221,7 +221,7 @@ private fun LicenseSection(state: ReservationDetailUiState, onEvent: (Reservatio
                         contentDescription = stringResource(Res.string.request_detail_license),
                         contentScale = ContentScale.Crop,
                         fallbackIcon = AppIcons.FileDocument,
-                        modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(dimens.radiusS)),
+                        modifier = Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(dimens.radius)),
                     )
                     Spacer(Modifier.height(dimens.spaceXs))
                     formatDate(detail.requesterLicenseUploadedAt)?.let {
@@ -251,7 +251,7 @@ private fun VehicleSection(state: ReservationDetailUiState) {
         contentDescription = title,
         contentScale = ContentScale.Crop,
         fallbackIcon = AppIcons.Car,
-        modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(dimens.radiusM)),
+        modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(dimens.radius)),
     )
     Spacer(Modifier.height(dimens.spaceS))
     BodyText(title)
@@ -334,7 +334,7 @@ private fun RejectReasonDialog(state: ReservationDetailUiState, onEvent: (Reserv
     Dialog(onDismissRequest = { onEvent(ReservationDetailEvent.DialogDismissed) }) {
         Surface(
             modifier = Modifier.widthIn(max = 420.dp),
-            shape = RoundedCornerShape(dimens.radiusM * 2),
+            shape = RoundedCornerShape(dimens.radiusDialog),
             color = AppTheme.colors.background,
         ) {
             Column(Modifier.padding(dimens.spaceL), horizontalAlignment = Alignment.CenterHorizontally) {

@@ -43,7 +43,7 @@ fun ResultDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             modifier = Modifier.widthIn(max = 400.dp),
-            shape = RoundedCornerShape(dimens.radiusM * 2),
+            shape = RoundedCornerShape(dimens.radiusDialog),
             color = colors.background,
         ) {
             Column(

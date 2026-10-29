@@ -136,7 +136,7 @@ fun ProfileScreen(
         // Nombre: al tocarlo se edita
         Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(dimens.radiusS))
+                .clip(RoundedCornerShape(dimens.radius))
                 .clickable(enabled = canEdit, onClick = onEditName)
                 .padding(horizontal = dimens.spaceS, vertical = dimens.spaceXs),
             verticalAlignment = Alignment.CenterVertically,

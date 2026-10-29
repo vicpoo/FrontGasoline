@@ -143,7 +143,7 @@ private fun TripCard(trip: Trip, onClick: () -> Unit) {
             }
             RouteMap(
                 points = trip.route,
-                modifier = Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(dimens.radiusS)),
+                modifier = Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(dimens.radius)),
             )
         }
     }

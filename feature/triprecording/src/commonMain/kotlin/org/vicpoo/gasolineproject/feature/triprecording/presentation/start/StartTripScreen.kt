@@ -145,7 +145,7 @@ private fun CostCenterOption(costCenter: CostCenter, selected: Boolean, onSelect
         modifier = Modifier
             .fillMaxWidth()
             .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton),
-        shape = RoundedCornerShape(dimens.radiusM),
+        shape = RoundedCornerShape(dimens.radius),
         color = colors.background,
         border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.divider),
     ) {

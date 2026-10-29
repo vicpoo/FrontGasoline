@@ -58,7 +58,7 @@ fun AppButton(
     val dimens = AppTheme.dimens
     val container = variant.containerColor()
     val content = variant.contentColor()
-    val shape = RoundedCornerShape(dimens.radiusM)
+    val shape = RoundedCornerShape(dimens.radius)
     val padding = PaddingValues(horizontal = dimens.spaceM, vertical = dimens.spaceS)
     val buttonModifier = modifier.heightIn(min = dimens.buttonHeight)
 

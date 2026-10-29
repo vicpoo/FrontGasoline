@@ -15,7 +15,7 @@ fun AppLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
         modifier = modifier
-            .background(AppTheme.colors.labelBackground, RoundedCornerShape(dimens.radiusS))
+            .background(AppTheme.colors.labelBackground, RoundedCornerShape(dimens.radius))
             .padding(horizontal = dimens.spaceM, vertical = dimens.spaceS),
         style = AppTheme.typography.bodySecondary,
         color = AppTheme.colors.onLabel,

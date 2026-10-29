@@ -190,7 +190,7 @@ fun StatusPill(status: ReservationStatus) {
         ReservationStatus.NOT_SENT -> Triple(stringResource(Res.string.requests_status_not_sent), colors.labelBackground, colors.onLabel)
         ReservationStatus.SEND_FAILED -> Triple(stringResource(Res.string.requests_status_send_failed), colors.danger, colors.onDanger)
     }
-    StatusBar(text = text, container = container, content = content, radius = dimens.radiusS)
+    StatusBar(text = text, container = container, content = content, radius = dimens.radius)
 }
 
 @Composable

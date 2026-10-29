@@ -231,7 +231,7 @@ private fun VehicleHeader(state: VehicleFormUiState) {
             model = state.photoModel,
             contentDescription = null,
             fallbackIcon = AppIcons.Car,
-            modifier = Modifier.size(width = 96.dp, height = 80.dp).clip(RoundedCornerShape(dimens.radiusM)),
+            modifier = Modifier.size(width = 96.dp, height = 80.dp).clip(RoundedCornerShape(dimens.radius)),
         )
         Spacer(Modifier.width(dimens.spaceM))
         Column(Modifier.weight(1f)) {

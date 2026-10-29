@@ -36,7 +36,7 @@ fun OfflineBanner(text: String, modifier: Modifier = Modifier, lastUpdatedAtMill
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .background(AppTheme.colors.labelBackground, RoundedCornerShape(dimens.radiusS))
+            .background(AppTheme.colors.labelBackground, RoundedCornerShape(dimens.radius))
             .padding(horizontal = dimens.spaceM, vertical = dimens.spaceS),
         verticalAlignment = Alignment.CenterVertically,
     ) {

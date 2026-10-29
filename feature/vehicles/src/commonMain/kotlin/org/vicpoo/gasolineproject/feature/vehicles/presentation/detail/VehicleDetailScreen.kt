@@ -227,7 +227,7 @@ private fun RequestReasonSheet(vehicle: Vehicle?, state: VehicleDetailUiState, o
         if (vehicle != null) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(dimens.radiusM * 2),
+                shape = RoundedCornerShape(dimens.radius),
                 color = colors.background,
                 border = BorderStroke(1.dp, colors.textSecondary.copy(alpha = if (colors.isDark) 0.45f else 0.25f)),
             ) {
@@ -235,7 +235,7 @@ private fun RequestReasonSheet(vehicle: Vehicle?, state: VehicleDetailUiState, o
                     AppImage(
                         model = vehicle.photo?.toImageModel(),
                         contentDescription = vehicle.cardTitle,
-                        modifier = Modifier.size(width = 88.dp, height = 72.dp).clip(RoundedCornerShape(dimens.radiusM)),
+                        modifier = Modifier.size(width = 88.dp, height = 72.dp).clip(RoundedCornerShape(dimens.radius)),
                     )
                     Spacer(Modifier.width(dimens.spaceM))
                     Column(Modifier.weight(1f)) {
@@ -336,7 +336,7 @@ private fun DetailExpanded(
             AppImage(
                 model = vehicle.photo?.toImageModel(),
                 contentDescription = vehicle.model,
-                modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(dimens.radiusM)),
+                modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(dimens.radius)),
             )
             AppBackButton(onClick = onBack, modifier = Modifier.padding(dimens.spaceM))
         }
