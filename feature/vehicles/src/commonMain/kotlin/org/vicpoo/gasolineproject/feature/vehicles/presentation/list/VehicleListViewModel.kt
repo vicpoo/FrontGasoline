@@ -17,13 +17,54 @@ import org.vicpoo.gasolineproject.core.network.reconnections
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.rbac.Privileges
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
+import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleStatus
+import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleType
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.ObservePendingVehicleSyncUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.ObserveVehiclesUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.RefreshVehiclesUseCase
 
+/**
+ * Búsqueda + filtros de la lista. Vacío = se ven todos.
+ * Los filtros dentro de un grupo se combinan con "o" (Disponible o Mantenimiento) y entre grupos
+ * con "y" (Moto y Disponible).
+ */
+data class VehicleFilter(
+    val query: String = "",
+    val statuses: Set<VehicleStatus> = emptySet(),
+    val types: Set<VehicleType> = emptySet(),
+) {
+    /** Cuántos filtros hay (la búsqueda por texto no cuenta; va escrita en la barra). */
+    val activeFilters: Int get() = statuses.size + types.size
+
+    val isEmpty: Boolean get() = query.isBlank() && activeFilters == 0
+
+    fun matches(vehicle: Vehicle): Boolean {
+        if (statuses.isNotEmpty() && vehicle.status !in statuses) return false
+        if (types.isNotEmpty() && vehicle.type !in types) return false
+        val text = query.trim()
+        if (text.isEmpty()) return true
+        // Cada palabra debe aparecer en algún dato ("nissan blanco", "abc 123")
+        val haystack = listOfNotNull(vehicle.brand, vehicle.model, vehicle.plates, vehicle.color).joinToString(" ")
+        return text.split(' ').filter { it.isNotBlank() }.all { word ->
+            haystack.contains(word, ignoreCase = true) || vehicle.plates.replace("-", "").contains(word.replace("-", ""), ignoreCase = true)
+        }
+    }
+}
+
+/** Vista de búsqueda abierta (la que se abre al tocar la barra, estilo Instagram / Airbnb). */
+data class VehicleSearchUiState(
+    /** Lo que se está escribiendo / eligiendo; se aplica a la lista hasta "Ver resultados". */
+    val draft: VehicleFilter = VehicleFilter(),
+    /** Vehículos que coinciden con [draft] (para mostrarlos mientras se escribe y contarlos). */
+    val results: List<Vehicle> = emptyList(),
+)
+
 data class VehicleListUiState(
     val vehicles: List<Vehicle> = emptyList(),
-    val query: String = "",
+    /** Búsqueda y filtros aplicados a la lista. */
+    val filter: VehicleFilter = VehicleFilter(),
+    /** null = la vista de búsqueda está cerrada. */
+    val search: VehicleSearchUiState? = null,
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isOffline: Boolean = false,
@@ -45,8 +86,22 @@ enum class VehiclesMode { CATALOG, FLEET }
 data class VehicleListArgs(val mode: VehiclesMode)
 
 sealed interface VehicleListEvent {
-    data class QueryChanged(val value: String) : VehicleListEvent
     data object Refresh : VehicleListEvent
+
+    // ---- Vista de búsqueda ----
+    /** Tocar la barra: abre la vista con lo que ya estaba aplicado. */
+    data object SearchOpened : VehicleListEvent
+    data object SearchDismissed : VehicleListEvent
+    data class QueryChanged(val value: String) : VehicleListEvent
+    data class StatusToggled(val status: VehicleStatus) : VehicleListEvent
+    data class TypeToggled(val type: VehicleType) : VehicleListEvent
+    /** "Borrar todo" dentro de la vista. */
+    data object DraftCleared : VehicleListEvent
+    /** "Ver N vehículos" o la tecla buscar: aplica y cierra. */
+    data object SearchApplied : VehicleListEvent
+
+    /** La X de la barra: quita búsqueda y filtros sin abrir la vista. */
+    data object FilterCleared : VehicleListEvent
 }
 
 class VehicleListViewModel(
@@ -67,19 +122,22 @@ class VehicleListViewModel(
         val error: AppError? = null,
     )
 
-    private val query = MutableStateFlow("")
+    private val filter = MutableStateFlow(VehicleFilter())
+    /** null = vista de búsqueda cerrada; si no, el borrador de la búsqueda. */
+    private val searchDraft = MutableStateFlow<VehicleFilter?>(null)
     private val refreshStatus = MutableStateFlow(RefreshStatus())
 
     val state: StateFlow<VehicleListUiState> = combine(
         observeVehicles(),
         observePendingSync(),
         permissionChecker.observe(Privileges.CARRO_CREAR),
-        query,
+        combine(filter, searchDraft) { applied, draft -> applied to draft },
         combine(refreshStatus, connectivity.isOnline, lastRefresh.observe(REFRESH_KEY)) { s, online, last -> Triple(s, online, last) },
-    ) { vehicles, pending, canAdd, q, (status, online, lastUpdated) ->
+    ) { vehicles, pending, canAdd, (applied, draft), (status, online, lastUpdated) ->
         VehicleListUiState(
-            vehicles = vehicles.filter { it.matches(q) },
-            query = q,
+            vehicles = vehicles.filter(applied::matches),
+            filter = applied,
+            search = draft?.let { d -> VehicleSearchUiState(draft = d, results = vehicles.filter(d::matches)) },
             isInitialLoading = vehicles.isEmpty() && !status.loadedOnce,
             isRefreshing = status.isRefreshing && status.loadedOnce,
             isOffline = status.isOffline || !online,
@@ -97,10 +155,22 @@ class VehicleListViewModel(
 
     fun onEvent(event: VehicleListEvent) {
         when (event) {
-            is VehicleListEvent.QueryChanged -> query.value = event.value
             VehicleListEvent.Refresh -> refresh()
+            VehicleListEvent.SearchOpened -> searchDraft.value = filter.value
+            VehicleListEvent.SearchDismissed -> searchDraft.value = null
+            is VehicleListEvent.QueryChanged -> searchDraft.update { it?.copy(query = event.value) }
+            is VehicleListEvent.StatusToggled -> searchDraft.update { it?.copy(statuses = it.statuses.toggle(event.status)) }
+            is VehicleListEvent.TypeToggled -> searchDraft.update { it?.copy(types = it.types.toggle(event.type)) }
+            VehicleListEvent.DraftCleared -> searchDraft.update { it?.let { VehicleFilter() } }
+            VehicleListEvent.SearchApplied -> {
+                searchDraft.value?.let { filter.value = it.copy(query = it.query.trim()) }
+                searchDraft.value = null
+            }
+            VehicleListEvent.FilterCleared -> filter.value = VehicleFilter()
         }
     }
+
+    private fun <T> Set<T>.toggle(item: T): Set<T> = if (item in this) this - item else this + item
 
     private fun refresh() {
         if (refreshStatus.value.isRefreshing) return
@@ -116,12 +186,6 @@ class VehicleListViewModel(
                 error = failure?.takeIf { it != AppError.NoConnection },
             )
         }
-    }
-
-    private fun Vehicle.matches(q: String): Boolean {
-        val text = q.trim()
-        if (text.isEmpty()) return true
-        return listOfNotNull(brand, model, plates, color).any { it.contains(text, ignoreCase = true) }
     }
 
     private companion object {

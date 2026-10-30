@@ -183,8 +183,10 @@ private fun TripCard(trip: Trip, onClick: () -> Unit) {
                 Text(AppDates.formatDuration(minutes), style = small, color = colors.text)
                 Text(stringResource(Res.string.trip_records_value, trip.fuelLoads.size), style = small, color = colors.text)
             }
+            // La ruta se va pintando la primera vez que aparece la tarjeta
             RouteMap(
                 points = trip.route,
+                animate = true,
                 modifier = Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(dimens.radius)),
             )
         }

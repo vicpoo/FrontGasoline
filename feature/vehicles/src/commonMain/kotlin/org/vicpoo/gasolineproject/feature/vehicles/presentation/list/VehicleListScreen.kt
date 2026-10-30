@@ -38,7 +38,7 @@ import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import org.vicpoo.gasolineproject.core.ui.components.AppAddButton
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
-import org.vicpoo.gasolineproject.core.ui.components.AppSearchField
+import org.vicpoo.gasolineproject.core.ui.components.AppSearchBar
 import org.vicpoo.gasolineproject.core.ui.components.EmptyView
 import org.vicpoo.gasolineproject.core.ui.components.ErrorText
 import org.vicpoo.gasolineproject.core.ui.components.LoadingView
@@ -47,13 +47,14 @@ import org.vicpoo.gasolineproject.core.ui.components.PendingSyncChip
 import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.SyncErrorChip
 import org.vicpoo.gasolineproject.core.ui.components.asText
-import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.VehicleStatusChip
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.icon
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.label
 import org.vicpoo.gasolineproject.feature.vehicles.resources.Res
 import org.vicpoo.gasolineproject.feature.vehicles.resources.action_add_vehicle
-import org.vicpoo.gasolineproject.feature.vehicles.resources.cd_clear_search
+import org.vicpoo.gasolineproject.feature.vehicles.resources.cd_clear_filters
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_list_empty
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_list_no_results
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_list_offline
@@ -115,12 +116,16 @@ fun VehicleListScreen(
                     .padding(horizontal = dimens.screenPadding),
             ) {
                 ScreenHeader(title = stringResource(Res.string.vehicle_list_title), action = topEndAction)
-                Spacer(Modifier.height(dimens.spaceM))
-                AppSearchField(
-                    value = state.query,
-                    onValueChange = { onEvent(VehicleListEvent.QueryChanged(it)) },
+                Spacer(Modifier.height(dimens.spaceS))
+                // Barra compacta tipo Instagram: al tocarla abre la vista de búsqueda y filtros
+                // (no abre el teclado aquí)
+                AppSearchBar(
+                    text = state.filter.query,
                     placeholder = stringResource(Res.string.vehicle_list_search),
-                    clearDescription = stringResource(Res.string.cd_clear_search),
+                    onClick = { onEvent(VehicleListEvent.SearchOpened) },
+                    activeFilters = state.filter.activeFilters,
+                    onClear = { onEvent(VehicleListEvent.FilterCleared) },
+                    clearDescription = stringResource(Res.string.cd_clear_filters),
                 )
 
                 SyncBanner(state)
@@ -139,7 +144,7 @@ fun VehicleListScreen(
                         state.isInitialLoading -> LoadingView()
                         state.vehicles.isEmpty() -> EmptyView(
                             stringResource(
-                                if (state.query.isBlank()) Res.string.vehicle_list_empty else Res.string.vehicle_list_no_results,
+                                if (state.filter.isEmpty) Res.string.vehicle_list_empty else Res.string.vehicle_list_no_results,
                             ),
                         )
                         else -> VehicleGrid(state.vehicles, onVehicleClick)
@@ -147,6 +152,10 @@ fun VehicleListScreen(
                 }
             }
         }
+    }
+
+    state.search?.let { search ->
+        VehicleSearchView(search = search, onEvent = onEvent, onVehicleClick = onVehicleClick)
     }
 }
 
@@ -195,7 +204,7 @@ fun VehicleCard(vehicle: Vehicle, onClick: () -> Unit, modifier: Modifier = Modi
                     .background(colors.primary.copy(alpha = 0.12f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(AppIcons.Car, contentDescription = null, tint = colors.primary, modifier = Modifier.size(26.dp))
+                Icon(vehicle.type.icon, contentDescription = vehicle.type.label(), tint = colors.primary, modifier = Modifier.size(26.dp))
             }
             Spacer(Modifier.width(dimens.spaceM))
             Column(Modifier.weight(1f)) {

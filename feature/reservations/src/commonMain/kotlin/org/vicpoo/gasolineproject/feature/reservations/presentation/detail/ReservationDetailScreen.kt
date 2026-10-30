@@ -1,6 +1,5 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.detail
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -63,7 +62,6 @@ import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRequest
 import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationStatus
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.Overline
-import org.vicpoo.gasolineproject.feature.reservations.presentation.common.PlatesTag
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.ResolutionBox
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.StatusDotBadge
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDate
@@ -87,9 +85,7 @@ import org.vicpoo.gasolineproject.feature.reservations.resources.company_request
 import org.vicpoo.gasolineproject.feature.reservations.resources.company_requests_rejected_title
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_color
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license
-import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_attached
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_missing
-import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_none
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_license_uploaded
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_mileage
 import org.vicpoo.gasolineproject.feature.reservations.resources.request_detail_offline
@@ -238,7 +234,8 @@ private fun RequesterCard(request: ReservationRequest) {
             }
             formatDateTime(request.requestedAt)?.let {
                 CardDivider()
-                DateRow(stringResource(Res.string.request_detail_requested_at), it)
+                // Solo ícono + fecha: el calendario ya dice que es cuándo se pidió
+                DateOnlyRow(contentDescription = stringResource(Res.string.request_detail_requested_at), value = it)
             }
         }
     }
@@ -314,22 +311,15 @@ private fun VehicleCard(state: ReservationDetailUiState) {
                 modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(dimens.radius)),
             )
             Column(Modifier.fillMaxWidth().padding(horizontal = dimens.spaceS, vertical = dimens.spaceM)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Overline(stringResource(Res.string.request_detail_vehicle))
-                        Text(
-                            text = title,
-                            style = AppTheme.typography.title.copy(fontWeight = FontWeight.SemiBold),
-                            color = AppTheme.colors.title,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    request.plates?.takeIf { it.isNotBlank() }?.let {
-                        Spacer(Modifier.width(dimens.spaceS))
-                        PlatesTag(it)
-                    }
-                }
+                // Sin placas junto al nombre: ya aparecen abajo en "Placas"
+                Overline(stringResource(Res.string.request_detail_vehicle))
+                Text(
+                    text = title,
+                    style = AppTheme.typography.title.copy(fontWeight = FontWeight.SemiBold),
+                    color = AppTheme.colors.title,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 Spacer(Modifier.height(dimens.spaceS))
                 request.plates?.let { InfoRow(stringResource(Res.string.request_detail_plates), it) }
                 detail?.vehicleYear?.let { InfoRow(stringResource(Res.string.request_detail_year), it.toString()) }
@@ -354,7 +344,7 @@ private fun LicenseCard(state: ReservationDetailUiState, onEvent: (ReservationDe
 
     AppCard(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(dimens.spaceS)) {
-            // Encabezado: ícono + título + etiqueta "Adjunta" / "Sin licencia"
+            // Encabezado: ícono + título completo (sin la etiqueta gris, que le quitaba espacio)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(AppIcons.Badge, contentDescription = null, tint = colors.title, modifier = Modifier.size(22.dp))
                 Spacer(Modifier.width(dimens.spaceS))
@@ -362,20 +352,8 @@ private fun LicenseCard(state: ReservationDetailUiState, onEvent: (ReservationDe
                     text = stringResource(Res.string.request_detail_license),
                     style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
                     color = colors.title,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                if (detail != null) {
-                    Overline(
-                        text = stringResource(
-                            if (hasLicense) Res.string.request_detail_license_attached else Res.string.request_detail_license_none,
-                        ),
-                        modifier = Modifier
-                            .background(colors.labelBackground, RoundedCornerShape(dimens.radius))
-                            .padding(horizontal = dimens.spaceS, vertical = 2.dp),
-                    )
-                }
             }
             Spacer(Modifier.height(dimens.spaceM))
 
@@ -453,6 +431,16 @@ private fun CardDivider() {
 }
 
 /** "Fecha de respuesta ............ 📅 26/10/2026 16:02" */
+@Composable
+private fun DateOnlyRow(contentDescription: String, value: String) {
+    val colors = AppTheme.colors
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Icon(AppIcons.Calendar, contentDescription = contentDescription, tint = colors.textSecondary, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(AppTheme.dimens.spaceS))
+        Text(value, style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold), color = colors.title)
+    }
+}
+
 @Composable
 private fun DateRow(label: String, value: String) {
     val colors = AppTheme.colors

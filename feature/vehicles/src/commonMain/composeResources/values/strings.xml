@@ -56,7 +56,7 @@
     <string name="vehicle_list_no_results">No se encontraron vehículos con esa búsqueda.</string>
     <string name="vehicle_list_offline">Sin conexión: estás viendo la última información guardada.</string>
     <string name="vehicle_list_pending">Cambios pendientes de sincronizar: %1$d</string>
-    <string name="vehicle_list_search">¿Qué vehículo buscas?</string>
+    <string name="vehicle_list_search">Buscar</string>
     <string name="vehicle_list_title">Vehículos</string>
     <string name="vehicle_liters_suffix">L</string>
     <string name="vehicle_liters_value">%1$s litros</string>
@@ -86,5 +86,19 @@
     <string name="cd_remove_photo">Quitar foto</string>
     <string name="reservation_queued_title">¡Solicitud guardada!</string>
     <string name="reservation_queued_message">Estás sin conexión. Tu solicitud para el %1$s se enviará sola en cuanto vuelva el internet; puedes ver cómo va en la campana.</string>
+    <string name="vehicle_field_type">Tipo de vehículo</string>
+    <string name="vehicle_type_car">Carro</string>
+    <string name="vehicle_type_motorcycle">Moto</string>
+    <string name="vehicle_type_pickup">Camioneta</string>
+    <string name="vehicle_type_truck">Camión</string>
+    <string name="vehicle_search_placeholder">Marca, modelo, color o placas</string>
+    <string name="vehicle_search_status">Estado</string>
+    <string name="vehicle_search_type">Tipo de vehículo</string>
+    <string name="vehicle_search_results">Resultados</string>
+    <string name="vehicle_search_clear_all">Borrar todo</string>
+    <string name="vehicle_search_show_results">Ver %1$d vehículos</string>
+    <string name="vehicle_search_show_one">Ver 1 vehículo</string>
+    <string name="vehicle_search_show_none">Sin resultados</string>
+    <string name="cd_clear_filters">Quitar búsqueda y filtros</string>
     <string name="vehicle_select_hint">Elige un carro de la lista para ver su detalle.</string>
 </resources>

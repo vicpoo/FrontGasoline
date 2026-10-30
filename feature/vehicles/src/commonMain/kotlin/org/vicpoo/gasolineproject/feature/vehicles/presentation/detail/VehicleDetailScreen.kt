@@ -65,6 +65,7 @@ import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.reservations.api.VehicleRequester
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.toImageModel
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.icon
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.label
 import org.vicpoo.gasolineproject.feature.vehicles.presentation.list.VehiclesMode
 import org.vicpoo.gasolineproject.feature.vehicles.resources.Res
@@ -96,6 +97,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_milea
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_plates
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_status
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_tank
+import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_type
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_year
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_km_value
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_liters_value
@@ -234,6 +236,7 @@ private fun RequestReasonSheet(vehicle: Vehicle?, state: VehicleDetailUiState, o
                 Row(Modifier.padding(dimens.spaceM), verticalAlignment = Alignment.CenterVertically) {
                     AppImage(
                         model = vehicle.photo?.toImageModel(),
+                        fallbackIcon = vehicle.type.icon,
                         contentDescription = vehicle.cardTitle,
                         modifier = Modifier.size(width = 88.dp, height = 72.dp).clip(RoundedCornerShape(dimens.radius)),
                     )
@@ -283,32 +286,62 @@ private fun DetailCompact(
     onEvent: (VehicleDetailEvent) -> Unit,
 ) {
     val dimens = AppTheme.dimens
+    val colors = AppTheme.colors
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppTheme.colors.background)
-            .verticalScroll(rememberScrollState())
+            .background(colors.background)
             .navigationBarsPadding(),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.fillMaxWidth()) {
-            AppImage(
-                model = vehicle.photo?.toImageModel(),
-                contentDescription = vehicle.model,
-                modifier = Modifier.fillMaxWidth().aspectRatio(16f / 10f),
-            )
-            AppBackButton(
-                onClick = onBack,
-                modifier = Modifier.statusBarsPadding().padding(dimens.spaceM),
-            )
-        }
         Column(
-            Modifier
+            modifier = Modifier
+                .weight(1f)
                 .fillMaxWidth()
-                .widthIn(max = dimens.maxContentWidth)
-                .padding(horizontal = dimens.screenPadding, vertical = dimens.spaceL),
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            VehicleInfo(vehicle, state, onEdit, onEvent)
+            Box(Modifier.fillMaxWidth()) {
+                AppImage(
+                    model = vehicle.photo?.toImageModel(),
+                    fallbackIcon = vehicle.type.icon,
+                    contentDescription = vehicle.model,
+                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 10f),
+                )
+                AppBackButton(
+                    onClick = onBack,
+                    modifier = Modifier.statusBarsPadding().padding(dimens.spaceM),
+                )
+            }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = dimens.maxContentWidth)
+                    .padding(horizontal = dimens.screenPadding, vertical = dimens.spaceL),
+            ) {
+                VehicleInfo(vehicle, state, onEdit, onEvent, showRequestButton = false)
+            }
+        }
+        // Solicitar fijo hasta abajo (estilo barra de "Reservar" de Airbnb): siempre a la mano
+        // sin tener que hacer scroll, y separado de los datos del carro.
+        if (state.canRequest) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(colors.textSecondary.copy(alpha = if (colors.isDark) 0.35f else 0.15f)),
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = dimens.screenPadding, vertical = dimens.spaceM),
+                contentAlignment = Alignment.Center,
+            ) {
+                PrimaryButton(
+                    text = stringResource(Res.string.reservation_request_button),
+                    onClick = { onEvent(VehicleDetailEvent.RequestClicked) },
+                    modifier = Modifier.fillMaxWidth().widthIn(max = dimens.maxContentWidth),
+                )
+            }
         }
     }
 }
@@ -335,6 +368,7 @@ private fun DetailExpanded(
         Box(Modifier.weight(1f)) {
             AppImage(
                 model = vehicle.photo?.toImageModel(),
+                fallbackIcon = vehicle.type.icon,
                 contentDescription = vehicle.model,
                 modifier = Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(RoundedCornerShape(dimens.radius)),
             )
@@ -352,6 +386,7 @@ private fun ColumnScope.VehicleInfo(
     state: VehicleDetailUiState,
     onEdit: () -> Unit,
     onEvent: (VehicleDetailEvent) -> Unit,
+    showRequestButton: Boolean = true,
 ) {
     val dimens = AppTheme.dimens
     TitleText(vehicle.model)
@@ -366,6 +401,7 @@ private fun ColumnScope.VehicleInfo(
     }
     Spacer(Modifier.height(dimens.spaceL))
 
+    InfoRow(stringResource(Res.string.vehicle_field_type), vehicle.type.label())
     InfoRow(stringResource(Res.string.vehicle_field_plates), vehicle.plates)
     InfoRow(stringResource(Res.string.vehicle_field_year), vehicle.year?.toString() ?: "—")
     InfoRow(stringResource(Res.string.vehicle_field_color), vehicle.color ?: "—")
@@ -382,7 +418,7 @@ private fun ColumnScope.VehicleInfo(
     }
 
     // RBAC: cada botón aparece solo si el usuario tiene el privilegio
-    if (state.canRequest) {
+    if (state.canRequest && showRequestButton) {
         Spacer(Modifier.height(dimens.spaceXl))
         AppButton(
             text = stringResource(Res.string.reservation_request_button),

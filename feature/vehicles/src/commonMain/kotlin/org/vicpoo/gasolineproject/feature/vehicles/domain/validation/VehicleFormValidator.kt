@@ -3,6 +3,7 @@ package org.vicpoo.gasolineproject.feature.vehicles.domain.validation
 import org.vicpoo.gasolineproject.core.common.ValidationReason
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleDraft
+import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleType
 
 /** Campos del formulario de vehículo. */
 enum class VehicleField { BRAND, MODEL, PLATES, YEAR, COLOR, MILEAGE, TANK }
@@ -16,6 +17,8 @@ data class VehicleFormInput(
     val color: String = "",
     val mileage: String = "",
     val tank: String = "",
+    /** Se elige con tarjetas (no se escribe), por eso no es un [VehicleField]. */
+    val type: VehicleType = VehicleType.CAR,
     val newPhoto: PickedFile? = null,
     val removePhoto: Boolean = false,
 ) {
@@ -69,6 +72,7 @@ class VehicleFormValidator {
         color = input.color.trim(),
         mileageKm = parseDecimal(input.mileage) ?: 0.0,
         tankCapacityLiters = parseDecimal(input.tank) ?: 0.0,
+        type = input.type,
         newPhoto = input.newPhoto,
         removePhoto = input.removePhoto,
     )

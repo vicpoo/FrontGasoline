@@ -18,6 +18,8 @@ data class AssignedVehicle(
     /** Kilometraje actual del carro: será el kilometraje inicial del viaje. */
     val mileage: Double,
     val tankCapacityLiters: Double?,
+    /** TipoVehiculo de la API ("carro", "moto", "camioneta", "camion"); cambia el ícono. */
+    val vehicleType: String? = null,
 ) {
     val title: String get() = "$brand $model".trim()
 }

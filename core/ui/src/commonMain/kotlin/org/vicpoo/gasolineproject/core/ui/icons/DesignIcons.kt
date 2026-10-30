@@ -219,6 +219,49 @@ internal object DesignIcons {
             svgPath("M20.5 14H19C18.4477 14 18 14.4477 18 15V15.5C18 16.0523 18.4477 16.5 19 16.5H19.5C20.0523 16.5 20.5 16.9477 20.5 17.5V18C20.5 18.5523 20.0523 19 19.5 19H18", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
         }
     }
+
+    /** Moto (tipo de vehículo) — motorbike-stroke-rounded.svg */
+    val Motorbike: ImageVector by lazy {
+        svgIcon("Motorbike") {
+            svgPath("M8 16.5C8 18.1569 6.65685 19.5 5 19.5C3.34315 19.5 2 18.1569 2 16.5C2 14.8431 3.34315 13.5 5 13.5C6.65685 13.5 8 14.8431 8 16.5Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M22 16.5C22 18.1569 20.6569 19.5 19 19.5C17.3431 19.5 16 18.1569 16 16.5C16 14.8431 17.3431 13.5 19 13.5C20.6569 13.5 22 14.8431 22 16.5Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M19 16.5L15.5 7H13.5", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M5 16.5L7 12.5H10.5L12 10.5H14.8C15.2 10.5 15.5 10.8 15.6 11.2L16.2 13.5", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M3.5 10.5H8.5L10.5 12.5", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M9.5 16.5H12.5C13.4 16.5 13.85 16.5 14.2 16.3C14.55 16.1 14.75 15.7 15.15 14.9L15.7 13.8", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        }
+    }
+
+    /** Camioneta pickup (tipo de vehículo) — pickup-stroke-rounded.svg */
+    val Pickup: ImageVector by lazy {
+        svgIcon("Pickup") {
+            svgPath("M9 17.5C9 18.6046 8.10457 19.5 7 19.5C5.89543 19.5 5 18.6046 5 17.5C5 16.3954 5.89543 15.5 7 15.5C8.10457 15.5 9 16.3954 9 17.5Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M20 17.5C20 18.6046 19.1046 19.5 18 19.5C16.8954 19.5 16 18.6046 16 17.5C16 16.3954 16.8954 15.5 18 15.5C19.1046 15.5 20 16.3954 20 17.5Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M5 17.5H4C2.9 17.5 2 16.6 2 15.5V12C2 11.06 2 10.59 2.29 10.29C2.59 10 3.06 10 4 10H11V7.5C11 6.56 11 6.09 11.29 5.79C11.59 5.5 12.06 5.5 13 5.5H15C15.6 5.5 15.9 5.5 16.16 5.63C16.42 5.76 16.6 6 16.96 6.48L19 9.2L20.5 9.75C21.2 10 21.55 10.13 21.78 10.42C22 10.7 22 11.07 22 11.8V15.5C22 16.6 21.1 17.5 20 17.5", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M9 17.5H16", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M11 10H19", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        }
+    }
+
+    /** Camión (tipo de vehículo) — truck-stroke-rounded.svg */
+    val Truck: ImageVector by lazy {
+        svgIcon("Truck") {
+            svgPath("M9 17.5C9 18.6046 8.10457 19.5 7 19.5C5.89543 19.5 5 18.6046 5 17.5C5 16.3954 5.89543 15.5 7 15.5C8.10457 15.5 9 16.3954 9 17.5Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M20 17.5C20 18.6046 19.1046 19.5 18 19.5C16.8954 19.5 16 18.6046 16 17.5C16 16.3954 16.8954 15.5 18 15.5C19.1046 15.5 20 16.3954 20 17.5Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M5 17.5C3.58579 17.5 2.87868 17.5 2.43934 17.0607C2 16.6213 2 15.9142 2 14.5V6.5C2 5.08579 2 4.37868 2.43934 3.93934C2.87868 3.5 3.58579 3.5 5 3.5H11.5C12.9142 3.5 13.6213 3.5 14.0607 3.93934C14.5 4.37868 14.5 5.08579 14.5 6.5V17.5H9", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M14.5 8H16.4C17.23 8 17.65 8 18 8.2C18.35 8.4 18.57 8.76 19 9.47L20.6 12.13C20.8 12.48 20.91 12.65 20.96 12.84C21 13.03 21 13.23 21 13.63V17.5H20", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M14.5 17.5H16", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        }
+    }
+
+    /** Filtros (deslizadores) — filter-horizontal, mismo trazo 1.5 redondeado */
+    val FilterHorizontal: ImageVector by lazy {
+        svgIcon("FilterHorizontal") {
+            svgPath("M3 7H6M12 7H21M3 17H12M18 17H21", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M6 7C6 6.06812 6 5.60218 6.15224 5.23463C6.35523 4.74458 6.74458 4.35523 7.23463 4.15224C7.60218 4 8.06812 4 9 4C9.93188 4 10.3978 4 10.7654 4.15224C11.2554 4.35523 11.6448 4.74458 11.8478 5.23463C12 5.60218 12 6.06812 12 7C12 7.93188 12 8.39782 11.8478 8.76537C11.6448 9.25542 11.2554 9.64477 10.7654 9.84776C10.3978 10 9.93188 10 9 10C8.06812 10 7.60218 10 7.23463 9.84776C6.74458 9.64477 6.35523 9.25542 6.15224 8.76537C6 8.39782 6 7.93188 6 7Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            svgPath("M12 17C12 16.0681 12 15.6022 12.1522 15.2346C12.3552 14.7446 12.7446 14.3552 13.2346 14.1522C13.6022 14 14.0681 14 15 14C15.9319 14 16.3978 14 16.7654 14.1522C17.2554 14.3552 17.6448 14.7446 17.8478 15.2346C18 15.6022 18 16.0681 18 17C18 17.9319 18 18.3978 17.8478 18.7654C17.6448 19.2554 17.2554 19.6448 16.7654 19.8478C16.3978 20 15.9319 20 15 20C14.0681 20 13.6022 20 13.2346 19.8478C12.7446 19.6448 12.3552 19.2554 12.1522 18.7654C12 18.3978 12 17.9319 12 17Z", stroked = true, filled = false, width = 1.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        }
+    }
 }
 
 /** Crea un ícono de 24x24 a partir de trazos SVG. */

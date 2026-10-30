@@ -22,11 +22,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.jetbrains.compose.resources.StringResource
@@ -66,31 +63,26 @@ fun MyReservationCard(request: ReservationRequest, onClick: (() -> Unit)? = null
 
     AppCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
         Column(Modifier.fillMaxWidth().padding(dimens.spaceS)) {
-            // Carro + placas + estado
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(dimens.spaceS),
-                ) {
-                    Text(
-                        text = title,
-                        style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
-                        color = colors.title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    request.plates?.takeIf { it.isNotBlank() }?.let { PlatesTag(it) }
-                }
-                Spacer(Modifier.width(dimens.spaceS))
-                StatusDotBadge(request.status)
-            }
+            // Nombre del carro con todo el ancho para que se lea completo
+            Text(
+                text = title,
+                style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
+                color = colors.title,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
 
-            // Fecha
-            formatDate(request.requestedAt)?.let { date ->
-                Spacer(Modifier.height(dimens.spaceXs))
-                RequestedOn(date)
+            // Abajo: placas + estado a la izquierda y la fecha a la derecha
+            Spacer(Modifier.height(dimens.spaceS))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(dimens.spaceS),
+            ) {
+                request.plates?.takeIf { it.isNotBlank() }?.let { PlatesTag(it) }
+                StatusDotBadge(request.status)
+                Spacer(Modifier.weight(1f))
+                formatDate(request.requestedAt)?.let { date -> RequestedOn(date) }
             }
 
             // Para qué se pidió
@@ -142,22 +134,20 @@ internal fun PlatesTag(plates: String) {
     )
 }
 
-/** Ícono de calendario + "Solicitada el **26/10/2026**". */
+/** Solo ícono de calendario + fecha ("26/10/2026"); el ícono ya dice que es la fecha. */
 @Composable
-private fun RequestedOn(date: String) {
+internal fun RequestedOn(date: String, modifier: Modifier = Modifier) {
     val colors = AppTheme.colors
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(AppIcons.Calendar, contentDescription = null, tint = colors.textSecondary, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(AppTheme.dimens.spaceS))
-        val label = stringResource(Res.string.requests_requested_on)
+    val label = stringResource(Res.string.requests_requested_on)
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        // El texto "Solicitada el" queda solo para lectores de pantalla
+        Icon(AppIcons.Calendar, contentDescription = label, tint = colors.textSecondary, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(AppTheme.dimens.spaceXs))
         Text(
-            text = buildAnnotatedString {
-                append(label)
-                append(' ')
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold, color = colors.text)) { append(date) }
-            },
-            style = AppTheme.typography.bodySecondary,
-            color = colors.textSecondary,
+            text = date,
+            style = AppTheme.typography.bodySecondary.copy(fontWeight = FontWeight.Medium),
+            color = colors.text,
+            maxLines = 1,
         )
     }
 }

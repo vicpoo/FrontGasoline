@@ -18,6 +18,8 @@ data class VehicleEntity(
     val mileageKm: Double = 0.0,
     val tankCapacityLiters: Double? = null,
     val status: String? = null,
+    /** TipoVehiculo de la API ("carro", "moto"...); null en datos guardados antes de esta versión. */
+    val type: String? = null,
     val photoUrl: String? = null,
     val localPhotoPath: String? = null,
     val localPhotoMime: String? = null,

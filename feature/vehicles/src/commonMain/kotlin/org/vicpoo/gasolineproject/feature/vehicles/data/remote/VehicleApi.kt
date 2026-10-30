@@ -29,6 +29,8 @@ data class CarroDto(
     val kilometrajeActual: Double = 0.0,
     /** "disponible" | "ocupado" | "enMantenimiento" */
     val estado: String? = null,
+    /** "carro" | "moto" | "camioneta" | "camion" (null si la API aún no tiene la columna) */
+    val tipoVehiculo: String? = null,
     val dadoDeBaja: Boolean = false,
 )
 
@@ -43,6 +45,8 @@ data class CarroRequestDto(
     val placas: String,
     val capacidadTanque: Double?,
     val kilometrajeActual: Double,
+    /** "carro" | "moto" | "camioneta" | "camion" */
+    val tipoVehiculo: String,
 )
 
 /** Fuente remota de vehículos (CarrosController). */

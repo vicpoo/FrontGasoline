@@ -16,6 +16,8 @@ data class Vehicle(
     val mileageKm: Double,
     val tankCapacityLiters: Double?,
     val status: VehicleStatus,
+    /** Carro, moto, camioneta o camión (cambia el ícono de la tarjeta). */
+    val type: VehicleType = VehicleType.CAR,
     val photo: VehiclePhoto?,
     val syncState: SyncState,
     /** Mensaje de la API si el último intento de sincronizar falló (ej. placas repetidas). */
@@ -48,6 +50,25 @@ enum class VehicleStatus {
     }
 }
 
+/**
+ * TipoVehiculo de la API: "carro", "moto", "camioneta", "camion".
+ * [apiValue] es lo que se manda/recibe en el JSON (camelCase, igual que la API).
+ */
+enum class VehicleType(val apiValue: String) {
+    CAR("carro"),
+    MOTORCYCLE("moto"),
+    PICKUP("camioneta"),
+    TRUCK("camion");
+
+    companion object {
+        /** Lo desconocido o vacío (carros viejos, API sin la columna) se muestra como carro. */
+        fun fromApi(value: String?): VehicleType {
+            val v = value?.trim()?.lowercase()
+            return entries.firstOrNull { it.apiValue == v } ?: CAR
+        }
+    }
+}
+
 /** Estado de sincronización offline-first. */
 enum class SyncState { SYNCED, PENDING_CREATE, PENDING_UPDATE, PENDING_DELETE }
 
@@ -74,6 +95,7 @@ data class VehicleDraft(
     val color: String,
     val mileageKm: Double,
     val tankCapacityLiters: Double,
+    val type: VehicleType = VehicleType.CAR,
     /** Foto nueva elegida por el usuario (null = no cambia). */
     val newPhoto: PickedFile?,
     /** true si el usuario quitó la foto y no eligió otra. */

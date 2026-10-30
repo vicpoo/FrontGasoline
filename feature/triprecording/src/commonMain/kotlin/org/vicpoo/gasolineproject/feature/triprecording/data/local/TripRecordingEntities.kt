@@ -19,6 +19,8 @@ data class AssignedVehicleEntity(
     val photoUrl: String? = null,
     val mileage: Double = 0.0,
     val tankCapacityLiters: Double? = null,
+    /** TipoVehiculo de la API ("carro", "moto"...); null en datos guardados antes. */
+    val vehicleType: String? = null,
 )
 
 @Serializable

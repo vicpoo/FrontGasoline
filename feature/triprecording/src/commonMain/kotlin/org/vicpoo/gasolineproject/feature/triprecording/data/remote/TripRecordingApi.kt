@@ -42,6 +42,8 @@ data class AssignedCarroDto(
     val fotoVehiculoUrl: String? = null,
     val capacidadTanque: Double? = null,
     val kilometrajeActual: Double = 0.0,
+    /** "carro" | "moto" | "camioneta" | "camion" (null si la API aún no lo manda) */
+    val tipoVehiculo: String? = null,
     val dadoDeBaja: Boolean = false,
 )
 

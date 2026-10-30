@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -77,6 +78,8 @@ fun ReviewRow(
     modifier: Modifier = Modifier,
     isError: Boolean = false,
     showDivider: Boolean = true,
+    /** Si se da, el botón muestra solo este ícono (ej. "+") y [actionText] queda para accesibilidad. */
+    actionIcon: ImageVector? = null,
 ) {
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
@@ -97,11 +100,18 @@ fun ReviewRow(
                 color = colors.labelBackground,
                 contentColor = colors.onLabel,
             ) {
-                Text(
-                    text = actionText,
-                    style = AppTheme.typography.body.copy(fontWeight = FontWeight.Medium),
-                    modifier = Modifier.padding(horizontal = dimens.spaceM, vertical = dimens.spaceS),
-                )
+                if (actionIcon != null) {
+                    // Botón cuadrado con el "+" (mismo alto que el de texto)
+                    Box(Modifier.size(dimens.iconButtonSize), contentAlignment = Alignment.Center) {
+                        Icon(actionIcon, contentDescription = actionText, modifier = Modifier.size(20.dp))
+                    }
+                } else {
+                    Text(
+                        text = actionText,
+                        style = AppTheme.typography.body.copy(fontWeight = FontWeight.Medium),
+                        modifier = Modifier.padding(horizontal = dimens.spaceM, vertical = dimens.spaceS),
+                    )
+                }
             }
         }
         if (showDivider) HorizontalDivider(color = colors.divider)

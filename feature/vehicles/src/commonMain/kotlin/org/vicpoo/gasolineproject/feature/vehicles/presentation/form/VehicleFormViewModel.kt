@@ -14,16 +14,17 @@ import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.ValidationReason
+import org.vicpoo.gasolineproject.core.common.formatDecimal
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehiclePhoto
+import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleType
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.toImageModel
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.ObserveVehicleUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.usecase.SaveVehicleUseCase
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleField
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleFormInput
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleFormValidator
-import org.vicpoo.gasolineproject.core.common.formatDecimal
 
 /** vehicleId == null -> Agregar · vehicleId != null -> Editar */
 data class VehicleFormArgs(val vehicleId: String?)
@@ -81,6 +82,8 @@ sealed interface VehicleFormEvent {
     data object ConfirmSection : VehicleFormEvent
 
     data class FieldChanged(val field: VehicleField, val value: String) : VehicleFormEvent
+    /** Carro / Moto / Camioneta / Camión (tarjetas en la hoja "Vehículo"). */
+    data class TypeChanged(val type: VehicleType) : VehicleFormEvent
     data class PhotoPicked(val file: PickedFile?) : VehicleFormEvent
     data object RemovePhoto : VehicleFormEvent
 
@@ -124,6 +127,7 @@ class VehicleFormViewModel(
             is VehicleFormEvent.FieldChanged -> _state.update {
                 it.copy(draft = it.draft.with(event.field, event.value), draftErrors = it.draftErrors - event.field)
             }
+            is VehicleFormEvent.TypeChanged -> _state.update { it.copy(draft = it.draft.copy(type = event.type)) }
             is VehicleFormEvent.PhotoPicked -> onPhotoPicked(event.file)
             VehicleFormEvent.RemovePhoto -> _state.update {
                 it.copy(draft = it.draft.copy(newPhoto = null, removePhoto = true), photoError = null)
@@ -226,4 +230,5 @@ private fun Vehicle.toFormInput() = VehicleFormInput(
     color = color.orEmpty(),
     mileage = formatDecimal(mileageKm),
     tank = tankCapacityLiters?.let(::formatDecimal).orEmpty(),
+    type = type,
 )

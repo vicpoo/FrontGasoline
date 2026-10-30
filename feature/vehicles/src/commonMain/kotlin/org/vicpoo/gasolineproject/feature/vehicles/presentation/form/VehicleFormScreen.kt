@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.form
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -50,8 +54,11 @@ import org.vicpoo.gasolineproject.core.ui.components.TitleText
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
+import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleType
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleField
 import org.vicpoo.gasolineproject.feature.vehicles.domain.validation.VehicleFormValidator
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.icon
+import org.vicpoo.gasolineproject.feature.vehicles.presentation.common.label
 import org.vicpoo.gasolineproject.feature.vehicles.resources.Res
 import org.vicpoo.gasolineproject.feature.vehicles.resources.action_add_short
 import org.vicpoo.gasolineproject.feature.vehicles.resources.action_cancel
@@ -66,6 +73,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_model
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_photo
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_plates
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_tank
+import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_type
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_field_year
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_form_add_title
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_form_edit_title
@@ -174,9 +182,11 @@ fun VehicleFormScreen(
             VehicleHeader(state)
             HorizontalDivider(color = AppTheme.colors.divider)
 
+            val brandModel = listOf(input.brand, input.model).filter { it.isNotBlank() }.joinToString(" ")
             SectionRow(
                 state, onEvent, VehicleFormSection.BASICS, Res.string.vehicle_section_basics,
-                value = listOf(input.brand, input.model).filter { it.isNotBlank() }.joinToString(" "),
+                // "Moto · Italika FT150" (el tipo solo se muestra cuando ya hay marca/modelo)
+                value = brandModel.takeIf { it.isNotBlank() }?.let { "${input.type.label()} · $it" }.orEmpty(),
             )
             SectionRow(
                 state, onEvent, VehicleFormSection.IDENTIFICATION, Res.string.vehicle_section_identification,
@@ -230,7 +240,7 @@ private fun VehicleHeader(state: VehicleFormUiState) {
         AppImage(
             model = state.photoModel,
             contentDescription = null,
-            fallbackIcon = AppIcons.Car,
+            fallbackIcon = state.input.type.icon,
             modifier = Modifier.size(width = 96.dp, height = 80.dp).clip(RoundedCornerShape(dimens.radius)),
         )
         Spacer(Modifier.width(dimens.spaceM))
@@ -262,6 +272,8 @@ private fun SectionRow(
             else -> value
         },
         actionText = stringResource(if (filled) Res.string.action_modify else Res.string.action_add_short),
+        // Sin llenar: solo "+" (más limpio); ya llena: "Modificar"
+        actionIcon = if (filled) null else AppIcons.Plus,
         onAction = { onEvent(VehicleFormEvent.OpenSection(section)) },
         isError = hasError,
         showDivider = showDivider,
@@ -295,6 +307,11 @@ private fun SectionSheet(
     ) {
         when (section) {
             VehicleFormSection.BASICS -> {
+                VehicleTypePicker(
+                    selected = state.draft.type,
+                    onSelect = { onEvent(VehicleFormEvent.TypeChanged(it)) },
+                )
+                Spacer(Modifier.height(AppTheme.dimens.spaceL))
                 FormField(state, onEvent, VehicleField.BRAND, Res.string.vehicle_field_brand, Res.string.vehicle_hint_brand, capitalization = KeyboardCapitalization.Words)
                 FormField(
                     state, onEvent, VehicleField.MODEL, Res.string.vehicle_field_model, Res.string.vehicle_hint_model,
@@ -367,3 +384,66 @@ private fun FormField(
     )
     Spacer(Modifier.height(AppTheme.dimens.spaceS))
 }
+
+/**
+ * Tipo de vehículo como en Airbnb ("¿Qué tipo de alojamiento?"): tarjetas de 2 en 2 con el ícono
+ * y el nombre; la elegida lleva borde grueso del color principal.
+ */
+@Composable
+private fun VehicleTypePicker(selected: VehicleType, onSelect: (VehicleType) -> Unit) {
+    val dimens = AppTheme.dimens
+    Text(
+        text = stringResource(Res.string.vehicle_field_type),
+        style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+        color = AppTheme.colors.title,
+    )
+    Spacer(Modifier.height(dimens.spaceS))
+    Column(verticalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
+        VehicleType.entries.chunked(2).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
+                row.forEach { type ->
+                    VehicleTypeOption(
+                        type = type,
+                        isSelected = type == selected,
+                        onClick = { onSelect(type) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                // Si quedara una sola en la fila, que no se estire al doble
+                if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun VehicleTypeOption(type: VehicleType, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val colors = AppTheme.colors
+    val dimens = AppTheme.dimens
+    Surface(
+        onClick = onClick,
+        modifier = modifier.semantics { selected = isSelected },
+        shape = RoundedCornerShape(dimens.radius),
+        color = if (isSelected) colors.primary.copy(alpha = if (colors.isDark) 0.18f else 0.06f) else colors.background,
+        border = BorderStroke(
+            width = if (isSelected) 2.dp else 1.dp,
+            color = if (isSelected) colors.primary else colors.textSecondary.copy(alpha = if (colors.isDark) 0.45f else 0.25f),
+        ),
+    ) {
+        Column(Modifier.padding(dimens.spaceM)) {
+            Icon(
+                imageVector = type.icon,
+                contentDescription = null,
+                tint = if (isSelected) colors.primary else colors.title,
+                modifier = Modifier.size(28.dp),
+            )
+            Spacer(Modifier.height(dimens.spaceS))
+            Text(
+                text = type.label(),
+                style = AppTheme.typography.body.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium),
+                color = colors.title,
+            )
+        }
+    }
+}
+

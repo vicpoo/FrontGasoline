@@ -44,11 +44,29 @@ object AppIcons {
 
     val Search: ImageVector get() = DesignIcons.Search
 
+    val Filter: ImageVector get() = DesignIcons.FilterHorizontal
+
     val Plus: ImageVector get() = DesignIcons.Plus
 
     val Close: ImageVector get() = DesignIcons.X
 
     val Car: ImageVector get() = DesignIcons.CarFront
+
+    /** Tipos de vehículo (mismo trazo que [Car]); úsalos según el tipo del carro. */
+    val Motorbike: ImageVector get() = DesignIcons.Motorbike
+    val Pickup: ImageVector get() = DesignIcons.Pickup
+    val Truck: ImageVector get() = DesignIcons.Truck
+
+    /**
+     * Ícono según el TipoVehiculo de la API ("carro", "moto", "camioneta", "camion").
+     * Lo desconocido o null (carros viejos) es [Car].
+     */
+    fun vehicleType(apiValue: String?): ImageVector = when (apiValue?.trim()?.lowercase()) {
+        "moto" -> Motorbike
+        "camioneta" -> Pickup
+        "camion", "camión" -> Truck
+        else -> Car
+    }
 
     val User: ImageVector get() = DesignIcons.User
 

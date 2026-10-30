@@ -29,6 +29,7 @@ fun SolicitudReservaDto.toAssignedEntity(car: AssignedCarroDto) = AssignedVehicl
     photoUrl = car.fotoVehiculoUrl,
     mileage = car.kilometrajeActual,
     tankCapacityLiters = car.capacidadTanque,
+    vehicleType = car.tipoVehiculo,
 )
 
 fun CentroCostoDto.toEntity() = CostCenterEntity(id = centroCostoId, name = nombre, key = clave)
@@ -45,6 +46,7 @@ fun AssignedVehicleEntity.toDomain() = AssignedVehicle(
     photoUrl = photoUrl,
     mileage = mileage,
     tankCapacityLiters = tankCapacityLiters,
+    vehicleType = vehicleType,
 )
 
 fun AssignedVehicle.toEntity() = AssignedVehicleEntity(
@@ -57,6 +59,7 @@ fun AssignedVehicle.toEntity() = AssignedVehicleEntity(
     photoUrl = photoUrl,
     mileage = mileage,
     tankCapacityLiters = tankCapacityLiters,
+    vehicleType = vehicleType,
 )
 
 fun CostCenterEntity.toDomain() = CostCenter(id = id, name = name, key = key)

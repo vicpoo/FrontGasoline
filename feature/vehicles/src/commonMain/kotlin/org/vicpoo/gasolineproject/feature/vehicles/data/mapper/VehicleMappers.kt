@@ -7,6 +7,7 @@ import org.vicpoo.gasolineproject.feature.vehicles.domain.model.SyncState
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehiclePhoto
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleStatus
+import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleType
 
 fun VehicleEntity.toDomain() = Vehicle(
     id = localId,
@@ -19,6 +20,7 @@ fun VehicleEntity.toDomain() = Vehicle(
     mileageKm = mileageKm,
     tankCapacityLiters = tankCapacityLiters,
     status = VehicleStatus.fromApi(status),
+    type = VehicleType.fromApi(type),
     photo = when {
         localPhotoPath != null -> VehiclePhoto.Local(localPhotoPath)
         photoUrl != null -> VehiclePhoto.Remote(photoUrl)
@@ -40,6 +42,7 @@ fun CarroDto.toEntity() = VehicleEntity(
     mileageKm = kilometrajeActual,
     tankCapacityLiters = capacidadTanque,
     status = estado,
+    type = tipoVehiculo,
     photoUrl = fotoVehiculoUrl?.takeIf { it.isNotBlank() },
     syncState = SyncState.SYNCED,
 )
@@ -53,4 +56,5 @@ fun VehicleEntity.toRequest() = CarroRequestDto(
     placas = plates,
     capacidadTanque = tankCapacityLiters,
     kilometrajeActual = mileageKm,
+    tipoVehiculo = VehicleType.fromApi(type).apiValue,
 )

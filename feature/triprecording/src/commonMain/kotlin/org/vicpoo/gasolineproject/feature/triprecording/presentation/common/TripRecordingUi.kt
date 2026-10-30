@@ -72,7 +72,7 @@ fun AssignedVehicleCard(
                         .background(colors.primary.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(AppIcons.Car, contentDescription = null, tint = colors.primary, modifier = Modifier.size(26.dp))
+                    Icon(AppIcons.vehicleType(vehicle.vehicleType), contentDescription = null, tint = colors.primary, modifier = Modifier.size(26.dp))
                 }
                 Spacer(Modifier.width(dimens.spaceM))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {

@@ -65,7 +65,9 @@ fun LoginScreen(
 
     AppScreen {
         AppBackButton(onClick = onBack)
-        Spacer(Modifier.height(dimens.spaceM))
+        // Los dos Spacer con peso centran el formulario en el alto disponible (sin espacio muerto
+        // abajo). El de abajo pesa un poco más para que quede ópticamente centrado, no caído.
+        Spacer(Modifier.weight(1f))
         TitleText(
             text = stringResource(Res.string.login_title),
             modifier = Modifier.fillMaxWidth(),
@@ -114,5 +116,8 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             isLoading = state.isLoading,
         )
+        Spacer(Modifier.weight(1.3f))
+        // Compensa la altura del botón de regresar para que el centro sea el de la pantalla
+        Spacer(Modifier.height(dimens.iconButtonSize))
     }
 }
