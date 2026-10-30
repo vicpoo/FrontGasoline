@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -32,7 +33,6 @@ import org.jetbrains.compose.resources.stringResource
 import org.vicpoo.gasolineproject.core.ui.components.AppFilterChip
 import org.vicpoo.gasolineproject.core.ui.components.AppTextButton
 import org.vicpoo.gasolineproject.core.ui.components.FullScreenSearch
-import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.Vehicle
 import org.vicpoo.gasolineproject.feature.vehicles.domain.model.VehicleStatus
@@ -44,11 +44,9 @@ import org.vicpoo.gasolineproject.feature.vehicles.resources.Res
 import org.vicpoo.gasolineproject.feature.vehicles.resources.cd_clear_search
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_list_no_results
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_clear_all
+import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_filters
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_placeholder
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_results
-import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_show_none
-import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_show_one
-import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_show_results
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_status
 import org.vicpoo.gasolineproject.feature.vehicles.resources.vehicle_search_type
 
@@ -57,10 +55,10 @@ private val FilterableStatuses = listOf(VehicleStatus.AVAILABLE, VehicleStatus.I
 
 /**
  * Vista de búsqueda de vehículos (se abre al tocar la barra de la lista), estilo Instagram/Airbnb:
- * - Arriba el campo con el teclado abierto.
- * - Filtros de Estado y Tipo en píldoras.
+ * - Arriba el campo; el teclado NO se abre solo, solo al tocar el campo.
+ * - "Filtros" con "Borrar todo" a la derecha, y las píldoras de Estado y Tipo.
  * - Mientras se escribe o filtra, los resultados en vivo (tocar uno abre su detalle).
- * - Abajo fijo: "Borrar todo" y "Ver N vehículos" (aplica a la lista y cierra).
+ * - Al regresar (‹ o atrás) o con la tecla buscar, la búsqueda y filtros quedan aplicados a la lista.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -71,7 +69,6 @@ internal fun VehicleSearchView(
 ) {
     val dimens = AppTheme.dimens
     val draft = search.draft
-    val count = search.results.size
 
     FullScreenSearch(
         query = draft.query,
@@ -80,30 +77,31 @@ internal fun VehicleSearchView(
         onDismiss = { onEvent(VehicleListEvent.SearchDismissed) },
         onSearch = { onEvent(VehicleListEvent.SearchApplied) },
         clearDescription = stringResource(Res.string.cd_clear_search),
-        bottomBar = {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                AppTextButton(
-                    text = stringResource(Res.string.vehicle_search_clear_all),
-                    onClick = { onEvent(VehicleListEvent.DraftCleared) },
-                    enabled = !draft.isEmpty,
-                )
-                Spacer(Modifier.weight(1f))
-                PrimaryButton(
-                    text = when (count) {
-                        0 -> stringResource(Res.string.vehicle_search_show_none)
-                        1 -> stringResource(Res.string.vehicle_search_show_one)
-                        else -> stringResource(Res.string.vehicle_search_show_results, count)
-                    },
-                    onClick = { onEvent(VehicleListEvent.SearchApplied) },
-                    enabled = count > 0,
-                )
-            }
-        },
+        // El teclado solo se abre cuando el usuario toca el campo
+        autoFocus = false,
     ) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth().weight(1f),
             contentPadding = PaddingValues(horizontal = dimens.screenPadding, vertical = dimens.spaceM),
         ) {
+            // "Filtros ................ Borrar todo" (el botón solo si hay algo que borrar)
+            item(key = "filters-header") {
+                Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = stringResource(Res.string.vehicle_search_filters),
+                        style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
+                        color = AppTheme.colors.title,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (!draft.isEmpty) {
+                        AppTextButton(
+                            text = stringResource(Res.string.vehicle_search_clear_all),
+                            onClick = { onEvent(VehicleListEvent.DraftCleared) },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(dimens.spaceS))
+            }
             item(key = "status") {
                 FilterGroup(title = stringResource(Res.string.vehicle_search_status)) {
                     FilterableStatuses.forEach { status ->

@@ -95,10 +95,8 @@
     <string name="vehicle_search_status">Estado</string>
     <string name="vehicle_search_type">Tipo de vehículo</string>
     <string name="vehicle_search_results">Resultados</string>
+    <string name="vehicle_search_filters">Filtros</string>
     <string name="vehicle_search_clear_all">Borrar todo</string>
-    <string name="vehicle_search_show_results">Ver %1$d vehículos</string>
-    <string name="vehicle_search_show_one">Ver 1 vehículo</string>
-    <string name="vehicle_search_show_none">Sin resultados</string>
     <string name="cd_clear_filters">Quitar búsqueda y filtros</string>
     <string name="vehicle_select_hint">Elige un carro de la lista para ver su detalle.</string>
 </resources>

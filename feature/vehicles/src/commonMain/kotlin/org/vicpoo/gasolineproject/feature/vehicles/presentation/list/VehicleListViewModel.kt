@@ -53,7 +53,7 @@ data class VehicleFilter(
 
 /** Vista de búsqueda abierta (la que se abre al tocar la barra, estilo Instagram / Airbnb). */
 data class VehicleSearchUiState(
-    /** Lo que se está escribiendo / eligiendo; se aplica a la lista hasta "Ver resultados". */
+    /** Lo que se está escribiendo / eligiendo; se aplica a la lista al cerrar la vista. */
     val draft: VehicleFilter = VehicleFilter(),
     /** Vehículos que coinciden con [draft] (para mostrarlos mientras se escribe y contarlos). */
     val results: List<Vehicle> = emptyList(),
@@ -91,13 +91,14 @@ sealed interface VehicleListEvent {
     // ---- Vista de búsqueda ----
     /** Tocar la barra: abre la vista con lo que ya estaba aplicado. */
     data object SearchOpened : VehicleListEvent
+    /** Regresar (‹ o atrás): sin botón de "Ver resultados", lo elegido queda aplicado al salir. */
     data object SearchDismissed : VehicleListEvent
     data class QueryChanged(val value: String) : VehicleListEvent
     data class StatusToggled(val status: VehicleStatus) : VehicleListEvent
     data class TypeToggled(val type: VehicleType) : VehicleListEvent
     /** "Borrar todo" dentro de la vista. */
     data object DraftCleared : VehicleListEvent
-    /** "Ver N vehículos" o la tecla buscar: aplica y cierra. */
+    /** La tecla buscar del teclado: aplica y cierra. */
     data object SearchApplied : VehicleListEvent
 
     /** La X de la barra: quita búsqueda y filtros sin abrir la vista. */
@@ -157,12 +158,11 @@ class VehicleListViewModel(
         when (event) {
             VehicleListEvent.Refresh -> refresh()
             VehicleListEvent.SearchOpened -> searchDraft.value = filter.value
-            VehicleListEvent.SearchDismissed -> searchDraft.value = null
             is VehicleListEvent.QueryChanged -> searchDraft.update { it?.copy(query = event.value) }
             is VehicleListEvent.StatusToggled -> searchDraft.update { it?.copy(statuses = it.statuses.toggle(event.status)) }
             is VehicleListEvent.TypeToggled -> searchDraft.update { it?.copy(types = it.types.toggle(event.type)) }
             VehicleListEvent.DraftCleared -> searchDraft.update { it?.let { VehicleFilter() } }
-            VehicleListEvent.SearchApplied -> {
+            VehicleListEvent.SearchDismissed, VehicleListEvent.SearchApplied -> {
                 searchDraft.value?.let { filter.value = it.copy(query = it.query.trim()) }
                 searchDraft.value = null
             }

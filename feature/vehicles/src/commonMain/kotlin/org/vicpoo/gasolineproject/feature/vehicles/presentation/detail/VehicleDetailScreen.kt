@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -276,7 +277,7 @@ private fun RequestReasonSheet(vehicle: Vehicle?, state: VehicleDetailUiState, o
     }
 }
 
-/** Teléfono: foto arriba a todo lo ancho, datos abajo. */
+/** Teléfono: foto arriba a todo lo ancho, datos abajo y los botones fijos abajo de la pantalla. */
 @Composable
 private fun DetailCompact(
     vehicle: Vehicle,
@@ -286,61 +287,70 @@ private fun DetailCompact(
     onEvent: (VehicleDetailEvent) -> Unit,
 ) {
     val dimens = AppTheme.dimens
-    val colors = AppTheme.colors
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(colors.background)
+            .background(AppTheme.colors.background)
             .navigationBarsPadding(),
     ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Box(Modifier.fillMaxWidth()) {
-                AppImage(
-                    model = vehicle.photo?.toImageModel(),
-                    fallbackIcon = vehicle.type.icon,
-                    contentDescription = vehicle.model,
-                    modifier = Modifier.fillMaxWidth().aspectRatio(16f / 10f),
-                )
-                AppBackButton(
-                    onClick = onBack,
-                    modifier = Modifier.statusBarsPadding().padding(dimens.spaceM),
-                )
-            }
+        // Los botones de abajo quedan un 5% de la pantalla arriba del borde
+        val bottomGap = maxHeight * 0.05f
+        Column(Modifier.fillMaxSize()) {
             Column(
-                Modifier
+                modifier = Modifier
+                    .weight(1f)
                     .fillMaxWidth()
-                    .widthIn(max = dimens.maxContentWidth)
-                    .padding(horizontal = dimens.screenPadding, vertical = dimens.spaceL),
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                VehicleInfo(vehicle, state, onEdit, onEvent, showRequestButton = false)
+                Box(Modifier.fillMaxWidth()) {
+                    AppImage(
+                        model = vehicle.photo?.toImageModel(),
+                        fallbackIcon = vehicle.type.icon,
+                        contentDescription = vehicle.model,
+                        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 10f),
+                    )
+                    AppBackButton(
+                        onClick = onBack,
+                        modifier = Modifier.statusBarsPadding().padding(dimens.spaceM),
+                    )
+                }
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = dimens.maxContentWidth)
+                        .padding(horizontal = dimens.screenPadding, vertical = dimens.spaceL),
+                ) {
+                    VehicleInfo(vehicle, state, onEdit, onEvent, showActions = false)
+                }
             }
-        }
-        // Solicitar fijo hasta abajo (estilo barra de "Reservar" de Airbnb): siempre a la mano
-        // sin tener que hacer scroll, y separado de los datos del carro.
-        if (state.canRequest) {
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(colors.textSecondary.copy(alpha = if (colors.isDark) 0.35f else 0.15f)),
-            )
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = dimens.screenPadding, vertical = dimens.spaceM),
-                contentAlignment = Alignment.Center,
-            ) {
-                PrimaryButton(
-                    text = stringResource(Res.string.reservation_request_button),
-                    onClick = { onEvent(VehicleDetailEvent.RequestClicked) },
-                    modifier = Modifier.fillMaxWidth().widthIn(max = dimens.maxContentWidth),
-                )
+
+            // Botones fijos abajo (Enviar solicitud / Editar · Eliminar), todos a la misma altura:
+            // siempre a la mano sin tener que hacer scroll.
+            if (state.canRequest || state.canEdit || state.canDelete) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = dimens.screenPadding, end = dimens.screenPadding, top = dimens.spaceM, bottom = bottomGap),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(dimens.spaceM),
+                ) {
+                    if (state.canRequest) {
+                        PrimaryButton(
+                            text = stringResource(Res.string.reservation_request_button),
+                            onClick = { onEvent(VehicleDetailEvent.RequestClicked) },
+                            modifier = Modifier.fillMaxWidth().widthIn(max = dimens.maxContentWidth),
+                        )
+                    }
+                    if (state.canEdit || state.canDelete) {
+                        EditDeleteButtons(
+                            state = state,
+                            onEdit = onEdit,
+                            onEvent = onEvent,
+                            modifier = Modifier.fillMaxWidth().widthIn(max = dimens.maxContentWidth),
+                        )
+                    }
+                }
             }
         }
     }
@@ -386,7 +396,8 @@ private fun ColumnScope.VehicleInfo(
     state: VehicleDetailUiState,
     onEdit: () -> Unit,
     onEvent: (VehicleDetailEvent) -> Unit,
-    showRequestButton: Boolean = true,
+    /** false = los botones van fijos abajo de la pantalla (teléfono), no después de los datos. */
+    showActions: Boolean = true,
 ) {
     val dimens = AppTheme.dimens
     TitleText(vehicle.model)
@@ -418,7 +429,9 @@ private fun ColumnScope.VehicleInfo(
     }
 
     // RBAC: cada botón aparece solo si el usuario tiene el privilegio
-    if (state.canRequest && showRequestButton) {
+    if (!showActions) return
+
+    if (state.canRequest) {
         Spacer(Modifier.height(dimens.spaceXl))
         AppButton(
             text = stringResource(Res.string.reservation_request_button),
@@ -430,25 +443,37 @@ private fun ColumnScope.VehicleInfo(
     }
     if (state.canEdit || state.canDelete) {
         Spacer(Modifier.height(dimens.spaceXl))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.spaceM)) {
-            if (state.canEdit) {
-                AppButton(
-                    text = stringResource(Res.string.action_edit),
-                    onClick = onEdit,
-                    modifier = Modifier.weight(1f),
-                    variant = AppButtonVariant.Secondary,
-                    outlined = true,
-                )
-            }
-            if (state.canDelete) {
-                AppButton(
-                    text = stringResource(Res.string.action_delete),
-                    onClick = { onEvent(VehicleDetailEvent.DeleteClicked) },
-                    modifier = Modifier.weight(1f),
-                    variant = AppButtonVariant.Danger,
-                    outlined = true,
-                )
-            }
+        EditDeleteButtons(state, onEdit, onEvent, Modifier.fillMaxWidth())
+    }
+}
+
+/** Editar / Eliminar lado a lado (cada uno solo si el usuario tiene el privilegio). */
+@Composable
+private fun EditDeleteButtons(
+    state: VehicleDetailUiState,
+    onEdit: () -> Unit,
+    onEvent: (VehicleDetailEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val dimens = AppTheme.dimens
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(dimens.spaceM)) {
+        if (state.canEdit) {
+            AppButton(
+                text = stringResource(Res.string.action_edit),
+                onClick = onEdit,
+                modifier = Modifier.weight(1f),
+                variant = AppButtonVariant.Secondary,
+                outlined = true,
+            )
+        }
+        if (state.canDelete) {
+            AppButton(
+                text = stringResource(Res.string.action_delete),
+                onClick = { onEvent(VehicleDetailEvent.DeleteClicked) },
+                modifier = Modifier.weight(1f),
+                variant = AppButtonVariant.Danger,
+                outlined = true,
+            )
         }
     }
 }
