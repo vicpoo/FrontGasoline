@@ -16,6 +16,7 @@
     <string name="active_trip_fuel_detail">$%1$s • %2$s L</string>
     <string name="active_trip_fuel_item">Recarga %1$d#</string>
     <string name="active_trip_gps_no_permission">Sin permiso de ubicación. Toca para activarlo.</string>
+    <string name="active_trip_gps_approximate">Ubicación aproximada: la ruta saldrá imprecisa. Toca para activar la precisa.</string>
     <string name="active_trip_gps_on">Señal de GPS activa</string>
     <string name="active_trip_gps_searching">Buscando señal de GPS…</string>
     <string name="active_trip_no_fuel">Aún no registras recargas en este viaje.</string>

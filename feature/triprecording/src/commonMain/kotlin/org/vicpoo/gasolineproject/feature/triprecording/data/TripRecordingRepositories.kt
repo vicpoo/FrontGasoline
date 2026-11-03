@@ -188,7 +188,11 @@ class FuelRecordRepositoryImpl(
     }
 
     override suspend fun markForRetry(localId: String) {
-        store.updateFuel(localId) { it.copy(syncErrorMessage = null, syncErrorCode = null) }
+        val fuel = store.updateFuel(localId) { it.copy(syncErrorMessage = null, syncErrorCode = null) } ?: return
+        // Si la recarga no subió porque la API rechazó el viaje, también se vuelve a intentar crear el viaje
+        store.updateTrip(fuel.tripLocalId) { trip ->
+            if (trip.serverId == null) trip.copy(syncErrorMessage = null, syncErrorCode = null) else trip
+        }
     }
 }
 

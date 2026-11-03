@@ -82,6 +82,7 @@ import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_fi
 import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_finish_confirm
 import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_fuel_detail
 import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_fuel_item
+import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_gps_approximate
 import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_gps_no_permission
 import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_gps_on
 import org.vicpoo.gasolineproject.feature.triprecording.resources.active_trip_gps_searching
@@ -261,6 +262,7 @@ private fun TripMap(
                 gpsActive = session.gpsActive,
                 isPaused = state.isPaused,
                 hasPermission = session.hasLocationPermission,
+                hasPreciseLocation = session.hasPreciseLocation,
                 onRequestPermission = onRequestPermission,
                 modifier = Modifier.weight(1f),
             )
@@ -274,19 +276,23 @@ private fun GpsBanner(
     gpsActive: Boolean,
     isPaused: Boolean,
     hasPermission: Boolean,
+    hasPreciseLocation: Boolean,
     onRequestPermission: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = AppTheme.colors
     val dimens = AppTheme.dimens
+    // Sin permiso o con ubicación "aproximada": tocar el aviso vuelve a pedir la ubicación precisa
+    val canFix = !hasPermission || !hasPreciseLocation
     val (text, container, content) = when {
         isPaused -> Triple(stringResource(Res.string.active_trip_paused), colors.secondary, colors.onSecondary)
         !hasPermission -> Triple(stringResource(Res.string.active_trip_gps_no_permission), colors.danger, colors.onDanger)
+        !hasPreciseLocation -> Triple(stringResource(Res.string.active_trip_gps_approximate), colors.danger, colors.onDanger)
         gpsActive -> Triple(stringResource(Res.string.active_trip_gps_on), colors.primary, colors.onPrimary)
         else -> Triple(stringResource(Res.string.active_trip_gps_searching), colors.secondary, colors.onSecondary)
     }
     Surface(
-        modifier = modifier.then(if (!hasPermission) Modifier.clickable(onClick = onRequestPermission) else Modifier),
+        modifier = modifier.then(if (canFix) Modifier.clickable(onClick = onRequestPermission) else Modifier),
         shape = RoundedCornerShape(dimens.radius),
         color = container,
         shadowElevation = 2.dp,

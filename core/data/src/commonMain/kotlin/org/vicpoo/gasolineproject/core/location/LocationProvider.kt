@@ -24,6 +24,9 @@ interface LocationProvider {
     /** true si el usuario ya dio permiso de ubicación. */
     fun hasPermission(): Boolean
 
+    /** true si el permiso es de ubicación precisa (no "aproximada"). */
+    fun hasPreciseLocation(): Boolean = hasPermission()
+
     /** true si el GPS / ubicación del teléfono está encendido. */
     fun isLocationEnabled(): Boolean
 
@@ -44,4 +47,7 @@ interface LocationProvider {
 interface TrackingServiceController {
     fun start()
     fun stop()
+
+    /** Cambia el texto de la notificación si el GPS dejó de dar lecturas (o volvió). */
+    fun setGpsSignalLost(lost: Boolean) = Unit
 }

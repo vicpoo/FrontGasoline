@@ -12,6 +12,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 
@@ -37,7 +38,7 @@ class TripTrackingService : Service() {
             0
         }
         runCatching {
-            ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(), type)
+            ServiceCompat.startForeground(this, NOTIFICATION_ID, buildNotification(this, gpsLost = false), type)
         }.onFailure {
             // Sin permiso de ubicación Android no deja iniciar el servicio: el viaje sigue en pantalla
             stopSelf()
@@ -45,27 +46,6 @@ class TripTrackingService : Service() {
         return START_STICKY
     }
 
-    private fun buildNotification() = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setSmallIcon(applicationInfo.icon)
-        .setContentTitle(TITLE)
-        .setContentText(TEXT)
-        .setOngoing(true)
-        .setOnlyAlertOnce(true)
-        .setPriority(NotificationCompat.PRIORITY_LOW)
-        .setCategory(NotificationCompat.CATEGORY_NAVIGATION)
-        .setContentIntent(openAppIntent())
-        .build()
-
-    private fun openAppIntent(): PendingIntent? {
-        val launch = packageManager.getLaunchIntentForPackage(packageName) ?: return null
-        launch.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        return PendingIntent.getActivity(
-            this,
-            0,
-            launch,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-    }
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -82,11 +62,44 @@ class TripTrackingService : Service() {
         private const val CHANNEL_NAME = "Viaje en curso"
         private const val TITLE = "Viaje en curso"
         private const val TEXT = "Registrando tu ruta con el GPS."
+        private const val TEXT_GPS_LOST = "Sin señal de GPS. Abre la app para seguir registrando la ruta."
         private const val NOTIFICATION_ID = 4101
         private const val ACTION_STOP = "org.vicpoo.gasolineproject.STOP_TRACKING"
 
         fun startIntent(context: Context) = Intent(context, TripTrackingService::class.java)
         fun stopIntent(context: Context) = Intent(context, TripTrackingService::class.java).setAction(ACTION_STOP)
+
+        /** Notificación del viaje; con [gpsLost] avisa que el GPS dejó de dar lecturas. */
+        fun buildNotification(context: Context, gpsLost: Boolean) = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(context.applicationInfo.icon)
+            .setContentTitle(TITLE)
+            .setContentText(if (gpsLost) TEXT_GPS_LOST else TEXT)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(if (gpsLost) TEXT_GPS_LOST else TEXT))
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_NAVIGATION)
+            .setContentIntent(openAppIntent(context))
+            .build()
+
+        /** Reemplaza la notificación del servicio (mismo id) sin reiniciarlo. */
+        fun updateNotification(context: Context, gpsLost: Boolean) {
+            // Sin permiso de notificaciones (Android 13+) no se puede mostrar: se ignora
+            runCatching {
+                NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, buildNotification(context, gpsLost))
+            }
+        }
+
+        private fun openAppIntent(context: Context): PendingIntent? {
+            val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+            launch.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            return PendingIntent.getActivity(
+                context,
+                0,
+                launch,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+        }
     }
 }
 
@@ -104,5 +117,9 @@ class AndroidTrackingServiceController(private val context: Context) : TrackingS
 
     override fun stop() {
         runCatching { context.stopService(TripTrackingService.startIntent(context)) }
+    }
+
+    override fun setGpsSignalLost(lost: Boolean) {
+        TripTrackingService.updateNotification(context, lost)
     }
 }

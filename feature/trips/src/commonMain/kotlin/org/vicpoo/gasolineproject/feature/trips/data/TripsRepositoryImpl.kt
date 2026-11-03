@@ -117,7 +117,8 @@ class TripsRepositoryImpl(
                     fuelLoads = previous?.fuelLoads.orEmpty(),
                     route = keptRoute,
                     pausedSeconds = trip.segundosEnPausa,
-                    // Se vuelven a pedir (las cargas pudieron corregirse); la ruta guardada se reutiliza
+                    // Se vuelven a pedir (las cargas pudieron corregirse y la ruta completarse);
+                    // mientras tanto se muestra lo guardado
                     detailsLoaded = false,
                 )
             }
@@ -145,10 +146,12 @@ class TripsRepositoryImpl(
                     val loads = loadsResult.getOrNull()?.map {
                         FuelLoadEntity(it.cargaCombustibleId, it.litros, it.monto, it.fotoComprobanteUrl)
                     }
-                    // La ruta de un viaje terminado no cambia: si ya se tiene, no se vuelve a pedir
-                    val route = trip.route.takeIf { it.isNotEmpty() && trip.endedAt != null }
-                        ?: safeApiCall { api.getRouteMap(trip.id) }.getOrNull()
-                            ?.coordenadas?.map { listOf(it.latitud, it.longitud) }
+                    // La ruta se vuelve a pedir en cada actualización: aunque el viaje ya esté cerrado,
+                    // pueden llegar después lotes de puntos que estaban pendientes (sin red o error 5xx)
+                    // y la API recalcula la ruta. Si falla, se queda la guardada.
+                    val route = safeApiCall { api.getRouteMap(trip.id) }.getOrNull()
+                        ?.coordenadas?.map { listOf(it.latitud, it.longitud) }
+                        ?.takeIf { it.isNotEmpty() }
                     trip.copy(
                         fuelLoads = loads ?: trip.fuelLoads,
                         route = route ?: trip.route,

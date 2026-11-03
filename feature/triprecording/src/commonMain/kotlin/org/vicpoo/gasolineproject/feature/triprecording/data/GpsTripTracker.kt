@@ -85,6 +85,7 @@ class GpsTripTracker(
             route = route,
             current = active.lastPoint(),
             hasLocationPermission = locationProvider.hasPermission(),
+            hasPreciseLocation = locationProvider.hasPreciseLocation(),
         )
         // En pausa o detenido no se enciende el GPS
         if (active.phase() == TripPhase.RUNNING) startTracking()
@@ -125,6 +126,7 @@ class GpsTripTracker(
                 route = emptyList(),
                 current = firstFix?.point,
                 hasLocationPermission = locationProvider.hasPermission(),
+                hasPreciseLocation = locationProvider.hasPreciseLocation(),
             )
             startTracking()
             sync.requestSync()
@@ -245,7 +247,10 @@ class GpsTripTracker(
                 if (reopened != null) state.update { it.copy(trip = reopened.toDomain()) }
             } else {
                 // Guardado (enviado o pendiente): ya no hay viaje en curso
-                state.value = TrackingSession(hasLocationPermission = locationProvider.hasPermission())
+                state.value = TrackingSession(
+                    hasLocationPermission = locationProvider.hasPermission(),
+                    hasPreciseLocation = locationProvider.hasPreciseLocation(),
+                )
             }
         }
         return AppResult.Success(outcome)
@@ -279,7 +284,12 @@ class GpsTripTracker(
     override fun onPermissionChanged() {
         appScope.scope.launch {
             mutex.withLock {
-                state.update { it.copy(hasLocationPermission = locationProvider.hasPermission()) }
+                state.update {
+                    it.copy(
+                        hasLocationPermission = locationProvider.hasPermission(),
+                        hasPreciseLocation = locationProvider.hasPreciseLocation(),
+                    )
+                }
                 if (state.value.trip?.phase == TripPhase.RUNNING && gpsJob?.isActive != true) startTracking()
             }
         }
@@ -296,10 +306,22 @@ class GpsTripTracker(
         heartbeatJob?.cancel()
         heartbeatJob = appScope.scope.launch {
             var ticks = 0
+            var signalLost = false
             while (isActive) {
                 delay(HEARTBEAT_MS)
                 val active = clock.nowMillis() - lastFixMillis < GPS_TIMEOUT_MS
-                state.update { it.copy(gpsActive = active, hasLocationPermission = locationProvider.hasPermission()) }
+                state.update {
+                    it.copy(
+                        gpsActive = active,
+                        hasLocationPermission = locationProvider.hasPermission(),
+                        hasPreciseLocation = locationProvider.hasPreciseLocation(),
+                    )
+                }
+                // Más de GPS_TIMEOUT_MS sin lecturas: se avisa en la notificación (y se quita al volver)
+                if (signalLost == active) {
+                    signalLost = !active
+                    trackingService.setGpsSignalLost(signalLost)
+                }
                 ticks++
                 if (ticks % SYNC_EVERY_TICKS == 0) sync.requestSync()
             }
@@ -357,7 +379,8 @@ class GpsTripTracker(
 
     private companion object {
         const val GPS_INTERVAL_MS = 5_000L
-        const val MIN_DISTANCE_M = 5f
+        /** 10 m: en movimiento llegan suficientes puntos; detenido (semáforo, estacionado) no se generan. */
+        const val MIN_DISTANCE_M = 10f
         const val HEARTBEAT_MS = 5_000L
         const val GPS_TIMEOUT_MS = 30_000L
         const val SYNC_EVERY_TICKS = 12 // 12 x 5 s = cada minuto

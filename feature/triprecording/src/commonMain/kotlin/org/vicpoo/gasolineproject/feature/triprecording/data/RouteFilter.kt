@@ -47,7 +47,7 @@ internal class RouteFilter {
     }
 
     companion object {
-        const val MAX_ACCURACY_M = 50.0
+        const val MAX_ACCURACY_M = 25.0
         const val MIN_STEP_M = 3.0
         const val MAX_SPEED_MPS = 70.0 // ~250 km/h
     }

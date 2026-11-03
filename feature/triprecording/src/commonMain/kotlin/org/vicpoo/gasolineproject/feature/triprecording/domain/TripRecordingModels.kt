@@ -141,4 +141,6 @@ data class TrackingSession(
     /** true si llegó una lectura del GPS en los últimos segundos. */
     val gpsActive: Boolean = false,
     val hasLocationPermission: Boolean = false,
+    /** false si el usuario dio solo ubicación "aproximada": la ruta saldría con pocos puntos y mal. */
+    val hasPreciseLocation: Boolean = true,
 )

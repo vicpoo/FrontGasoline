@@ -91,11 +91,22 @@ class TripRecordingSyncer(
         // 1. Viaje
         var trip = currentTrip(localId) ?: return AppResult.Success(Unit)
         if (trip.serverId == null) {
-            // Rechazado de forma definitiva: espera a que el usuario lo corrija
-            if (trip.isBlocked()) return AppResult.Success(Unit)
+            // Rechazado de forma definitiva: espera a que el usuario lo corrija.
+            // Excepción: si el viaje sigue en curso se reintenta en cada sincronización (cada minuto,
+            // al pausar/reanudar o al guardar una recarga). El rechazo suele depender de algo que se
+            // arregla en el servidor (ej. "el carro ya tiene un viaje en curso") y el operador no
+            // tiene forma de corregirlo desde la app.
+            if (trip.isBlocked() && !trip.running) {
+                flagFuelBlockedByTrip(localId, trip.syncErrorMessage)
+                return AppResult.Success(Unit)
+            }
             when (val created = trips.create(trip)) {
                 is Step.Stop -> return AppResult.Failure(created.error)
-                is Step.Rejected -> return AppResult.Success(Unit) // el error quedó guardado en el viaje
+                is Step.Rejected -> {
+                    // El error quedó guardado en el viaje; las recargas lo muestran para que se sepa por qué no suben
+                    flagFuelBlockedByTrip(localId, currentTrip(localId)?.syncErrorMessage)
+                    return AppResult.Success(Unit)
+                }
                 is Step.Done -> trip = currentTrip(localId) ?: return AppResult.Success(Unit)
             }
         }
@@ -149,6 +160,27 @@ class TripRecordingSyncer(
     }
 
     // ---------------- Utilidades ----------------
+
+    /**
+     * La API no aceptó el viaje, así que sus recargas no se pueden mandar todavía.
+     * Se les pone el motivo del viaje (sin código: no es un rechazo definitivo de la recarga) para que
+     * el usuario vea el error real en lugar de un "error en el servidor" genérico.
+     * Al tocar "Reintentar" en la recarga se limpia este mensaje y también el bloqueo del viaje.
+     */
+    private suspend fun flagFuelBlockedByTrip(localId: String, tripMessage: String?) {
+        val message = TRIP_NOT_REGISTERED + (tripMessage ?: DEFAULT_TRIP_REJECTED)
+        val pending = store.current().fuel.filter {
+            it.tripLocalId == localId && it.state != FuelSyncState.SYNCED && it.syncErrorCode == null
+        }
+        for (entity in pending) {
+            store.updateFuel(entity.localId) { it.copy(syncErrorMessage = message, syncErrorCode = null) }
+        }
+    }
+
+    private companion object {
+        const val TRIP_NOT_REGISTERED = "El viaje no se pudo registrar en el servidor: "
+        const val DEFAULT_TRIP_REJECTED = "el servidor lo rechazó."
+    }
 
     private suspend fun currentTrip(localId: String): TripEntity? =
         store.current().trips.firstOrNull { it.localId == localId }

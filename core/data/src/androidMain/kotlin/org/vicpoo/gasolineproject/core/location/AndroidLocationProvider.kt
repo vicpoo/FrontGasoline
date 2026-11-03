@@ -30,6 +30,11 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
 
+    /** En Android 12+ el usuario puede dar solo ubicación "aproximada" (COARSE): no sirve para la ruta. */
+    override fun hasPreciseLocation(): Boolean =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+
     override fun isLocationEnabled(): Boolean = LocationManagerCompat.isLocationEnabled(manager)
 
     @SuppressLint("MissingPermission")
@@ -41,17 +46,15 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
                 .setQuality(LocationRequestCompat.QUALITY_HIGH_ACCURACY)
                 .setMinUpdateDistanceMeters(minDistanceMeters)
                 .build()
-            val providers = activeProviders()
             try {
-                providers.forEach { provider ->
-                    LocationManagerCompat.requestLocationUpdates(
-                        manager,
-                        provider,
-                        request,
-                        ContextCompat.getMainExecutor(context),
-                        listener,
-                    )
-                }
+                // Un solo proveedor: mezclar GPS con red mete lecturas imprecisas (zigzag) que inflan los km
+                LocationManagerCompat.requestLocationUpdates(
+                    manager,
+                    trackingProvider(),
+                    request,
+                    ContextCompat.getMainExecutor(context),
+                    listener,
+                )
             } catch (e: SecurityException) {
                 close() // el usuario quitó el permiso
             }
@@ -70,7 +73,24 @@ class AndroidLocationProvider(private val context: Context) : LocationProvider {
         }.getOrNull()
     }
 
-    /** GPS para precisión; red como respaldo (llega antes en interiores). */
+    /**
+     * Proveedor para registrar la ruta:
+     * - Android 12+: "fused" (GPS + sensores; gasta menos batería que el GPS solo).
+     * - Antes: GPS.
+     * - Red solo si el teléfono no tiene otro (mejor una ruta imprecisa que ninguna).
+     */
+    private fun trackingProvider(): String {
+        val all = manager.getProviders(true)
+        return when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && LocationManager.FUSED_PROVIDER in all ->
+                LocationManager.FUSED_PROVIDER
+            LocationManager.GPS_PROVIDER in all -> LocationManager.GPS_PROVIDER
+            LocationManager.NETWORK_PROVIDER in all -> LocationManager.NETWORK_PROVIDER
+            else -> LocationManager.GPS_PROVIDER
+        }
+    }
+
+    /** Para la última ubicación conocida: GPS y red (la de red llega antes en interiores). */
     private fun activeProviders(): List<String> {
         val all = manager.getProviders(true)
         val preferred = buildList {
@@ -90,5 +110,7 @@ private fun Location.toFix(): LocationFix = LocationFix(
     accuracyMeters = if (hasAccuracy()) accuracy.toDouble() else null,
     altitudeMeters = if (hasAltitude()) altitude else null,
     speedMetersPerSecond = if (hasSpeed()) speed.toDouble() else null,
-    timeMillis = System.currentTimeMillis(),
+    // Hora en que el GPS tomó la lectura (no en la que llegó a la app): así las velocidades
+    // y el filtro de saltos de la API son correctos
+    timeMillis = time,
 )
