@@ -19,6 +19,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
@@ -33,6 +35,7 @@ import org.vicpoo.gasolineproject.core.ui.components.AppBackButton
 import org.vicpoo.gasolineproject.core.ui.components.AppButton
 import org.vicpoo.gasolineproject.core.ui.components.AppButtonVariant
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
+import org.vicpoo.gasolineproject.core.ui.components.AppImage
 import org.vicpoo.gasolineproject.core.ui.components.AppScreen
 import org.vicpoo.gasolineproject.core.ui.components.AppTextField
 import org.vicpoo.gasolineproject.core.ui.components.EmptyView
@@ -44,10 +47,17 @@ import org.vicpoo.gasolineproject.core.ui.components.ResultType
 import org.vicpoo.gasolineproject.core.ui.components.UserAvatar
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
+import org.vicpoo.gasolineproject.core.ui.components.EditSheet
+import org.vicpoo.gasolineproject.core.ui.components.SheetCharCounter
+import org.vicpoo.gasolineproject.core.ui.components.SheetSubjectCard
+import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
+import org.vicpoo.gasolineproject.feature.reservations.domain.UnlinkAssignmentUseCase
+import org.vicpoo.gasolineproject.feature.reservations.resources.assignments_unlink_sheet_title
+import org.vicpoo.gasolineproject.feature.reservations.resources.assignments_holder_value
+import org.vicpoo.gasolineproject.feature.reservations.resources.cd_close
 import org.vicpoo.gasolineproject.feature.reservations.domain.AssignmentEmployee
 import org.vicpoo.gasolineproject.feature.reservations.domain.EmployeeVehicle
 import org.vicpoo.gasolineproject.feature.reservations.presentation.assignments.ActiveTripChip
-import org.vicpoo.gasolineproject.feature.reservations.presentation.assignments.IconBadge
 import org.vicpoo.gasolineproject.feature.reservations.presentation.assignments.VehicleStateChip
 import org.vicpoo.gasolineproject.feature.reservations.presentation.assignments.icon
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.formatDate
@@ -92,7 +102,8 @@ fun AssignmentDetailRoute(
 /**
  * Detalle de la asignación (como el de Solicitudes):
  * 1. A quién está asignado (foto y nombre).
- * 2. Cada carro: ícono, datos, desde cuándo, estado y "Desvincular".
+ * 2. Cada carro: foto (como en el detalle de Solicitudes), datos, desde cuándo, estado y "Desvincular".
+ *    En la lista no hay fotos (solo íconos); la foto se ve aquí, en el detalle.
  */
 @Composable
 fun AssignmentDetailScreen(
@@ -190,64 +201,72 @@ private fun VehicleCard(car: EmployeeVehicle, canUnlink: Boolean, onUnlink: () -
     val dimens = AppTheme.dimens
     val vehicle = car.vehicle
     AppCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth().padding(dimens.spaceS)) {
-            Overline(stringResource(Res.string.assignments_detail_vehicle))
-            Spacer(Modifier.height(dimens.spaceS))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBadge(vehicle.type.icon, contentDescription = null)
-                Spacer(Modifier.width(dimens.spaceM))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = vehicle.title,
-                        style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
-                        color = colors.title,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = listOfNotNull(
-                            stringResource(Res.string.assignments_plates_value, vehicle.plates),
-                            vehicle.color?.takeIf { it.isNotBlank() },
-                        ).joinToString("  ·  "),
-                        style = AppTheme.typography.bodySecondary,
-                        color = colors.textSecondary,
-                    )
-                    formatDate(car.assignment.since)?.let {
+        Column(Modifier.fillMaxWidth()) {
+            // Foto del vehículo; si no tiene, el ícono de su tipo
+            AppImage(
+                model = vehicle.photoUrl,
+                contentDescription = vehicle.title,
+                contentScale = ContentScale.Crop,
+                fallbackIcon = vehicle.type.icon,
+                modifier = Modifier.fillMaxWidth().height(180.dp).clip(RoundedCornerShape(dimens.radius)),
+            )
+            Column(Modifier.fillMaxWidth().padding(horizontal = dimens.spaceS, vertical = dimens.spaceM)) {
+                Overline(stringResource(Res.string.assignments_detail_vehicle))
+                Spacer(Modifier.height(dimens.spaceXs))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
-                            text = stringResource(Res.string.assignments_since, it),
-                            style = AppTheme.typography.caption,
+                            text = vehicle.title,
+                            style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.title,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = listOfNotNull(
+                                stringResource(Res.string.assignments_plates_value, vehicle.plates),
+                                vehicle.color?.takeIf { it.isNotBlank() },
+                            ).joinToString("  ·  "),
+                            style = AppTheme.typography.bodySecondary,
                             color = colors.textSecondary,
                         )
+                        formatDate(car.assignment.since)?.let {
+                            Text(
+                                text = stringResource(Res.string.assignments_since, it),
+                                style = AppTheme.typography.caption,
+                                color = colors.textSecondary,
+                            )
+                        }
                     }
                 }
-            }
-            Spacer(Modifier.height(dimens.spaceS))
-            Row(horizontalArrangement = Arrangement.spacedBy(dimens.spaceXs)) {
-                VehicleStateChip(vehicle.state)
-                if (car.assignment.hasActiveTrip) ActiveTripChip()
-            }
+                Spacer(Modifier.height(dimens.spaceS))
+                Row(horizontalArrangement = Arrangement.spacedBy(dimens.spaceXs)) {
+                    VehicleStateChip(vehicle.state)
+                    if (car.assignment.hasActiveTrip) ActiveTripChip()
+                }
 
-            Spacer(Modifier.height(dimens.spaceM))
-            HorizontalDivider(thickness = 1.dp, color = colors.divider)
-            Spacer(Modifier.height(dimens.spaceM))
+                Spacer(Modifier.height(dimens.spaceM))
+                HorizontalDivider(thickness = 1.dp, color = colors.divider)
+                Spacer(Modifier.height(dimens.spaceM))
 
-            // Con viaje en curso no se puede (la API también lo valida) y se explica por qué
-            AppButton(
-                text = stringResource(Res.string.assignments_unlink),
-                onClick = onUnlink,
-                variant = AppButtonVariant.Danger,
-                enabled = canUnlink && !car.assignment.hasActiveTrip,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (car.assignment.hasActiveTrip) {
-                Spacer(Modifier.height(dimens.spaceXs))
-                Text(
-                    text = stringResource(Res.string.assignments_unlink_blocked),
-                    style = AppTheme.typography.caption,
-                    color = colors.textSecondary,
-                    textAlign = TextAlign.Center,
+                // Con viaje en curso no se puede (la API también lo valida) y se explica por qué
+                AppButton(
+                    text = stringResource(Res.string.assignments_unlink),
+                    onClick = onUnlink,
+                    variant = AppButtonVariant.Danger,
+                    enabled = canUnlink && !car.assignment.hasActiveTrip,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                if (car.assignment.hasActiveTrip) {
+                    Spacer(Modifier.height(dimens.spaceXs))
+                    Text(
+                        text = stringResource(Res.string.assignments_unlink_blocked),
+                        style = AppTheme.typography.caption,
+                        color = colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }
@@ -295,62 +314,49 @@ private fun Dialogs(state: AssignmentDetailUiState, onEvent: (AssignmentDetailEv
     }
 }
 
-/** "¿Desvincular el Nissan Versa (ABC-123) de Ana?" + motivo obligatorio. */
+/**
+ * Desvincular con el mismo diseño que "Enviar solicitud": hoja que sube desde abajo con el carro
+ * (foto, placas y a quién está asignado), el motivo obligatorio con contador y el botón en rojo.
+ */
 @Composable
 private fun UnlinkReasonDialog(target: UnlinkTarget, state: AssignmentDetailUiState, onEvent: (AssignmentDetailEvent) -> Unit) {
-    val dimens = AppTheme.dimens
-    val colors = AppTheme.colors
-    Dialog(onDismissRequest = { onEvent(AssignmentDetailEvent.DialogDismissed) }) {
-        Surface(
-            modifier = Modifier.widthIn(max = 420.dp),
-            shape = RoundedCornerShape(dimens.radiusDialog),
-            color = colors.background,
-        ) {
-            Column(Modifier.padding(dimens.spaceL), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(Res.string.assignments_unlink_question, target.vehicleTitle, target.plates, target.employeeName),
-                    style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
-                    color = colors.title,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(dimens.spaceS))
-                Text(
-                    text = stringResource(Res.string.assignments_unlink_info),
-                    style = AppTheme.typography.bodySecondary,
-                    color = colors.textSecondary,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(dimens.spaceM))
-                AppTextField(
-                    value = state.unlinkReason,
-                    onValueChange = { onEvent(AssignmentDetailEvent.UnlinkReasonChanged(it)) },
-                    label = stringResource(Res.string.assignments_unlink_reason),
-                    placeholder = stringResource(Res.string.assignments_unlink_reason_hint),
-                    modifier = Modifier.fillMaxWidth(),
-                    errorMessage = state.unlinkReasonError?.asText(),
-                    enabled = !state.isSending,
-                    singleLine = false,
-                    minLines = 3,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                )
-                Spacer(Modifier.height(dimens.spaceL))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
-                    AppButton(
-                        text = stringResource(Res.string.action_cancel),
-                        onClick = { onEvent(AssignmentDetailEvent.DialogDismissed) },
-                        modifier = Modifier.weight(1f),
-                        variant = AppButtonVariant.Secondary,
-                        enabled = !state.isSending,
-                    )
-                    AppButton(
-                        text = stringResource(Res.string.assignments_unlink),
-                        onClick = { onEvent(AssignmentDetailEvent.UnlinkConfirmed) },
-                        modifier = Modifier.weight(1f),
-                        variant = AppButtonVariant.Danger,
-                        isLoading = state.isSending,
-                    )
-                }
-            }
-        }
+    val car = state.detail?.vehicles?.firstOrNull { it.assignment.reservationId == target.reservationId }
+    EditSheet(
+        title = stringResource(Res.string.assignments_unlink_sheet_title),
+        subtitle = stringResource(Res.string.assignments_unlink_info),
+        cancelText = stringResource(Res.string.action_cancel),
+        saveText = stringResource(Res.string.assignments_unlink),
+        onCancel = { onEvent(AssignmentDetailEvent.DialogDismissed) },
+        onSave = { onEvent(AssignmentDetailEvent.UnlinkConfirmed) },
+        isSaving = state.isSending,
+        closeDescription = stringResource(Res.string.cd_close),
+        destructive = true,
+    ) {
+        SheetSubjectCard(
+            title = target.vehicleTitle,
+            subtitle = target.plates,
+            imageModel = car?.vehicle?.photoUrl,
+            fallbackIcon = car?.vehicle?.type?.icon ?: AppIcons.Car,
+            detail = stringResource(Res.string.assignments_holder_value, target.employeeName),
+        )
+        Spacer(Modifier.height(AppTheme.dimens.spaceL))
+
+        AppTextField(
+            value = state.unlinkReason,
+            onValueChange = { onEvent(AssignmentDetailEvent.UnlinkReasonChanged(it)) },
+            label = stringResource(Res.string.assignments_unlink_reason),
+            placeholder = stringResource(Res.string.assignments_unlink_reason_hint),
+            modifier = Modifier.fillMaxWidth(),
+            errorMessage = state.unlinkReasonError?.asText(),
+            enabled = !state.isSending,
+            singleLine = false,
+            minLines = 5,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+        SheetCharCounter(
+            length = state.unlinkReason.length,
+            max = UnlinkAssignmentUseCase.MAX_REASON,
+            modifier = Modifier.align(Alignment.End),
+        )
     }
 }

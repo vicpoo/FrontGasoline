@@ -60,6 +60,12 @@ import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
+import org.vicpoo.gasolineproject.core.ui.components.EditSheet
+import org.vicpoo.gasolineproject.core.ui.components.SheetCharCounter
+import org.vicpoo.gasolineproject.core.ui.components.SheetSubjectCard
+import org.vicpoo.gasolineproject.feature.triprecording.domain.ReleaseVehicleUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.resources.assigned_release_sheet_title
+import org.vicpoo.gasolineproject.feature.triprecording.resources.cd_close
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.triprecording.domain.AssignedVehicle
 import org.vicpoo.gasolineproject.feature.triprecording.domain.RecordedTrip
@@ -268,60 +274,44 @@ private fun ReleaseDialogs(state: AssignedVehiclesUiState, onEvent: (AssignedVeh
 /** "¿Dejar el Nissan Versa (ABC-123)?" + observaciones opcionales. */
 @Composable
 private fun ReleaseConfirmDialog(vehicle: AssignedVehicle, state: AssignedVehiclesUiState, onEvent: (AssignedVehiclesEvent) -> Unit) {
-    val dimens = AppTheme.dimens
-    val colors = AppTheme.colors
-    Dialog(onDismissRequest = { onEvent(AssignedVehiclesEvent.DialogDismissed) }) {
-        Surface(
-            modifier = Modifier.widthIn(max = 420.dp),
-            shape = RoundedCornerShape(dimens.radiusDialog),
-            color = colors.background,
-        ) {
-            Column(Modifier.padding(dimens.spaceL), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(Res.string.assigned_release_question, vehicle.title, vehicle.plates),
-                    style = AppTheme.typography.subtitle.copy(fontWeight = FontWeight.SemiBold),
-                    color = colors.title,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(dimens.spaceS))
-                Text(
-                    text = stringResource(Res.string.assigned_release_info),
-                    style = AppTheme.typography.bodySecondary,
-                    color = colors.textSecondary,
-                    textAlign = TextAlign.Center,
-                )
-                Spacer(Modifier.height(dimens.spaceM))
-                AppTextField(
-                    value = state.releaseNotes,
-                    onValueChange = { onEvent(AssignedVehiclesEvent.ReleaseNotesChanged(it)) },
-                    label = stringResource(Res.string.assigned_release_notes),
-                    placeholder = stringResource(Res.string.assigned_release_notes_hint),
-                    modifier = Modifier.fillMaxWidth(),
-                    errorMessage = state.releaseNotesError?.asText(),
-                    enabled = !state.isReleasing,
-                    singleLine = false,
-                    minLines = 3,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                )
-                Spacer(Modifier.height(dimens.spaceL))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
-                    AppButton(
-                        text = stringResource(Res.string.action_cancel),
-                        onClick = { onEvent(AssignedVehiclesEvent.DialogDismissed) },
-                        modifier = Modifier.weight(1f),
-                        variant = AppButtonVariant.Secondary,
-                        enabled = !state.isReleasing,
-                    )
-                    AppButton(
-                        text = stringResource(Res.string.assigned_release),
-                        onClick = { onEvent(AssignedVehiclesEvent.ReleaseConfirmed) },
-                        modifier = Modifier.weight(1f),
-                        variant = AppButtonVariant.Danger,
-                        isLoading = state.isReleasing,
-                    )
-                }
-            }
-        }
+    // Mismo diseño que "Enviar solicitud" (hoja desde abajo), con el botón en rojo
+    EditSheet(
+        title = stringResource(Res.string.assigned_release_sheet_title),
+        subtitle = stringResource(Res.string.assigned_release_info),
+        cancelText = stringResource(Res.string.action_cancel),
+        saveText = stringResource(Res.string.assigned_release),
+        onCancel = { onEvent(AssignedVehiclesEvent.DialogDismissed) },
+        onSave = { onEvent(AssignedVehiclesEvent.ReleaseConfirmed) },
+        isSaving = state.isReleasing,
+        closeDescription = stringResource(Res.string.cd_close),
+        destructive = true,
+    ) {
+        // El vehículo que se va a dejar
+        SheetSubjectCard(
+            title = vehicle.title,
+            subtitle = vehicle.plates,
+            imageModel = vehicle.photoUrl,
+            fallbackIcon = AppIcons.vehicleType(vehicle.vehicleType),
+        )
+        Spacer(Modifier.height(AppTheme.dimens.spaceL))
+
+        AppTextField(
+            value = state.releaseNotes,
+            onValueChange = { onEvent(AssignedVehiclesEvent.ReleaseNotesChanged(it)) },
+            label = stringResource(Res.string.assigned_release_notes),
+            placeholder = stringResource(Res.string.assigned_release_notes_hint),
+            modifier = Modifier.fillMaxWidth(),
+            errorMessage = state.releaseNotesError?.asText(),
+            enabled = !state.isReleasing,
+            singleLine = false,
+            minLines = 5,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+        SheetCharCounter(
+            length = state.releaseNotes.length,
+            max = ReleaseVehicleUseCase.MAX_NOTES,
+            modifier = Modifier.align(Alignment.End),
+        )
     }
 }
 

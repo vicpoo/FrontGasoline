@@ -32,6 +32,10 @@
     <string name="assignments_vehicle_count">%1$d carro(s) asignado(s)</string>
     <string name="assignments_plates_value">Placas: %1$s</string>
     <string name="assignments_holder_value">Asignado a %1$s</string>
+    <string name="assignments_unlink_sheet_title">¿Por qué desvinculas este vehículo?</string>
+    <string name="company_requests_reject_sheet_title">¿Por qué rechazas esta solicitud?</string>
+    <string name="company_requests_reject_sheet_subtitle">Quien la pidió verá este motivo en su campana.</string>
+    <string name="company_requests_requested_by">Solicitado por %1$s</string>
     <string name="assignments_detail_title">Detalle de la asignación</string>
     <string name="assignments_detail_holder">Asignado a</string>
     <string name="assignments_detail_vehicle">Vehículo</string>

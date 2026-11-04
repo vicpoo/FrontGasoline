@@ -26,6 +26,7 @@
     <string name="active_trip_resume">Reanudar</string>
     <string name="action_cancel">Cancelar</string>
     <string name="assigned_release">Dejar vehículo</string>
+    <string name="assigned_release_sheet_title">¿Quieres dejar este vehículo?</string>
     <string name="assigned_release_blocked_active">Tienes un viaje en curso con este vehículo. Termínalo para poder dejarlo.</string>
     <string name="assigned_release_blocked_title">Todavía no puedes dejarlo</string>
     <string name="assigned_release_blocked_offline">Necesitas conexión a internet para dejar el vehículo.</string>

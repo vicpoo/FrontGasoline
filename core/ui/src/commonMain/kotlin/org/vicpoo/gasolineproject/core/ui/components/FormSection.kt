@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -142,6 +143,8 @@ fun SegmentedProgress(total: Int, done: Int, modifier: Modifier = Modifier) {
  * Hoja que sube desde abajo para editar una sección (Airbnb "Modifica el número de huéspedes"):
  * X arriba a la derecha, título grande, contenido con scroll y abajo "Cancelar" (texto subrayado)
  * y "Guardar" (botón). Ocupa casi toda la pantalla.
+ * Con [destructive] el botón es rojo (Rechazar, Desvincular, Dejar vehículo): mismo diseño que
+ * "Enviar solicitud", pero se nota que la acción quita algo.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -155,6 +158,7 @@ fun EditSheet(
     subtitle: String? = null,
     isSaving: Boolean = false,
     closeDescription: String? = null,
+    destructive: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = AppTheme.colors
@@ -212,12 +216,23 @@ fun EditSheet(
                         .clickable(enabled = !isSaving, onClick = onCancel)
                         .padding(vertical = dimens.spaceS),
                 )
-                PrimaryButton(
-                    text = saveText,
-                    onClick = onSave,
-                    isLoading = isSaving,
-                    modifier = Modifier.heightIn(min = 48.dp).width(140.dp),
-                )
+                // Ancho mínimo de 140 dp (como "Enviar solicitud"); crece si el texto es más largo
+                if (destructive) {
+                    AppButton(
+                        text = saveText,
+                        onClick = onSave,
+                        variant = AppButtonVariant.Danger,
+                        isLoading = isSaving,
+                        modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 140.dp),
+                    )
+                } else {
+                    PrimaryButton(
+                        text = saveText,
+                        onClick = onSave,
+                        isLoading = isSaving,
+                        modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 140.dp),
+                    )
+                }
             }
         }
     }

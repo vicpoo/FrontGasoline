@@ -59,6 +59,13 @@ import org.vicpoo.gasolineproject.core.ui.components.UserAvatar
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
+import org.vicpoo.gasolineproject.core.ui.components.EditSheet
+import org.vicpoo.gasolineproject.core.ui.components.SheetCharCounter
+import org.vicpoo.gasolineproject.core.ui.components.SheetSubjectCard
+import org.vicpoo.gasolineproject.feature.reservations.domain.RejectReservationUseCase
+import org.vicpoo.gasolineproject.feature.reservations.resources.company_requests_reject_sheet_title
+import org.vicpoo.gasolineproject.feature.reservations.resources.company_requests_reject_sheet_subtitle
+import org.vicpoo.gasolineproject.feature.reservations.resources.company_requests_requested_by
 import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRequest
 import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationStatus
 import org.vicpoo.gasolineproject.feature.reservations.presentation.common.Overline
@@ -495,46 +502,53 @@ private fun Dialogs(state: ReservationDetailUiState, onEvent: (ReservationDetail
     }
 }
 
-/** "Motivo del rechazo" (obligatorio: lo ve quien pidió el carro en su campana). */
+/**
+ * Rechazar con el mismo diseño que "Enviar solicitud": hoja que sube desde abajo con el carro pedido
+ * (foto, placas y quién lo pidió), el motivo obligatorio con contador (lo ve el solicitante en su
+ * campana) y el botón "Rechazar" en rojo.
+ */
 @Composable
 private fun RejectReasonDialog(state: ReservationDetailUiState, onEvent: (ReservationDetailEvent) -> Unit) {
-    val dimens = AppTheme.dimens
-    Dialog(onDismissRequest = { onEvent(ReservationDetailEvent.DialogDismissed) }) {
-        Surface(
-            modifier = Modifier.widthIn(max = 420.dp),
-            shape = RoundedCornerShape(dimens.radiusDialog),
-            color = AppTheme.colors.background,
-        ) {
-            Column(Modifier.padding(dimens.spaceL), horizontalAlignment = Alignment.CenterHorizontally) {
-                AppTextField(
-                    value = state.rejectReason,
-                    onValueChange = { onEvent(ReservationDetailEvent.RejectReasonChanged(it)) },
-                    label = stringResource(Res.string.company_requests_reject_reason),
-                    placeholder = stringResource(Res.string.company_requests_reject_reason_hint),
-                    modifier = Modifier.fillMaxWidth(),
-                    errorMessage = state.rejectReasonError?.asText(),
-                    enabled = !state.isSending,
-                    singleLine = false,
-                    minLines = 4,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                )
-                Spacer(Modifier.height(dimens.spaceL))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
-                    AppButton(
-                        text = stringResource(Res.string.action_cancel),
-                        onClick = { onEvent(ReservationDetailEvent.DialogDismissed) },
-                        modifier = Modifier.weight(1f),
-                        variant = AppButtonVariant.Secondary,
-                    )
-                    PrimaryButton(
-                        text = stringResource(Res.string.company_requests_reject),
-                        onClick = { onEvent(ReservationDetailEvent.RejectConfirmed) },
-                        isLoading = state.isSending,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+    val request = state.current
+    EditSheet(
+        title = stringResource(Res.string.company_requests_reject_sheet_title),
+        subtitle = stringResource(Res.string.company_requests_reject_sheet_subtitle),
+        cancelText = stringResource(Res.string.action_cancel),
+        saveText = stringResource(Res.string.company_requests_reject),
+        onCancel = { onEvent(ReservationDetailEvent.DialogDismissed) },
+        onSave = { onEvent(ReservationDetailEvent.RejectConfirmed) },
+        isSaving = state.isSending,
+        closeDescription = stringResource(Res.string.cd_close),
+        destructive = true,
+    ) {
+        if (request != null) {
+            SheetSubjectCard(
+                title = request.vehicleTitle?.takeIf { it.isNotBlank() } ?: stringResource(Res.string.requests_unknown_vehicle),
+                subtitle = request.plates,
+                imageModel = request.photoUrl,
+                detail = request.requesterName?.takeIf { it.isNotBlank() }
+                    ?.let { stringResource(Res.string.company_requests_requested_by, it) },
+            )
+            Spacer(Modifier.height(AppTheme.dimens.spaceL))
         }
+
+        AppTextField(
+            value = state.rejectReason,
+            onValueChange = { onEvent(ReservationDetailEvent.RejectReasonChanged(it)) },
+            label = stringResource(Res.string.company_requests_reject_reason),
+            placeholder = stringResource(Res.string.company_requests_reject_reason_hint),
+            modifier = Modifier.fillMaxWidth(),
+            errorMessage = state.rejectReasonError?.asText(),
+            enabled = !state.isSending,
+            singleLine = false,
+            minLines = 5,
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
+        )
+        SheetCharCounter(
+            length = state.rejectReason.length,
+            max = RejectReservationUseCase.MAX_REASON,
+            modifier = Modifier.align(Alignment.End),
+        )
     }
 }
 
