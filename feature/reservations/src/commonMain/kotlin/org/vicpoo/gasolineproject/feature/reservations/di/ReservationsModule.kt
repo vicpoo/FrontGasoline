@@ -11,15 +11,22 @@ import org.vicpoo.gasolineproject.core.data.JsonFileCache
 import org.vicpoo.gasolineproject.core.session.LogoutListener
 import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.feature.reservations.api.VehicleRequester
+import org.vicpoo.gasolineproject.feature.reservations.data.AssignmentsRepositoryImpl
 import org.vicpoo.gasolineproject.feature.reservations.data.ReservationRepositoryImpl
 import org.vicpoo.gasolineproject.feature.reservations.data.local.CompanyReservationsSnapshot
 import org.vicpoo.gasolineproject.feature.reservations.data.local.MyReservationsSnapshot
 import org.vicpoo.gasolineproject.feature.reservations.data.local.ReservationOutbox
 import org.vicpoo.gasolineproject.feature.reservations.data.local.ReservationOutboxSnapshot
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.AssignmentsApi
+import org.vicpoo.gasolineproject.feature.reservations.data.remote.KtorAssignmentsApi
 import org.vicpoo.gasolineproject.feature.reservations.data.remote.KtorReservationApi
 import org.vicpoo.gasolineproject.feature.reservations.data.remote.ReservationApi
 import org.vicpoo.gasolineproject.feature.reservations.data.sync.ReservationOutboxSyncer
 import org.vicpoo.gasolineproject.feature.reservations.domain.ApproveReservationUseCase
+import org.vicpoo.gasolineproject.feature.reservations.domain.AssignmentsRepository
+import org.vicpoo.gasolineproject.feature.reservations.domain.GetAssignmentsUseCase
+import org.vicpoo.gasolineproject.feature.reservations.domain.ObserveAssignmentDetailUseCase
+import org.vicpoo.gasolineproject.feature.reservations.domain.UnlinkAssignmentUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.GetReservationDetailUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.MarkReservationUpdatesSeenUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.ObserveCompanyReservationUseCase
@@ -32,6 +39,8 @@ import org.vicpoo.gasolineproject.feature.reservations.domain.RefreshUnseenReser
 import org.vicpoo.gasolineproject.feature.reservations.domain.RejectReservationUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.RequestVehicleUseCase
 import org.vicpoo.gasolineproject.feature.reservations.domain.ReservationRepository
+import org.vicpoo.gasolineproject.feature.reservations.presentation.assignmentdetail.AssignmentDetailViewModel
+import org.vicpoo.gasolineproject.feature.reservations.presentation.assignments.AssignmentsViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBellViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.company.CompanyReservationsViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.detail.ReservationDetailViewModel
@@ -105,4 +114,13 @@ val reservationsModule = module {
     factoryOf(::RejectReservationUseCase)
     viewModelOf(::CompanyReservationsViewModel)
     viewModelOf(::ReservationDetailViewModel) // reservationId llega con parametersOf
+
+    // Pestaña llave, sección "Asignados": quién tiene cada carro y desvincular (asignacion.gestionar)
+    singleOf(::KtorAssignmentsApi) { bind<AssignmentsApi>() }
+    single<AssignmentsRepository> { AssignmentsRepositoryImpl(api = get(), reservations = get()) }
+    factoryOf(::GetAssignmentsUseCase)
+    factoryOf(::UnlinkAssignmentUseCase)
+    factoryOf(::ObserveAssignmentDetailUseCase)
+    viewModelOf(::AssignmentsViewModel)
+    viewModelOf(::AssignmentDetailViewModel) // la clave ("r:<reserva>" / "e:<empleado>") llega con parametersOf
 }

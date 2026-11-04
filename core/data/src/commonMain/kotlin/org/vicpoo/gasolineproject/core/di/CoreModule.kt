@@ -24,6 +24,7 @@ import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.session.SessionStore
 import org.vicpoo.gasolineproject.core.session.SessionWriter
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncCoordinator
+import org.vicpoo.gasolineproject.core.sync.PendingBeforeLogoutUseCase
 import org.vicpoo.gasolineproject.core.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.core.sync.SyncAllPendingUseCase
 
@@ -91,6 +92,7 @@ val rbacModule = module {
 val syncModule = module {
     // Todas las features registradas con `bind PendingSyncTask::class`
     factory { SyncAllPendingUseCase(getAll<PendingSyncTask>()) }
+    factory { PendingBeforeLogoutUseCase(getAll<PendingSyncTask>()) }
     single(createdAtStart = true) {
         BackgroundSyncCoordinator(sessionReader = get(), scheduler = get(), connectivity = get(), appScope = get())
     }

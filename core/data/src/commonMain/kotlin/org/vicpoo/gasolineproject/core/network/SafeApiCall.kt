@@ -5,19 +5,36 @@ import io.ktor.serialization.ContentConvertException
 import kotlinx.io.IOException
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 
-/** ProblemDetails de APIGasoline (ExceptionHandlingMiddleware): { status, title, detail }. */
-@Serializable
-private data class ProblemDetailsDto(
-    val title: String? = null,
-    val detail: String? = null,
-    val message: String? = null,
-)
+/**
+ * ProblemDetails de APIGasoline (ExceptionHandlingMiddleware): { status, title, detail } y, en algunos 409,
+ * extensiones como { codigo: "VIAJE_EN_CURSO", viajeId, empleadoOperadorId, fechaInicio }.
+ */
+private class ParsedProblem(val message: String?, val code: String?, val data: Map<String, String>)
+
+/** Campos estándar del ProblemDetails: todo lo demás se guarda en [ParsedProblem.data]. */
+private val STANDARD_PROBLEM_KEYS = setOf("type", "title", "status", "detail", "instance", "message", "codigo", "traceId", "errors")
+
+private fun parseProblem(body: String): ParsedProblem {
+    val obj = errorJson.parseToJsonElement(body).jsonObject
+    fun text(key: String): String? = (obj[key] as? JsonPrimitive)?.contentOrNull
+    val data = obj
+        .filterKeys { it !in STANDARD_PROBLEM_KEYS }
+        .mapNotNull { (key, value) -> (value as? JsonPrimitive)?.contentOrNull?.let { key to it } }
+        .toMap()
+    return ParsedProblem(
+        message = text("detail") ?: text("message") ?: text("title"),
+        code = text("codigo"),
+        data = data,
+    )
+}
 
 private val errorJson = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -33,16 +50,14 @@ suspend fun <T> safeApiCall(block: suspend () -> T): AppResult<T> =
     } catch (e: ResponseException) {
         val status = e.response.status.value
         println("[API] HTTP $status ${e.response.call.request.method.value} ${e.response.call.request.url}")
-        val serverMessage = runCatching {
-            val dto = errorJson.decodeFromString(ProblemDetailsDto.serializer(), e.response.bodyAsText())
-            dto.detail ?: dto.message ?: dto.title
-        }.getOrNull()
+        val problem = runCatching { parseProblem(e.response.bodyAsText()) }.getOrNull()
+        val serverMessage = problem?.message
         AppResult.Failure(
             when (status) {
                 401 -> AppError.Unauthorized
                 403 -> AppError.Forbidden(serverMessage)
                 404 -> AppError.NotFound
-                else -> AppError.Server(status, serverMessage)
+                else -> AppError.Server(status, serverMessage, problem?.code, problem?.data.orEmpty())
             },
         )
     } catch (e: SerializationException) {

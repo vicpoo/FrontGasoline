@@ -38,6 +38,8 @@ data class ReservationCarDto(
     val color: String? = null,
     val placas: String,
     val fotoVehiculoUrl: String? = null,
+    /** "carro" | "moto" | "camioneta" | "camion" (para el ícono). */
+    val tipoVehiculo: String? = null,
 )
 
 /** SolicitudReservaDto (GET /api/solicitudes-reserva): ya trae solicitante y carro. */

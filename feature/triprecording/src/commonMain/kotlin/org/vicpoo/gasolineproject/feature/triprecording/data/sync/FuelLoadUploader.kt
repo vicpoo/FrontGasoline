@@ -47,7 +47,15 @@ internal class FuelLoadUploader(
     private suspend fun createFuel(entity: FuelEntity, tripServerId: String): Step {
         val receipt = receiptOf(entity)
             ?: return markFuelError(entity.localId, MISSING_RECEIPT, SyncRejection.LOCAL_INVALID)
-        val result = safeApiCall { api.createFuelLoad(entity.toForm(viajeId = tripServerId, motivo = null, receipt = receipt)) }
+        // El UUID de la recarga es el del teléfono: si se pierde la respuesta y se reenvía, la API
+        // regresa la misma carga en lugar de duplicarla o responder "ya existe una carga en esa fecha"
+        val form = entity.toForm(
+            viajeId = tripServerId,
+            motivo = null,
+            receipt = receipt,
+            cargaCombustibleId = entity.localId.asUuidOrNull(),
+        )
+        val result = safeApiCall { api.createFuelLoad(form) }
         return when (result) {
             is AppResult.Success -> {
                 store.updateFuel(entity.localId) {

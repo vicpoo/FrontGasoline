@@ -7,6 +7,15 @@ import org.vicpoo.gasolineproject.core.platform.PickedFile
  * Carro que el usuario puede usar para un viaje: viene de una solicitud de reserva APROBADA
  * (GET /api/solicitudes-reserva?empleadoSolicitanteId=...&estado=aprobada) + los datos del carro.
  */
+/** Por qué todavía no se puede dejar un carro. */
+enum class ReleaseBlock {
+    /** Hay un viaje en curso, en pausa o detenido esperando el kilometraje con ese carro. */
+    ACTIVE_TRIP,
+
+    /** Hay un viaje terminado guardado en el teléfono que todavía no se envía a la API. */
+    PENDING_SYNC,
+}
+
 data class AssignedVehicle(
     val reservationId: String,
     val vehicleId: String,

@@ -3,6 +3,7 @@ package org.vicpoo.gasolineproject.navigation
 import androidx.compose.ui.graphics.vector.ImageVector
 import gasolineproject.shared.generated.resources.Res
 import gasolineproject.shared.generated.resources.nav_account
+import gasolineproject.shared.generated.resources.nav_assignments
 import gasolineproject.shared.generated.resources.nav_fleet
 import gasolineproject.shared.generated.resources.nav_home
 import gasolineproject.shared.generated.resources.nav_requests
@@ -14,6 +15,8 @@ import org.vicpoo.gasolineproject.core.rbac.AccessRule
 import org.vicpoo.gasolineproject.core.rbac.AppAccess
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.ProfileDestination
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.AssignmentsDestination
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.AssignmentsGraph
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsGraph
 import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.ProfileGraph
@@ -83,6 +86,15 @@ enum class TopLevelDestination(
         label = Res.string.nav_requests,
         icon = { AppIcons.Requests },
         access = AppAccess.COMPANY_REQUESTS,
+    ),
+
+    /** Eslabones: carros vinculados a un empleado y "Desvincular" (asignacion.gestionar). */
+    ASSIGNMENTS(
+        graph = AssignmentsGraph,
+        start = AssignmentsDestination.List,
+        label = Res.string.nav_assignments,
+        icon = { AppIcons.Link },
+        access = AppAccess.ASSIGNMENTS,
     ),
 
     /** Hoja con reloj: historial de viajes. */

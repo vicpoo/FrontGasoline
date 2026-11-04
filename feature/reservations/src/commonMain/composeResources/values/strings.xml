@@ -1,6 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Textos de :feature:reservations. -->
 <resources>
+    <string name="assignments_active_trip">Viaje en curso</string>
+    <string name="assignments_empty_employees">Ningún empleado tiene un carro asignado.</string>
+    <string name="assignments_empty_search">No hay resultados para tu búsqueda.</string>
+    <string name="assignments_empty_vehicles">No hay carros asignados a empleados.</string>
+    <string name="assignments_offline">Sin conexión. Para desvincular necesitas internet.</string>
+    <string name="assignments_filter_employees">Empleados (%1$d)</string>
+    <string name="assignments_filter_vehicles">Carros (%1$d)</string>
+    <string name="assignments_search_bar">Buscar</string>
+    <string name="assignments_search_clear_all">Borrar todo</string>
+    <string name="assignments_search_filters">Filtros</string>
+    <string name="assignments_search_placeholder">Carro, placas o empleado</string>
+    <string name="assignments_search_results">Resultados</string>
+    <string name="assignments_search_view_by">Ver por</string>
+    <string name="cd_clear_filters">Quitar búsqueda y filtros</string>
+    <string name="assignments_since">Desde el %1$s</string>
+    <string name="assignments_state_available">Disponible</string>
+    <string name="assignments_state_maintenance">En mantenimiento</string>
+    <string name="assignments_state_occupied">Ocupado</string>
+    <string name="assignments_title">Asignaciones</string>
+    <string name="assignments_unlink">Desvincular</string>
+    <string name="assignments_unlink_blocked">Tiene un viaje en curso. Para desvincularlo, primero se debe finalizar el viaje.</string>
+    <string name="assignments_unlink_error_title">No se pudo desvincular</string>
+    <string name="assignments_unlink_info">El carro quedará disponible para otros empleados y se le avisará a quien lo tenía, con el motivo.</string>
+    <string name="assignments_unlink_question">¿Desvincular el %1$s (%2$s) de %3$s?</string>
+    <string name="assignments_unlink_reason">Motivo</string>
+    <string name="assignments_unlink_reason_hint">Ej. El carro se reasigna a otra ruta.</string>
+    <string name="assignments_unlinked_message">El %1$s (%2$s) ya está disponible. Se le avisó a %3$s.</string>
+    <string name="assignments_unlinked_title">Carro desvinculado</string>
+    <string name="assignments_vehicle_count">%1$d carro(s) asignado(s)</string>
+    <string name="assignments_plates_value">Placas: %1$s</string>
+    <string name="assignments_holder_value">Asignado a %1$s</string>
+    <string name="assignments_detail_title">Detalle de la asignación</string>
+    <string name="assignments_detail_holder">Asignado a</string>
+    <string name="assignments_detail_vehicle">Vehículo</string>
+    <string name="assignments_detail_not_found">Esta asignación ya no existe. Puede que ya se haya desvinculado.</string>
+    <string name="assignments_select_hint">Elige una asignación para ver su detalle y desvincularla.</string>
+    <string name="cd_clear_search">Borrar búsqueda</string>
     <string name="cd_notifications">Mis solicitudes (%1$d sin ver)</string>
     <string name="company_requests_all">Todas</string>
     <string name="company_requests_approve">Aceptar</string>

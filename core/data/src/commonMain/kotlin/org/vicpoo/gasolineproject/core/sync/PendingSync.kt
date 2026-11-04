@@ -21,6 +21,26 @@ interface PendingSyncTask {
      * (sin red o sesión vencida); los rechazos de la API se guardan en cada registro.
      */
     suspend fun syncPending(): AppResult<Unit>
+
+    /**
+     * Cuántos registros siguen guardados SOLO en el teléfono (sin llegar a la API, o rechazados).
+     * Cerrar sesión los borra, así que antes se avisa al usuario (ver [PendingBeforeLogoutUseCase]).
+     */
+    suspend fun pendingCount(): Int = 0
+}
+
+/**
+ * Antes de "Salir": si hay registros que solo existen en el teléfono, intenta mandarlos una vez y regresa
+ * cuántos siguen pendientes (0 = se puede cerrar sesión sin perder nada).
+ */
+class PendingBeforeLogoutUseCase(private val tasks: List<PendingSyncTask>) {
+    suspend operator fun invoke(): Int {
+        if (countPending() == 0) return 0
+        SyncAllPendingUseCase(tasks)()
+        return countPending()
+    }
+
+    private suspend fun countPending(): Int = tasks.sumOf { it.pendingCount() }
 }
 
 /** Planificador de la sincronización en segundo plano (implementación por plataforma). */

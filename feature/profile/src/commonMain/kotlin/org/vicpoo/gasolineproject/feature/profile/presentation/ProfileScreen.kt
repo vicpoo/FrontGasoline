@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import org.vicpoo.gasolineproject.core.platform.rememberCameraCapture
 import org.vicpoo.gasolineproject.core.platform.rememberDocumentPicker
 import org.vicpoo.gasolineproject.core.ui.components.AppCard
 import org.vicpoo.gasolineproject.core.ui.components.AppScreen
+import org.vicpoo.gasolineproject.core.ui.components.ConfirmDialog
 import org.vicpoo.gasolineproject.core.ui.components.EditableAvatar
 import org.vicpoo.gasolineproject.core.ui.components.OptionsBottomSheet
 import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
@@ -46,6 +48,9 @@ import org.vicpoo.gasolineproject.feature.profile.resources.action_retry
 import org.vicpoo.gasolineproject.feature.profile.resources.cd_change_photo
 import org.vicpoo.gasolineproject.feature.profile.resources.cd_close
 import org.vicpoo.gasolineproject.feature.profile.resources.cd_edit_name
+import org.vicpoo.gasolineproject.feature.profile.resources.logout_pending_cancel
+import org.vicpoo.gasolineproject.feature.profile.resources.logout_pending_confirm
+import org.vicpoo.gasolineproject.feature.profile.resources.logout_pending_message
 import org.vicpoo.gasolineproject.feature.profile.resources.profile_license_ok
 import org.vicpoo.gasolineproject.feature.profile.resources.profile_license_pending
 import org.vicpoo.gasolineproject.feature.profile.resources.profile_license_title
@@ -113,13 +118,22 @@ fun ProfileScreen(
             title = stringResource(Res.string.profile_title),
             topSpacing = 0.dp,
             action = {
-                IconButton(onClick = { onEvent(ProfileEvent.Logout) }) {
-                    Icon(
-                        imageVector = AppIcons.Logout,
-                        contentDescription = stringResource(Res.string.action_logout),
-                        tint = AppTheme.colors.title,
-                        modifier = Modifier.size(26.dp),
-                    )
+                IconButton(onClick = { onEvent(ProfileEvent.Logout) }, enabled = !state.isCheckingLogout) {
+                    if (state.isCheckingLogout) {
+                        // Mandando lo pendiente antes de salir
+                        CircularProgressIndicator(
+                            color = AppTheme.colors.title,
+                            strokeWidth = 2.dp,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    } else {
+                        Icon(
+                            imageVector = AppIcons.Logout,
+                            contentDescription = stringResource(Res.string.action_logout),
+                            tint = AppTheme.colors.title,
+                            modifier = Modifier.size(26.dp),
+                        )
+                    }
                 }
             },
         )
@@ -204,6 +218,19 @@ fun ProfileScreen(
                     onTakePhoto()
                 },
             ),
+        )
+    }
+
+    state.logoutPendingCount?.let { count ->
+        ConfirmDialog(
+            message = stringResource(Res.string.logout_pending_message, count),
+            // Mismo patrón que "¿Está seguro de eliminar?": confirmar = la acción, cancelar = quedarse.
+            // Tocar fuera o deslizar también cancela, así que nunca se pierde nada por accidente.
+            confirmText = stringResource(Res.string.logout_pending_confirm),
+            dismissText = stringResource(Res.string.logout_pending_cancel),
+            onConfirm = { onEvent(ProfileEvent.LogoutAnyway) },
+            onDismiss = { onEvent(ProfileEvent.DismissLogoutWarning) },
+            icon = AppIcons.Warning,
         )
     }
 

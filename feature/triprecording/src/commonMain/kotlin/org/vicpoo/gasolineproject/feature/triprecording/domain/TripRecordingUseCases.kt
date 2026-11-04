@@ -20,6 +20,32 @@ class RefreshAssignedVehiclesUseCase(private val repository: AssignedVehicleRepo
     suspend operator fun invoke(): AppResult<Unit> = repository.refresh()
 }
 
+/** Qué carros no se pueden dejar todavía y por qué (viaje en curso o sin enviar). */
+class ObserveReleaseBlocksUseCase(private val repository: AssignedVehicleRepository) {
+    operator fun invoke(): Flow<Map<String, ReleaseBlock>> = repository.observeReleaseBlocks()
+}
+
+/**
+ * "Dejar carro": el empleado ya no lo necesita y queda disponible para otros.
+ * Se revisa primero en el teléfono (viaje en curso o sin enviar); la API lo vuelve a validar.
+ * Las observaciones son opcionales (máx. 500).
+ */
+class ReleaseVehicleUseCase(private val repository: AssignedVehicleRepository) {
+    suspend operator fun invoke(reservationId: String, notes: String): AppResult<Unit> {
+        val clean = notes.trim().takeIf { it.isNotEmpty() }
+        if (clean != null && clean.length > MAX_NOTES) return AppResult.Failure(AppError.Validation(ValidationReason.OUT_OF_RANGE))
+        // Mismo código que la API (409); la pantalla muestra el motivo con ReleaseBlock
+        if (repository.observeReleaseBlocks().first().containsKey(reservationId)) {
+            return AppResult.Failure(AppError.Server(409, null))
+        }
+        return repository.release(reservationId, clean)
+    }
+
+    companion object {
+        const val MAX_NOTES = 500
+    }
+}
+
 class GetAssignedVehicleUseCase(private val repository: AssignedVehicleRepository) {
     suspend operator fun invoke(reservationId: String): AssignedVehicle? = repository.find(reservationId)
 }

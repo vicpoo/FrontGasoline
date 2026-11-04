@@ -18,7 +18,17 @@ sealed interface AppError {
     /** El usuario no está ligado a un empleado/empresa (ej. Administrador interno). */
     data object NoCompany : AppError
     data class Validation(val reason: ValidationReason) : AppError
-    data class Server(val code: Int, val message: String?) : AppError
+    /**
+     * Error HTTP de la API. message = "detail" del ProblemDetails.
+     * [problemCode] = extensión "codigo" (ej. "VIAJE_EN_CURSO") y [problemData] = las demás extensiones
+     * (ej. "viajeId"), para decidir qué hacer sin depender del texto del mensaje.
+     */
+    data class Server(
+        val code: Int,
+        val message: String?,
+        val problemCode: String? = null,
+        val problemData: Map<String, String> = emptyMap(),
+    ) : AppError
     data class Unknown(val cause: Throwable? = null) : AppError
 }
 

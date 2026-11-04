@@ -33,6 +33,7 @@ import org.vicpoo.gasolineproject.feature.reports.presentation.navigation.report
 import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBell
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.MyReservationsDestination
+import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.assignmentsGraph
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.companyReservationsGraph
 import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.myReservationsDestination
 import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.tripRecordingGraph
@@ -106,6 +107,7 @@ fun MainScreen(
             )
             vehiclesGraph(navController)
             companyReservationsGraph(navController)
+            assignmentsGraph(navController)
             tripHistoryGraph(navController)
             reportsGraph()
             profileGraph(

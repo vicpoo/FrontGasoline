@@ -4,6 +4,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppError
@@ -18,6 +19,7 @@ import org.vicpoo.gasolineproject.feature.triprecording.data.local.FuelEntity
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.FuelSyncState
 import org.vicpoo.gasolineproject.feature.triprecording.data.local.TripRecordingLocalStore
 import org.vicpoo.gasolineproject.feature.triprecording.data.remote.AssignedCarroDto
+import org.vicpoo.gasolineproject.feature.triprecording.data.remote.LiberarReservaRequestDto
 import org.vicpoo.gasolineproject.feature.triprecording.data.remote.TripRecordingApi
 import org.vicpoo.gasolineproject.feature.triprecording.domain.AssignedVehicle
 import org.vicpoo.gasolineproject.feature.triprecording.domain.AssignedVehicleRepository
@@ -26,6 +28,7 @@ import org.vicpoo.gasolineproject.feature.triprecording.domain.CostCenterReposit
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecord
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecordRepository
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecordValues
+import org.vicpoo.gasolineproject.feature.triprecording.domain.ReleaseBlock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -37,6 +40,9 @@ class AssignedVehicleRepositoryImpl(
     private val api: TripRecordingApi,
     private val cache: JsonFileCache<AssignedVehiclesSnapshot>,
     private val sessionReader: SessionReader,
+    /** Viajes del teléfono: deciden si un carro se puede dejar. */
+    private val store: TripRecordingLocalStore,
+    private val clock: AppClock,
 ) : AssignedVehicleRepository {
 
     override fun observe(): Flow<List<AssignedVehicle>> =
@@ -71,6 +77,29 @@ class AssignedVehicleRepositoryImpl(
 
     override suspend fun find(reservationId: String): AssignedVehicle? =
         cache.current().vehicles.firstOrNull { it.reservationId == reservationId }?.toDomain()
+
+    // Un viaje se borra del teléfono cuando todo llegó a la API: si sigue aquí, está en curso
+    // (running) o guardado pendiente de enviar.
+    override fun observeReleaseBlocks(): Flow<Map<String, ReleaseBlock>> =
+        store.snapshot.map { snapshot ->
+            snapshot.trips
+                .groupBy { it.vehicle.reservationId }
+                .mapValues { (_, trips) -> if (trips.any { it.running }) ReleaseBlock.ACTIVE_TRIP else ReleaseBlock.PENDING_SYNC }
+        }.distinctUntilChanged()
+
+    override suspend fun release(reservationId: String, notes: String?): AppResult<Unit> {
+        val request = LiberarReservaRequestDto(
+            fechaLiberacion = clock.toLocalIso(clock.nowMillis()),
+            observaciones = notes,
+        )
+        val result = safeApiCall { api.releaseReservation(reservationId, request) }
+        if (result is AppResult.Success) {
+            // Sale de la lista al instante (ya no es suyo); la próxima actualización lo confirma
+            val current = cache.current()
+            cache.save(current.copy(vehicles = current.vehicles.filterNot { it.reservationId == reservationId }))
+        }
+        return result
+    }
 
     suspend fun clear() = cache.clear()
 }

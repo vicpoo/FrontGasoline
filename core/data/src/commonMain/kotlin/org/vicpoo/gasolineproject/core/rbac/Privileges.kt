@@ -43,4 +43,10 @@ object Privileges {
     const val VIAJE_CORREGIR_CERRADO = "viaje.corregir_cerrado"
     const val AUDITORIA_VER = "auditoria.ver"
     const val EMPLEADO_VER = "empleado.ver"
+
+    /**
+     * Pestaña Asignaciones: ver quién tiene cada carro y desvincularlo de un
+     * empleado. Cada empleado deja SU carro sin este privilegio (botón "Dejar carro" en Registrar).
+     */
+    const val ASIGNACION_GESTIONAR = "asignacion.gestionar"
 }

@@ -50,6 +50,12 @@ object ApiRoutes {
     fun reservationApprove(id: String) = "solicitudes-reserva/$id/aprobar"
     fun reservationReject(id: String) = "solicitudes-reserva/$id/rechazar"
     fun reservation(id: String) = "solicitudes-reserva/$id"
+    /** El empleado deja SU carro ("Dejar carro"). */
+    fun reservationRelease(id: String) = "solicitudes-reserva/$id/liberar"
+
+    // Asignaciones (quién tiene cada carro; asignacion.gestionar)
+    const val ASSIGNMENTS = "asignaciones"
+    fun assignmentUnlink(reservationId: String) = "asignaciones/$reservationId/desvincular"
 
     // Notificaciones (badge de la campana)
     const val NOTIFICATIONS = "notificaciones"

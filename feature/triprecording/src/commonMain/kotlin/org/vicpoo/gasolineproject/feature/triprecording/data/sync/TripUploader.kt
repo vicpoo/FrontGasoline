@@ -44,6 +44,9 @@ internal class TripUploader(
     suspend fun create(trip: TripEntity): Step {
         // Mientras el usuario no guarde "Registrar Viaje" se crea en curso (así ya suben los puntos)
         val completeOffline = !trip.running && trip.finalMileage != null && trip.endedAt != null
+        // Offline-first: el viaje viaja con el UUID que generó el teléfono. Si la respuesta se pierde y se
+        // reenvía, la API regresa el mismo viaje en lugar de "el carro ya tiene un viaje en curso".
+        val clientId = trip.localId.asUuidOrNull()
         val result = if (!completeOffline) {
             safeApiCall {
                 api.startTrip(
@@ -57,6 +60,7 @@ internal class TripUploader(
                         ubicacionInicioLng = trip.startLng?.round7(),
                         kilometrajeInicial = trip.initialMileage.round2(),
                         centroCostoId = trip.costCenter?.id,
+                        viajeId = clientId,
                     ),
                 )
             }
@@ -80,26 +84,54 @@ internal class TripUploader(
                         kilometrajeFinal = trip.finalMileage(),
                         centroCostoId = trip.costCenter?.id,
                         pausas = trip.pauses.map { it.toSyncDto() }.ifEmpty { null },
+                        viajeId = clientId,
                     ),
                 )
             }
         }
         return when (result) {
             is AppResult.Success -> {
+                // Manda lo que diga la API: en un reintento /sincronizar puede regresar el viaje que ya se
+                // había creado EN CURSO (se perdió la respuesta de POST /viajes). Entonces todavía faltan
+                // sus pausas, recargas y el finalizar, como en un viaje en línea.
+                val closed = result.data.estado?.let { it != ESTADO_EN_CURSO } ?: completeOffline
                 store.updateTrip(trip.localId) { entity ->
                     entity.copy(
                         serverId = result.data.viajeId,
-                        closedOnServer = completeOffline,
+                        closedOnServer = closed,
                         // Con /sincronizar las pausas ya viajaron junto con el viaje
-                        pauses = if (completeOffline) entity.pauses.map { it.copy(startSent = true, endSent = true) } else entity.pauses,
+                        pauses = if (completeOffline && closed) entity.pauses.map { it.copy(startSent = true, endSent = true) } else entity.pauses,
                         syncErrorMessage = null,
                         syncErrorCode = null,
                     )
                 }
                 Step.Done
             }
-            is AppResult.Failure -> handleTripFailure(trip.localId, result.error)
+            is AppResult.Failure -> adoptServerTrip(trip, result.error) ?: handleTripFailure(trip.localId, result.error)
         }
+    }
+
+    /**
+     * 409 VIAJE_EN_CURSO: el carro ya tiene un viaje abierto en la API. Si es ESTE mismo viaje (una versión
+     * anterior de la app lo creó sin mandar su UUID y se perdió la respuesta), se liga a ese id y se sigue
+     * con los puntos, pausas y recargas. Si es otro viaje regresa null y queda el error para el usuario.
+     */
+    private suspend fun adoptServerTrip(trip: TripEntity, error: AppError): Step? {
+        val server = error as? AppError.Server ?: return null
+        if (server.problemCode != CODIGO_VIAJE_EN_CURSO) return null
+        val serverTripId = server.problemData["viajeId"] ?: return null
+        val sameTrip = ServerTripMatch.isSameTrip(
+            employeeId = trip.employeeId,
+            startedAt = trip.startedAt,
+            serverEmployeeId = server.problemData["empleadoOperadorId"],
+            serverStartedAt = server.problemData["fechaInicio"],
+        )
+        if (!sameTrip) return null
+
+        store.updateTrip(trip.localId) {
+            it.copy(serverId = serverTripId, closedOnServer = false, syncErrorMessage = null, syncErrorCode = null)
+        }
+        return Step.Done
     }
 
 

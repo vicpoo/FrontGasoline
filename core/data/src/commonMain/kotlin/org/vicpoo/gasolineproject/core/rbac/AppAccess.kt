@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.core.rbac
 
+import org.vicpoo.gasolineproject.core.rbac.Privileges.ASIGNACION_GESTIONAR
 import org.vicpoo.gasolineproject.core.rbac.Privileges.AUDITORIA_VER
 import org.vicpoo.gasolineproject.core.rbac.Privileges.CARGA_EDITAR
 import org.vicpoo.gasolineproject.core.rbac.Privileges.CARGA_REGISTRAR
@@ -42,6 +43,9 @@ object AppAccess {
 
     /** Solicitudes de la empresa (aceptar / rechazar). */
     val COMPANY_REQUESTS = AccessRule.anyOf(SOLICITUD_VER_TODAS)
+
+    /** Asignaciones: los carros vinculados a un empleado y desvincularlos. */
+    val ASSIGNMENTS = AccessRule.anyOf(ASIGNACION_GESTIONAR)
 
     /** Historial de viajes (propios o de todos). */
     val TRIP_HISTORY = AccessRule.anyOf(VIAJE_VER_PROPIOS, VIAJE_VER_TODOS)

@@ -16,6 +16,7 @@ import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import org.vicpoo.gasolineproject.core.session.LogoutAction
+import org.vicpoo.gasolineproject.core.sync.PendingBeforeLogoutUseCase
 import org.vicpoo.gasolineproject.feature.profile.domain.ObserveProfileUseCase
 import org.vicpoo.gasolineproject.feature.profile.domain.Profile
 import org.vicpoo.gasolineproject.feature.profile.domain.RefreshProfileUseCase
@@ -28,6 +29,10 @@ data class ProfileUiState(
     val photoError: AppError? = null,
     /** Foto pendiente para el botón "Reintentar". */
     val pendingPhoto: PickedFile? = null,
+    /** "Salir": se está intentando mandar lo pendiente antes de cerrar sesión. */
+    val isCheckingLogout: Boolean = false,
+    /** Registros que solo existen en el teléfono y se perderían al salir (muestra el aviso). */
+    val logoutPendingCount: Int? = null,
 )
 
 sealed interface ProfileEvent {
@@ -37,6 +42,10 @@ sealed interface ProfileEvent {
     data object RetryPhoto : ProfileEvent
     data object DismissPhotoError : ProfileEvent
     data object Logout : ProfileEvent
+
+    /** En el aviso de pendientes: "Salir de todos modos" (se pierden) o "Cancelar". */
+    data object LogoutAnyway : ProfileEvent
+    data object DismissLogoutWarning : ProfileEvent
 }
 
 sealed interface ProfileEffect {
@@ -48,6 +57,7 @@ class ProfileViewModel(
     private val refreshProfile: RefreshProfileUseCase,
     private val updatePhoto: UpdateProfilePhotoUseCase,
     private val logout: LogoutAction,
+    private val pendingBeforeLogout: PendingBeforeLogoutUseCase,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(ProfileUiState())
@@ -74,10 +84,34 @@ class ProfileViewModel(
             }
             ProfileEvent.RetryPhoto -> local.value.pendingPhoto?.let(::upload)
             ProfileEvent.DismissPhotoError -> local.update { it.copy(photoError = null, pendingPhoto = null) }
-            ProfileEvent.Logout -> viewModelScope.launch {
-                logout()
-                _effects.send(ProfileEffect.LoggedOut)
+            ProfileEvent.Logout -> checkPendingAndLogout()
+            ProfileEvent.LogoutAnyway -> {
+                local.update { it.copy(logoutPendingCount = null) }
+                doLogout()
             }
+            ProfileEvent.DismissLogoutWarning -> local.update { it.copy(logoutPendingCount = null) }
+        }
+    }
+
+    /**
+     * Cerrar sesión borra lo guardado en el teléfono. Si hay viajes, recargas o solicitudes que todavía
+     * no llegan a la API, primero se intenta mandarlos; si siguen pendientes (sin red o rechazados) se
+     * avisa en lugar de borrarlos sin decir nada.
+     */
+    private fun checkPendingAndLogout() {
+        if (local.value.isCheckingLogout) return
+        viewModelScope.launch {
+            local.update { it.copy(isCheckingLogout = true) }
+            val pending = pendingBeforeLogout()
+            local.update { it.copy(isCheckingLogout = false) }
+            if (pending == 0) doLogout() else local.update { it.copy(logoutPendingCount = pending) }
+        }
+    }
+
+    private fun doLogout() {
+        viewModelScope.launch {
+            logout()
+            _effects.send(ProfileEffect.LoggedOut)
         }
     }
 

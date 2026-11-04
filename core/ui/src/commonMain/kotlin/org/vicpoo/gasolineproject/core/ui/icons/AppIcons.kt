@@ -353,6 +353,26 @@ object AppIcons {
         }
     }
 
+    /** Eslabones (pestaña Asignaciones: carro vinculado a un empleado). */
+    val Link: ImageVector by lazy {
+        lineIcon("Link") {
+            strokePath {
+                moveTo(10f, 13f)
+                arcToRelative(5f, 5f, 0f, false, false, 7.54f, 0.54f)
+                lineToRelative(3f, -3f)
+                arcToRelative(5f, 5f, 0f, false, false, -7.07f, -7.07f)
+                lineToRelative(-1.72f, 1.71f)
+            }
+            strokePath {
+                moveTo(14f, 11f)
+                arcToRelative(5f, 5f, 0f, false, false, -7.54f, -0.54f)
+                lineToRelative(-3f, 3f)
+                arcToRelative(5f, 5f, 0f, false, false, 7.07f, 7.07f)
+                lineToRelative(1.71f, -1.71f)
+            }
+        }
+    }
+
     /** Bomba de gasolina (recargas). */
     val Fuel: ImageVector get() = DesignIcons.PetrolPump
 

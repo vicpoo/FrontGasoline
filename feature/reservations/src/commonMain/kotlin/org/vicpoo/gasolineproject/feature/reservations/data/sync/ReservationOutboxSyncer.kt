@@ -34,6 +34,9 @@ class ReservationOutboxSyncer(
 
     private val mutex = Mutex()
 
+    /** Las solicitudes salen de la cola en cuanto la API las acepta: lo que quede está pendiente. */
+    override suspend fun pendingCount(): Int = outbox.all().size
+
     override suspend fun syncPending(): AppResult<Unit> = mutex.withLock {
         val session = sessionReader.current() ?: return@withLock AppResult.Success(Unit)
         val employeeId = session.employeeId ?: return@withLock AppResult.Success(Unit)

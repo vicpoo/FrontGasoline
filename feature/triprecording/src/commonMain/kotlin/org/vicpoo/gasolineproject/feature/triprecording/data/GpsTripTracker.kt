@@ -121,9 +121,27 @@ class GpsTripTracker(
             store.update { it.copy(trips = it.trips + entity) }
 
             routeFilter.reset()
+            // Punto de partida: con una ubicación reciente y precisa, la distancia empieza a contar desde
+            // aquí. Sin esto se perdía lo recorrido mientras el GPS daba su primera lectura buena (con el
+            // GPS "frío" pueden ser varios cientos de metros). Se guarda como punto para que la API
+            // calcule la misma distancia.
+            val anchor = firstFix?.copy(timeMillis = now)?.takeIf { routeFilter.accept(it) != null }
+            if (anchor != null) {
+                store.appendPoint(
+                    entity.localId,
+                    TrackPointEntity(
+                        lat = anchor.lat,
+                        lng = anchor.lng,
+                        t = clock.toLocalIso(now),
+                        acc = anchor.accuracyMeters,
+                        alt = anchor.altitudeMeters,
+                        spd = null,
+                    ),
+                )
+            }
             state.value = TrackingSession(
                 trip = entity.toDomain(),
-                route = emptyList(),
+                route = listOfNotNull(anchor?.point),
                 current = firstFix?.point,
                 hasLocationPermission = locationProvider.hasPermission(),
                 hasPreciseLocation = locationProvider.hasPreciseLocation(),
@@ -378,9 +396,12 @@ class GpsTripTracker(
     }
 
     private companion object {
-        const val GPS_INTERVAL_MS = 5_000L
-        /** 10 m: en movimiento llegan suficientes puntos; detenido (semáforo, estacionado) no se generan. */
-        const val MIN_DISTANCE_M = 10f
+        /**
+         * Una lectura por segundo y sin distancia mínima (como Strava): con 5 s / 10 m la ruta "cortaba"
+         * las curvas y medía de menos. El ruido estando detenido lo limpia RouteFilter.
+         */
+        const val GPS_INTERVAL_MS = 1_000L
+        const val MIN_DISTANCE_M = 0f
         const val HEARTBEAT_MS = 5_000L
         const val GPS_TIMEOUT_MS = 30_000L
         const val SYNC_EVERY_TICKS = 12 // 12 x 5 s = cada minuto

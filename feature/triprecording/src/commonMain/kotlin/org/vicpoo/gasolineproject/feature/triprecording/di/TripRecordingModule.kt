@@ -30,6 +30,8 @@ import org.vicpoo.gasolineproject.feature.triprecording.domain.FinishTripValidat
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecordRepository
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecordValidator
 import org.vicpoo.gasolineproject.feature.triprecording.domain.GetAssignedVehicleUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveReleaseBlocksUseCase
+import org.vicpoo.gasolineproject.feature.triprecording.domain.ReleaseVehicleUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.GetFuelRecordUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.LocationPermissionChangedUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.ObserveAssignedVehiclesUseCase
@@ -82,7 +84,9 @@ val tripRecordingModule = module {
     }
 
     // Explícitos: reciben un caché con nombre (named), eso no se resuelve solo por tipo
-    single { AssignedVehicleRepositoryImpl(api = get(), cache = get(ASSIGNED_CACHE), sessionReader = get()) }
+    single {
+        AssignedVehicleRepositoryImpl(api = get(), cache = get(ASSIGNED_CACHE), sessionReader = get(), store = get(), clock = get())
+    }
     single<AssignedVehicleRepository> { get<AssignedVehicleRepositoryImpl>() }
 
     single { CostCenterRepositoryImpl(api = get(), cache = get(COST_CENTERS_CACHE), sessionReader = get()) }
@@ -121,6 +125,8 @@ val tripRecordingModule = module {
     factoryOf(::ObserveAssignedVehiclesUseCase)
     factoryOf(::RefreshAssignedVehiclesUseCase)
     factoryOf(::GetAssignedVehicleUseCase)
+    factoryOf(::ObserveReleaseBlocksUseCase)
+    factoryOf(::ReleaseVehicleUseCase)
     factoryOf(::ObserveCostCentersUseCase)
     factoryOf(::RefreshCostCentersUseCase)
     factoryOf(::ObserveTrackingUseCase)

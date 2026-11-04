@@ -2,6 +2,9 @@
 <!-- Textos de :feature:profile. -->
 <resources>
     <string name="action_logout">Salir</string>
+    <string name="logout_pending_message">Tienes %1$d registro(s) que todavía no llegan al servidor (viajes, recargas o solicitudes). Si sales ahora se borrarán del teléfono. ¿Salir de todos modos?</string>
+    <string name="logout_pending_cancel">No, esperar a tener internet</string>
+    <string name="logout_pending_confirm">Sí, salir y borrarlos</string>
     <string name="cd_change_photo">Cambiar foto de perfil</string>
     <string name="cd_edit_name">Editar nombre</string>
     <string name="edit_name_error_message">No pudimos guardar el nombre. Por favor revisa tu conexión e inténtalo de nuevo.</string>

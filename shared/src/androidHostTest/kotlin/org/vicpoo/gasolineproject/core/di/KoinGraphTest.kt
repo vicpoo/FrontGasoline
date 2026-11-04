@@ -40,6 +40,8 @@ import org.vicpoo.gasolineproject.feature.profile.presentation.ProfileViewModel
 import org.vicpoo.gasolineproject.feature.profile.presentation.editname.EditNameViewModel
 import org.vicpoo.gasolineproject.feature.reports.presentation.ReportsViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBellViewModel
+import org.vicpoo.gasolineproject.feature.reservations.presentation.assignmentdetail.AssignmentDetailViewModel
+import org.vicpoo.gasolineproject.feature.reservations.presentation.assignments.AssignmentsViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.company.CompanyReservationsViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.detail.ReservationDetailViewModel
 import org.vicpoo.gasolineproject.feature.reservations.presentation.list.MyReservationsViewModel
@@ -171,6 +173,8 @@ class KoinGraphTest {
         koin.get<MyReservationsViewModel>()
         koin.get<ReservationsBellViewModel>()
         koin.get<CompanyReservationsViewModel>()
+        koin.get<AssignmentsViewModel>()
+        koin.get<AssignmentDetailViewModel> { parametersOf("r:res-1") }
         koin.get<ReservationDetailViewModel> { parametersOf("res-1") }
 
         // trips

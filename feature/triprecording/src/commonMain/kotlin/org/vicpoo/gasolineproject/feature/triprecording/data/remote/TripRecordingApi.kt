@@ -70,6 +70,8 @@ data class IniciarViajeRequestDto(
     val kilometrajeInicial: Double,
     /** Centro de costos elegido en "Iniciar viaje" (null si la empresa no tiene). */
     val centroCostoId: String? = null,
+    /** UUID que generó el teléfono: reenviar con el mismo id regresa el viaje ya creado (sin 409). */
+    val viajeId: String? = null,
 )
 
 /** SincronizarViajeRequest (POST /api/viajes/sincronizar): viaje completo hecho sin red. */
@@ -92,6 +94,8 @@ data class SincronizarViajeRequestDto(
     val centroCostoId: String? = null,
     /** Pausas hechas sin conexión (fechaFin null = sigue abierta). */
     val pausas: List<PausaSincronizadaDto>? = null,
+    /** UUID que generó el teléfono. Si ya existe, la API lo regresa tal como está (revisar [ViajeCreadoDto.estado]). */
+    val viajeId: String? = null,
 )
 
 /** PausaSincronizadaRequest (dentro de SincronizarViajeRequest). */
@@ -178,9 +182,19 @@ data class CargaFormData(
     val motivo: String?,
     val centroCostoId: String?,
     val receipt: ReceiptUpload?,
+    /** Solo en POST: UUID que generó el teléfono (reenviar no duplica la carga). */
+    val cargaCombustibleId: String? = null,
 )
 
 class ReceiptUpload(val bytes: ByteArray, val fileName: String, val mimeType: String)
+
+/** LiberarSolicitudReservaRequest (POST /api/solicitudes-reserva/{id}/liberar): "Dejar carro". */
+@Serializable
+data class LiberarReservaRequestDto(
+    /** Hora del celular (ISO con zona). */
+    val fechaLiberacion: String? = null,
+    val observaciones: String? = null,
+)
 
 // ======================= API =======================
 
@@ -205,6 +219,9 @@ interface TripRecordingApi {
     suspend fun updateFuelLoad(fuelLoadId: String, form: CargaFormData): CargaCreadaDto
     /** El motivo es obligatorio: la API lo guarda en la auditoría. */
     suspend fun deleteFuelLoad(fuelLoadId: String, motivo: String)
+
+    /** "Dejar carro": la reserva queda finalizada y el carro disponible (409 con un viaje en curso). */
+    suspend fun releaseReservation(reservationId: String, request: LiberarReservaRequestDto)
 }
 
 class KtorTripRecordingApi(private val client: HttpClient) : TripRecordingApi {
@@ -287,11 +304,19 @@ class KtorTripRecordingApi(private val client: HttpClient) : TripRecordingApi {
     override suspend fun deleteFuelLoad(fuelLoadId: String, motivo: String) {
         client.delete(ApiRoutes.fuelLoad(fuelLoadId)) { parameter("motivo", motivo) }
     }
+
+    override suspend fun releaseReservation(reservationId: String, request: LiberarReservaRequestDto) {
+        client.post(ApiRoutes.reservationRelease(reservationId)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }
+    }
 }
 
 /** Arma el formulario con los nombres de campo de los contratos [FromForm] (camelCase). */
 private fun CargaFormData.toMultipart(): MultiPartFormDataContent = MultiPartFormDataContent(
     formData {
+        cargaCombustibleId?.let { append("cargaCombustibleId", it) }
         viajeId?.let { append("viajeId", it) }
         append("litros", litros.plain(2))
         monto?.let { append("monto", it.plain(2)) }

@@ -75,6 +75,16 @@ class TripRecordingSyncer(
 
     override suspend fun syncPending(): AppResult<Unit> = sync()
 
+    /**
+     * Un viaje se borra del teléfono en cuanto todo llegó a la API, así que cada viaje que quede
+     * (en curso, sin enviar o rechazado) está pendiente, igual que las recargas sin sincronizar.
+     */
+    override suspend fun pendingCount(): Int {
+        val snapshot = store.current()
+        return snapshot.trips.size +
+            snapshot.fuel.count { it.state != FuelSyncState.SYNCED || it.syncErrorMessage != null }
+    }
+
     override suspend fun sync(): AppResult<Unit> = mutex.withLock {
         for (trip in store.current().trips) {
             val result = syncTrip(trip.localId)

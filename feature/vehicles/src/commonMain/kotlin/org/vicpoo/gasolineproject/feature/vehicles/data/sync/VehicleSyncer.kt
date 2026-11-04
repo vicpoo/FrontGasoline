@@ -34,6 +34,9 @@ class VehicleSyncer(
 ) : PendingSyncTask {
     private val mutex = Mutex()
 
+    /** Vehículos creados, editados o borrados sin conexión que todavía no llegan a la API. */
+    override suspend fun pendingCount(): Int = local.getAll().count { it.syncState != SyncState.SYNCED }
+
     override suspend fun syncPending(): AppResult<Unit> = mutex.withLock {
         val pending = local.getAll().filter {
             it.syncState != SyncState.SYNCED && !SyncRejection.isPermanent(it.lastSyncErrorCode)

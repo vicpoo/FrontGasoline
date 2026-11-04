@@ -15,6 +15,16 @@ interface AssignedVehicleRepository {
     fun observe(): Flow<List<AssignedVehicle>>
     suspend fun refresh(): AppResult<Unit>
     suspend fun find(reservationId: String): AssignedVehicle?
+
+    /**
+     * Por qué no se puede dejar cada carro todavía (reservationId -> motivo), según los viajes
+     * que hay en el teléfono: uno en curso / en pausa / esperando el kilometraje, o uno ya
+     * guardado que aún no se envía. Los carros que no aparecen se pueden dejar.
+     */
+    fun observeReleaseBlocks(): Flow<Map<String, ReleaseBlock>>
+
+    /** "Dejar carro" (requiere red). Con éxito el carro sale de la lista. */
+    suspend fun release(reservationId: String, notes: String?): AppResult<Unit>
 }
 
 /** Centros de costo activos de la empresa (lista offline + refresco desde la API). */
