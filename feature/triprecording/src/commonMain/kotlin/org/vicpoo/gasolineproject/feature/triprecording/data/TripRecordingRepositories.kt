@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.map
 import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.core.data.JsonFileCache
 import org.vicpoo.gasolineproject.core.network.safeApiCall
 import org.vicpoo.gasolineproject.core.platform.PickedFile
@@ -156,6 +157,7 @@ class FuelRecordRepositoryImpl(
         localId: String?,
         values: FuelRecordValues,
         newReceipt: PickedFile?,
+        location: GeoPoint?,
     ): AppResult<FuelRecord> {
         val snapshot = store.current()
         val trip = snapshot.trips.firstOrNull { it.localId == tripLocalId }
@@ -175,8 +177,9 @@ class FuelRecordRepositoryImpl(
                 receiptMimeType = newReceipt?.mimeType,
                 receiptChanged = receiptPath != null,
                 loadedAt = clock.nowLocalIso(),
-                lat = trip.lastLat,
-                lng = trip.lastLng,
+                // La que se tomó al abrir el formulario; si no hubo, la última del viaje
+                lat = location?.lat ?: trip.lastLat,
+                lng = location?.lng ?: trip.lastLng,
                 state = FuelSyncState.PENDING_CREATE,
             )
             store.update { it.copy(fuel = it.fuel + created) }

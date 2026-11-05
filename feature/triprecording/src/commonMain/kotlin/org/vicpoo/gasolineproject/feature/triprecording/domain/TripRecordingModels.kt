@@ -121,6 +121,11 @@ data class FuelRecordDraft(
     val newReceipt: PickedFile?,
     /** true si ya tiene una foto guardada (al editar). */
     val hasCurrentReceipt: Boolean,
+    /**
+     * Dónde se hizo la carga: se toma al ABRIR el formulario (no al guardar), así no importa si
+     * se tarda en tomar la foto del ticket o si se guarda ya en camino. null = se busca al guardar.
+     */
+    val location: GeoPoint? = null,
 )
 
 /** Qué pasó después de guardar algo en el teléfono e intentar enviarlo. */

@@ -4,7 +4,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import org.vicpoo.gasolineproject.core.common.AppError
+import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.core.common.ValidationReason
 import org.vicpoo.gasolineproject.core.location.LocationProvider
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
@@ -174,6 +176,41 @@ sealed interface SaveFuelResult {
  * Guarda la recarga en el teléfono (offline-first) y luego intenta enviarla de inmediato.
  * Así la pantalla puede mostrar "¡Solicitud enviada!" o "¡Error al enviar!" sin perder el registro.
  */
+/**
+ * Punto donde se está haciendo la carga de gasolina. Funciona sin internet (el GPS no usa red).
+ * Orden de preferencia:
+ * 1. La lectura actual del GPS del viaje, si es reciente (aunque el filtro de ruta la haya
+ *    descartado por estar detenido: justo es el caso de la gasolinera).
+ * 2. La última ubicación del teléfono, si tiene menos de [MAX_LAST_KNOWN_AGE_MS] y buena precisión.
+ * 3. La última lectura del GPS del viaje (aunque no sea reciente).
+ * 4. El último punto aceptado de la ruta.
+ * null = no hay nada confiable; la API la completa con el punto de la ruta más cercano a la hora.
+ */
+class CaptureFuelLocationUseCase(
+    private val tracker: TripTracker,
+    private val locationProvider: LocationProvider,
+    private val clock: AppClock,
+) {
+    suspend operator fun invoke(): GeoPoint? {
+        val session = tracker.session.value
+        if (session.gpsActive && session.current != null) return session.current
+
+        val lastKnown = runCatching { locationProvider.lastKnown() }.getOrNull()
+        if (lastKnown != null &&
+            clock.nowMillis() - lastKnown.timeMillis <= MAX_LAST_KNOWN_AGE_MS &&
+            (lastKnown.accuracyMeters ?: 0.0) <= MAX_ACCURACY_M
+        ) {
+            return lastKnown.point
+        }
+        return session.current ?: session.trip?.lastLocation
+    }
+
+    private companion object {
+        const val MAX_LAST_KNOWN_AGE_MS = 2 * 60_000L
+        const val MAX_ACCURACY_M = 50.0
+    }
+}
+
 class SaveFuelRecordUseCase(
     private val repository: FuelRecordRepository,
     private val sync: TripRecordingSync,
@@ -181,6 +218,7 @@ class SaveFuelRecordUseCase(
     private val costCenters: CostCenterRepository,
     private val validator: FuelRecordValidator,
     private val imageCompressor: ImageCompressor,
+    private val captureLocation: CaptureFuelLocationUseCase,
 ) {
     suspend operator fun invoke(draft: FuelRecordDraft): SaveFuelResult {
         val trip = tracker.session.value.trip
@@ -195,7 +233,10 @@ class SaveFuelRecordUseCase(
             is FuelValidation.Valid -> validation.values
         }
 
-        val saved = when (val result = repository.save(trip.localId, draft.localId, values, receipt)) {
+        // Solo al crear: la ubicación de una carga ya registrada no se mueve al editarla
+        val location = if (draft.localId == null) draft.location ?: captureLocation() else null
+
+        val saved = when (val result = repository.save(trip.localId, draft.localId, values, receipt, location)) {
             is AppResult.Failure -> return SaveFuelResult.Failed(result.error)
             is AppResult.Success -> result.data
         }

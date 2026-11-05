@@ -11,6 +11,8 @@ import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.ValidationReason
 import org.vicpoo.gasolineproject.core.platform.PickedFile
+import org.vicpoo.gasolineproject.core.common.GeoPoint
+import org.vicpoo.gasolineproject.feature.triprecording.domain.CaptureFuelLocationUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.CostCenter
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelField
 import org.vicpoo.gasolineproject.feature.triprecording.domain.FuelRecordDraft
@@ -70,12 +72,19 @@ class FuelRecordFormViewModel(
     private val observeTracking: ObserveTrackingUseCase,
     private val saveRecord: SaveFuelRecordUseCase,
     private val retryRecord: RetryFuelRecordUseCase,
+    private val captureLocation: CaptureFuelLocationUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(FuelRecordFormUiState(isEdit = args.recordId != null))
     val state: StateFlow<FuelRecordFormUiState> = _state.asStateFlow()
 
+    /** Dónde está el operador al ABRIR el formulario (solo para una carga nueva). */
+    private var fuelLocation: GeoPoint? = null
+
     init {
+        if (args.recordId == null) {
+            viewModelScope.launch { fuelLocation = captureLocation() }
+        }
         viewModelScope.launch { load() }
     }
 
@@ -161,6 +170,7 @@ class FuelRecordFormViewModel(
                 costCenterId = current.selectedCostCenterId,
                 newReceipt = current.newReceipt,
                 hasCurrentReceipt = current.hasCurrentReceipt,
+                location = fuelLocation,
             )
             when (val result = saveRecord(draft)) {
                 is SaveFuelResult.Invalid -> _state.update { it.copy(isSaving = false, errors = result.errors) }

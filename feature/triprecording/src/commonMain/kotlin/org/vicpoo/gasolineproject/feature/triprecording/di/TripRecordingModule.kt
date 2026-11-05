@@ -22,6 +22,7 @@ import org.vicpoo.gasolineproject.feature.triprecording.data.remote.KtorTripReco
 import org.vicpoo.gasolineproject.feature.triprecording.data.remote.TripRecordingApi
 import org.vicpoo.gasolineproject.feature.triprecording.data.sync.TripRecordingSyncer
 import org.vicpoo.gasolineproject.feature.triprecording.domain.AssignedVehicleRepository
+import org.vicpoo.gasolineproject.feature.triprecording.domain.CaptureFuelLocationUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.CheckLocationPermissionUseCase
 import org.vicpoo.gasolineproject.feature.triprecording.domain.CostCenterRepository
 import org.vicpoo.gasolineproject.feature.triprecording.domain.DeleteFuelRecordUseCase
@@ -140,6 +141,7 @@ val tripRecordingModule = module {
     factoryOf(::UndoStopTripUseCase)
     factoryOf(::ObserveFuelRecordsUseCase)
     factoryOf(::GetFuelRecordUseCase)
+    factoryOf(::CaptureFuelLocationUseCase)
     factoryOf(::SaveFuelRecordUseCase)
     factoryOf(::RetryFuelRecordUseCase)
     factoryOf(::DeleteFuelRecordUseCase)

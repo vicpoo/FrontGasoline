@@ -3,6 +3,7 @@ package org.vicpoo.gasolineproject.feature.triprecording.domain
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 
 /*
@@ -86,6 +87,8 @@ interface FuelRecordRepository {
         localId: String?,
         values: FuelRecordValues,
         newReceipt: PickedFile?,
+        /** Ubicación de la carga (solo al crear). null = la última del viaje. */
+        location: GeoPoint? = null,
     ): AppResult<FuelRecord>
 
     /** Marca la recarga para borrarse (si nunca se envió, se borra al momento). */

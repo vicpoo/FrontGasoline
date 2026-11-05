@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
+import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.core.platform.PickedFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,6 +38,7 @@ class RetryFuelRecordUseCaseTest {
             localId: String?,
             values: FuelRecordValues,
             newReceipt: PickedFile?,
+            location: GeoPoint?,
         ): AppResult<FuelRecord> = error("No se usa en esta prueba")
         override suspend fun delete(localId: String): AppResult<Unit> = error("No se usa en esta prueba")
         override suspend fun markForRetry(localId: String) {
