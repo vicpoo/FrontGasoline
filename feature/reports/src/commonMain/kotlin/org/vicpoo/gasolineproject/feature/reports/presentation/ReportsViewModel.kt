@@ -52,6 +52,9 @@ data class ReportsUiState(
 sealed interface ReportsEvent {
     data class PeriodSelected(val period: ReportPeriod) : ReportsEvent
 
+    /** Fechas elegidas en el calendario ("yyyy-MM-dd", ambos días incluidos). */
+    data class CustomRangeSelected(val from: String, val to: String) : ReportsEvent
+
     /** null = toda la flota. */
     data class VehicleSelected(val vehicleId: String?) : ReportsEvent
     data object Refresh : ReportsEvent
@@ -120,7 +123,12 @@ class ReportsViewModel(
 
     fun onEvent(event: ReportsEvent) {
         when (event) {
-            is ReportsEvent.PeriodSelected -> changeFilters(status.value.filters.copy(period = event.period))
+            is ReportsEvent.PeriodSelected -> changeFilters(
+                status.value.filters.copy(period = event.period, customFrom = null, customTo = null),
+            )
+            is ReportsEvent.CustomRangeSelected -> changeFilters(
+                status.value.filters.copy(period = ReportPeriod.CUSTOM, customFrom = event.from, customTo = event.to),
+            )
             is ReportsEvent.VehicleSelected -> changeFilters(status.value.filters.copy(vehicleId = event.vehicleId))
             ReportsEvent.Refresh -> load(showIndicator = true)
             is ReportsEvent.Download -> download(event.format)

@@ -56,6 +56,8 @@ data class FuelLoadEntity(
     val amount: Double? = null,
     val receiptUrl: String? = null,
     val date: String? = null,
+    val lat: Double? = null,
+    val lng: Double? = null,
 )
 
 /**
@@ -145,7 +147,7 @@ class TripsRepositoryImpl(
                     val loadsResult = safeApiCall { api.getFuelLoads(trip.id) }
                     if (loadsResult is AppResult.Failure && loadsResult.error == AppError.NoConnection) noConnection = true
                     val loads = loadsResult.getOrNull()?.map {
-                        FuelLoadEntity(it.cargaCombustibleId, it.litros, it.monto, it.fotoComprobanteUrl, it.fechaCarga)
+                        FuelLoadEntity(it.cargaCombustibleId, it.litros, it.monto, it.fotoComprobanteUrl, it.fechaCarga, it.ubicacionLat, it.ubicacionLng)
                     }
                     // La ruta se vuelve a pedir en cada actualización: aunque el viaje ya esté cerrado,
                     // pueden llegar después lotes de puntos que estaban pendientes (sin red o error 5xx)
@@ -179,7 +181,14 @@ private fun TripEntity.toDomain() = Trip(
     distanceKm = distanceKm,
     finalMileageKm = finalMileageKm,
     status = TripStatus.fromApi(status),
-    fuelLoads = fuelLoads.map { FuelLoad(it.id, it.liters, it.amount, it.receiptUrl, it.date) },
+    fuelLoads = fuelLoads.map { FuelLoad(
+            id = it.id,
+            liters = it.liters,
+            amount = it.amount,
+            receiptUrl = it.receiptUrl,
+            date = it.date,
+            location = if (it.lat != null && it.lng != null) GeoPoint(it.lat, it.lng) else null,
+        ) },
     route = route.mapNotNull { pair -> if (pair.size >= 2) GeoPoint(pair[0], pair[1]) else null },
     pausedSeconds = pausedSeconds,
 )

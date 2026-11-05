@@ -21,6 +21,11 @@ import org.maplibre.spatialk.geojson.Position
 import org.vicpoo.gasolineproject.core.common.GeoPoint
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import kotlin.time.Duration.Companion.milliseconds
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.unit.DpSize
+import org.maplibre.compose.expressions.dsl.image
+import org.maplibre.compose.layers.SymbolLayer
+import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 
 @Composable
 actual fun LiveRouteMap(
@@ -28,6 +33,7 @@ actual fun LiveRouteMap(
     current: GeoPoint?,
     modifier: Modifier,
     followCurrent: Boolean,
+    fuelPoints: List<GeoPoint>,
 ) {
     val colors = AppTheme.colors
     val start = current ?: route.lastOrNull()
@@ -65,6 +71,10 @@ actual fun LiveRouteMap(
     val styleUri = if (colors.isDark) MapStyles.DARK else MapStyles.LIGHT
     val routeJson = remember(route) { GeoJson.lineString(route) }
     val currentJson = remember(current) { GeoJson.point(current) }
+    val fuelJson = remember(fuelPoints) { GeoJson.points(fuelPoints) }
+    // Bomba de gasolina como imagen SDF: así MapLibre la pinta del color que se le pida (blanco)
+    val fuelPainter = rememberVectorPainter(AppIcons.Fuel)
+    val fuelIcon = remember(fuelPainter) { image(fuelPainter, size = DpSize(14.dp, 14.dp), drawAsSdf = true) }
 
     MaplibreMap(
         modifier = modifier,
@@ -88,6 +98,26 @@ actual fun LiveRouteMap(
             width = const(5.dp),
             cap = const(LineCap.Round),
             join = const(LineJoin.Round),
+        )
+
+        // Cargas de gasolina: círculo azul con borde blanco y la bomba encima (debajo de la posición actual)
+        val fuelSource = rememberGeoJsonSource(GeoJsonData.JsonString(fuelJson))
+        CircleLayer(
+            id = "trip-fuel-circle",
+            source = fuelSource,
+            color = const(colors.primary),
+            radius = const(13.dp),
+            strokeColor = const(Color.White),
+            strokeWidth = const(2.dp),
+        )
+        SymbolLayer(
+            id = "trip-fuel-icon",
+            source = fuelSource,
+            iconImage = fuelIcon,
+            iconColor = const(Color.White),
+            // Siempre visibles aunque se encimen con otras etiquetas del mapa
+            iconAllowOverlap = const(true),
+            iconIgnorePlacement = const(true),
         )
 
         val currentSource = rememberGeoJsonSource(GeoJsonData.JsonString(currentJson))
@@ -127,6 +157,15 @@ private object GeoJson {
         if (points.size < 2) return EMPTY
         val coordinates = points.joinToString(separator = ",") { "[${it.lng},${it.lat}]" }
         return """{"type":"Feature","properties":{},"geometry":{"type":"LineString","coordinates":[$coordinates]}}"""
+    }
+
+    /** Varios puntos sueltos (ej. las cargas de gasolina). */
+    fun points(points: List<GeoPoint>): String {
+        if (points.isEmpty()) return EMPTY
+        val features = points.joinToString(separator = ",") {
+            """{"type":"Feature","properties":{},"geometry":{"type":"Point","coordinates":[${it.lng},${it.lat}]}}"""
+        }
+        return """{"type":"FeatureCollection","features":[$features]}"""
     }
 
     fun point(point: GeoPoint?): String {

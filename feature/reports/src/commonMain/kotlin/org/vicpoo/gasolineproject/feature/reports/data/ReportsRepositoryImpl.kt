@@ -35,6 +35,9 @@ import org.vicpoo.gasolineproject.feature.reports.domain.VehicleStatus
 data class ReportsSnapshot(
     val period: String? = null,
     val vehicleId: String? = null,
+    /** Fechas elegidas en el calendario (periodo CUSTOM). */
+    val customFrom: String? = null,
+    val customTo: String? = null,
     val report: ReporteFlotaDto? = null,
     val vehicles: List<VehicleOptionEntity> = emptyList(),
 )
@@ -54,6 +57,8 @@ class ReportsRepositoryImpl(
             filters = ReportFilters(
                 period = ReportPeriod.entries.firstOrNull { it.name == snapshot.period } ?: ReportPeriod.THIS_MONTH,
                 vehicleId = snapshot.vehicleId,
+                customFrom = snapshot.customFrom,
+                customTo = snapshot.customTo,
             ),
             report = report.toDomain(),
         )
@@ -78,6 +83,8 @@ class ReportsRepositoryImpl(
             ReportsSnapshot(
                 period = filters.period.name,
                 vehicleId = filters.vehicleId,
+                customFrom = filters.customFrom,
+                customTo = filters.customTo,
                 report = dto,
                 vehicles = vehicles,
             ),
@@ -103,7 +110,7 @@ class ReportsRepositoryImpl(
 
     /** Fechas del periodo con la hora: el último día se incluye completo. */
     private fun ReportFilters.toQuery(): ReportQuery {
-        val range = ReportPeriods.rangeOf(period, clock.nowLocalIso())
+        val range = ReportPeriods.rangeOf(this, clock.nowLocalIso())
         return ReportQuery(
             vehicleId = vehicleId,
             from = range?.let { "${it.from}T00:00:00" },

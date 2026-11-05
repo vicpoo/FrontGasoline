@@ -3,13 +3,19 @@ package org.vicpoo.gasolineproject.feature.reports.domain
 import kotlinx.coroutines.flow.Flow
 import org.vicpoo.gasolineproject.core.common.AppResult
 
-/** Periodo del reporte (los rangos los calcula [ReportPeriods]). */
-enum class ReportPeriod { THIS_MONTH, LAST_MONTH, LAST_3_MONTHS, THIS_YEAR, ALL_TIME }
+/**
+ * Periodo del reporte (los rangos los calcula [ReportPeriods]).
+ * CUSTOM = fechas que eligió el usuario en el calendario ([ReportFilters.customFrom] / [ReportFilters.customTo]).
+ */
+enum class ReportPeriod { THIS_MONTH, LAST_MONTH, LAST_3_MONTHS, THIS_YEAR, ALL_TIME, CUSTOM }
 
 /** Qué se quiere ver: un periodo y toda la flota (vehicleId == null) o un solo carro. */
 data class ReportFilters(
     val period: ReportPeriod = ReportPeriod.THIS_MONTH,
     val vehicleId: String? = null,
+    /** Solo con [ReportPeriod.CUSTOM]: "yyyy-MM-dd" (ambos días incluidos). */
+    val customFrom: String? = null,
+    val customTo: String? = null,
 )
 
 enum class ReportFormat { PDF, EXCEL }

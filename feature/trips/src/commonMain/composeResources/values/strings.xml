@@ -10,6 +10,8 @@
     <string name="trip_detail_no_loads">Este viaje no tiene cargas de combustible.</string>
     <string name="trip_detail_start">Inicio del viaje</string>
     <string name="trip_detail_view_receipt">Ver recibo</string>
+    <string name="trip_fuel_marker">Carga de gasolina</string>
+    <string name="trip_detail_show_full_route">Ver ruta completa</string>
     <string name="trip_detail_amount_value">$%1$s</string>
     <string name="trip_detail_liters_chip">%1$sL</string>
     <string name="trip_history_empty">Aún no hay viajes registrados.</string>

@@ -96,6 +96,7 @@ import org.vicpoo.gasolineproject.feature.triprecording.resources.cd_edit_fuel
 import org.vicpoo.gasolineproject.feature.triprecording.resources.cd_finish_trip
 import org.vicpoo.gasolineproject.feature.triprecording.resources.cd_pause_trip
 import org.vicpoo.gasolineproject.feature.triprecording.resources.cd_resume_trip
+import androidx.compose.runtime.remember
 
 @Composable
 fun ActiveTripRoute(
@@ -247,7 +248,14 @@ private fun TripMap(
     val dimens = AppTheme.dimens
     val session = state.session
     Box(modifier.fillMaxHeight()) {
-        LiveRouteMap(route = session.route, current = session.current, modifier = Modifier.fillMaxSize())
+        // Icono de gasolina donde ya se registraron cargas en este viaje
+        val fuelPoints = remember(state.fuelRecords) { state.fuelRecords.mapNotNull { it.location } }
+        LiveRouteMap(
+            route = session.route,
+            current = session.current,
+            fuelPoints = fuelPoints,
+            modifier = Modifier.fillMaxSize(),
+        )
 
         // Parte de arriba: regresar + aviso del GPS
         Row(

@@ -43,6 +43,9 @@ data class CargaCombustibleDto(
     val monto: Double? = null,
     val fotoComprobanteUrl: String? = null,
     val fechaCarga: String? = null,
+    /** Dónde se hizo la carga (la manda el teléfono o la estima la API con la ruta). */
+    val ubicacionLat: Double? = null,
+    val ubicacionLng: Double? = null,
 )
 
 @Serializable

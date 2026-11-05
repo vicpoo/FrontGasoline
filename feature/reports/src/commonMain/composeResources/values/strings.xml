@@ -13,6 +13,11 @@
     <string name="reports_period_last_3_months">Últimos 3 meses</string>
     <string name="reports_period_this_year">Este año</string>
     <string name="reports_period_all_time">Todo</string>
+    <string name="reports_period_custom">Elegir fechas</string>
+    <string name="reports_custom_range">%1$s – %2$s</string>
+    <string name="reports_date_picker_title">Elige el periodo del reporte</string>
+    <string name="reports_date_picker_apply">Aplicar</string>
+    <string name="reports_date_picker_cancel">Cancelar</string>
     <string name="reports_range">Del %1$s al %2$s</string>
     <string name="reports_range_all_time">Todo el historial</string>
     <string name="reports_vehicle_label">Vehículo</string>
@@ -40,7 +45,6 @@
     <!-- Descargas -->
     <string name="reports_download_pdf">Descargar PDF</string>
     <string name="reports_download_excel">Descargar Excel</string>
-    <string name="reports_download_hint">El servidor genera el archivo; después eliges dónde guardarlo o con quién compartirlo.</string>
     <string name="reports_download_error">No se pudo descargar el reporte: %1$s</string>
 
     <!-- Por vehículo -->

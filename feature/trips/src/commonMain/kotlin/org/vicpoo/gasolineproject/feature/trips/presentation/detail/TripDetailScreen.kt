@@ -67,6 +67,14 @@ import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_no_loads
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_start
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_view_receipt
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_not_found
+import org.vicpoo.gasolineproject.feature.trips.presentation.common.fuelMarkers
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.shape.CircleShape
+import kotlinx.coroutines.launch
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_show_full_route
 
 @Composable
 fun TripDetailRoute(
@@ -127,6 +135,10 @@ private fun TripDetailContent(trip: Trip, onBack: () -> Unit, onViewReceipt: (St
         bottomSheetState = rememberStandardBottomSheetState(initialValue = SheetValue.Expanded),
     )
     val sheetState = scaffoldState.bottomSheetState
+    val scope = rememberCoroutineScope()
+    // Carga elegida en la hoja: el mapa se centra en su icono (null = toda la ruta)
+    var focusedLoadId by rememberSaveable(trip.id) { mutableStateOf<String?>(null) }
+    val focusedPoint = trip.fuelLoads.firstOrNull { it.id == focusedLoadId }?.location
     val navigationBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     BoxWithConstraints(Modifier.fillMaxSize().background(colors.background)) {
@@ -147,6 +159,13 @@ private fun TripDetailContent(trip: Trip, onBack: () -> Unit, onViewReceipt: (St
                 TripDetailSheet(
                     trip = trip,
                     onViewReceipt = onViewReceipt,
+                    focusedLoadId = focusedLoadId,
+                    onLoadClick = { load ->
+                        // Tocar la misma carga otra vez regresa a la ruta completa
+                        focusedLoadId = if (focusedLoadId == load.id) null else load.id
+                        // Se baja la hoja para que se vea el mapa
+                        if (focusedLoadId != null) scope.launch { sheetState.partialExpand() }
+                    },
                     modifier = Modifier.heightIn(max = maxSheetHeight),
                 )
             },
@@ -156,6 +175,10 @@ private fun TripDetailContent(trip: Trip, onBack: () -> Unit, onViewReceipt: (St
                 RouteMap(
                     points = trip.route,
                     animate = true,
+                    // Icono de gasolina donde se hizo cada carga
+                    markers = trip.fuelMarkers(),
+                    // Al tocar una carga, el mapa se acerca a su icono
+                    focusPoint = focusedPoint,
                     // El zoom se elige para que la ruta quepa arriba de la hoja abierta...
                     fitBottomInset = maxSheetHeight,
                     // ...y al bajar la hoja la ruta se recorre al centro de lo que se ve
@@ -168,6 +191,28 @@ private fun TripDetailContent(trip: Trip, onBack: () -> Unit, onViewReceipt: (St
                     modifier = Modifier.fillMaxSize(),
                 )
                 AppBackButton(onClick = onBack, modifier = Modifier.statusBarsPadding().padding(dimens.spaceM))
+                // Con una carga enfocada: botón para volver a ver toda la ruta
+                if (focusedPoint != null) {
+                    Surface(
+                        onClick = { focusedLoadId = null },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .statusBarsPadding()
+                            .padding(dimens.spaceM)
+                            .size(dimens.iconButtonSize),
+                        shape = CircleShape,
+                        color = colors.labelBackground,
+                        contentColor = colors.onLabel,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = AppIcons.Route,
+                                contentDescription = stringResource(Res.string.trip_detail_show_full_route),
+                                modifier = Modifier.size(dimens.iconSize),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -175,7 +220,13 @@ private fun TripDetailContent(trip: Trip, onBack: () -> Unit, onViewReceipt: (St
 
 /** Contenido de la hoja: operador y fecha arriba (lo que se ve con la hoja abajo) y luego el resto. */
 @Composable
-private fun TripDetailSheet(trip: Trip, onViewReceipt: (String?) -> Unit, modifier: Modifier = Modifier) {
+private fun TripDetailSheet(
+    trip: Trip,
+    onViewReceipt: (String?) -> Unit,
+    focusedLoadId: String?,
+    onLoadClick: (FuelLoad) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val dimens = AppTheme.dimens
     val colors = AppTheme.colors
     Column(
@@ -222,7 +273,12 @@ private fun TripDetailSheet(trip: Trip, onViewReceipt: (String?) -> Unit, modifi
         } else {
             // De la más antigua a la más reciente
             trip.fuelLoads.sortedBy { AppDates.sortKey(it.date) }.forEach { load ->
-                FuelLoadCard(load, onViewReceipt = { onViewReceipt(load.receiptUrl) })
+                FuelLoadCard(
+                    load = load,
+                    selected = load.id == focusedLoadId,
+                    onClick = { onLoadClick(load) },
+                    onViewReceipt = { onViewReceipt(load.receiptUrl) },
+                )
                 Spacer(Modifier.height(dimens.spaceS))
             }
         }
@@ -242,14 +298,18 @@ private fun DateTimeRow(label: String, iso: String?) {
  * y a la derecha el botón de recibo (solo icono). Sin borde: se separa por contraste (colors.card).
  */
 @Composable
-private fun FuelLoadCard(load: FuelLoad, onViewReceipt: () -> Unit) {
+private fun FuelLoadCard(load: FuelLoad, selected: Boolean, onClick: () -> Unit, onViewReceipt: () -> Unit) {
     val dimens = AppTheme.dimens
     val colors = AppTheme.colors
     val shape = RoundedCornerShape(dimens.radius)
+    // Tocar la tarjeta centra el mapa en la carga (solo si se sabe dónde fue).
+    // La elegida se marca con un fondo azul tenue (sin borde, igual que las demás tarjetas).
     Surface(
+        onClick = onClick,
+        enabled = load.location != null,
         modifier = Modifier.fillMaxWidth(),
         shape = shape,
-        color = colors.card,
+        color = if (selected) colors.primary.copy(alpha = if (colors.isDark) 0.28f else 0.14f) else colors.card,
         contentColor = colors.text,
     ) {
         Row(Modifier.padding(dimens.spaceM), verticalAlignment = Alignment.CenterVertically) {

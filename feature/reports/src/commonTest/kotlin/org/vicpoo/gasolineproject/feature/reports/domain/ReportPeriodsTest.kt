@@ -46,4 +46,31 @@ class ReportPeriodsTest {
 
     @Test
     fun todo_noTieneLimites() = assertNull(ReportPeriods.rangeOf(ReportPeriod.ALL_TIME, today))
+
+    @Test
+    fun personalizado_usaLasFechasElegidas() = assertEquals(
+        DateRange("2026-09-05", "2026-10-02"),
+        ReportPeriods.rangeOf(ReportFilters(ReportPeriod.CUSTOM, customFrom = "2026-09-05", customTo = "2026-10-02"), today),
+    )
+
+    @Test
+    fun personalizado_alReves_seOrdena() = assertEquals(
+        DateRange("2026-09-05", "2026-10-02"),
+        ReportPeriods.rangeOf(ReportFilters(ReportPeriod.CUSTOM, customFrom = "2026-10-02", customTo = "2026-09-05"), today),
+    )
+
+    @Test
+    fun personalizado_unSoloDia() = assertEquals(
+        DateRange("2026-10-02", "2026-10-02"),
+        ReportPeriods.rangeOf(ReportFilters(ReportPeriod.CUSTOM, customFrom = "2026-10-02"), today),
+    )
+
+    @Test
+    fun calendario_milisegundosUtc_ida_y_vuelta() {
+        // 2026-10-28T00:00:00Z
+        assertEquals(1_793_145_600_000L, ReportPeriods.utcMillisOf("2026-10-28"))
+        assertEquals("2026-10-28", ReportPeriods.dateFromUtcMillis(1_793_145_600_000L))
+        assertEquals("2024-02-29", ReportPeriods.dateFromUtcMillis(ReportPeriods.utcMillisOf("2024-02-29")!!))
+        assertEquals("1970-01-01", ReportPeriods.dateFromUtcMillis(0L))
+    }
 }

@@ -27,6 +27,8 @@ data class FuelLoad(
     val receiptUrl: String?,
     /** Fecha de la carga (fechaCarga de la API). */
     val date: String? = null,
+    /** Dónde se hizo la carga (null si no se sabe): se dibuja en el mapa con el icono de gasolina. */
+    val location: GeoPoint? = null,
 )
 
 enum class TripStatus {

@@ -62,7 +62,6 @@ import org.vicpoo.gasolineproject.feature.reports.resources.Res
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_active_vehicles
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_download_error
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_download_excel
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_download_hint
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_download_pdf
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_empty
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_generated_at
@@ -100,6 +99,30 @@ import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_labe
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_last_trip
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_no_trips
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicles_title
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.coroutines.launch
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import org.vicpoo.gasolineproject.feature.reports.domain.ReportPeriods
+import org.vicpoo.gasolineproject.feature.reports.resources.reports_period_custom
+import org.vicpoo.gasolineproject.feature.reports.resources.reports_custom_range
+import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_title
+import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_apply
+import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_cancel
 
 /** Id del selector para "Toda la flota". */
 private const val ALL_VEHICLES = "__all__"
@@ -133,6 +156,14 @@ fun ReportsRoute(viewModel: ReportsViewModel = koinViewModel()) {
 fun ReportsScreen(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
     val dimens = AppTheme.dimens
     val wide = LocalWindowWidth.current != WindowWidth.Compact
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    // Tocar la tarjeta de un carro = elegirlo en el filtro (otra vez = toda la flota) y subir al resumen
+    val onVehicleClick: (VehicleStats) -> Unit = { vehicle ->
+        val selected = state.filters.vehicleId == vehicle.id
+        onEvent(ReportsEvent.VehicleSelected(if (selected) null else vehicle.id))
+        scope.launch { listState.animateScrollToItem(0) }
+    }
     Box(
         modifier = Modifier.fillMaxSize().background(AppTheme.colors.background).statusBarsPadding(),
         contentAlignment = Alignment.TopCenter,
@@ -155,6 +186,7 @@ fun ReportsScreen(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = dimens.spaceL),
                     verticalArrangement = Arrangement.spacedBy(dimens.spaceM),
@@ -172,6 +204,8 @@ fun ReportsScreen(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
                         else -> {
                             item(key = "summary") { SummarySection(report.summary, columns = if (wide) 4 else 2) }
                             item(key = "downloads") { Downloads(state, onEvent, sideBySide = wide) }
+                            // El filtro de vehículo va abajo de los botones de descarga
+                            item(key = "vehicle_filter") { VehicleFilter(state, onEvent) }
                             item(key = "vehicles_title") {
                                 Text(
                                     stringResource(Res.string.reports_vehicles_title),
@@ -188,7 +222,14 @@ fun ReportsScreen(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
                                 rows.forEachIndexed { index, row ->
                                     item(key = "vehicle_row_${row.first().id}_$index") {
                                         Row(horizontalArrangement = Arrangement.spacedBy(dimens.spaceM)) {
-                                            row.forEach { VehicleCard(it, Modifier.weight(1f)) }
+                                            row.forEach { vehicle ->
+                                                VehicleCard(
+                                                    vehicle = vehicle,
+                                                    selected = state.filters.vehicleId == vehicle.id,
+                                                    onClick = { onVehicleClick(vehicle) },
+                                                    modifier = Modifier.weight(1f),
+                                                )
+                                            }
                                             repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
                                         }
                                     }
@@ -228,47 +269,164 @@ private fun subtitleOf(report: FleetReport): String {
 @Composable
 private fun Filters(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
     val dimens = AppTheme.dimens
-    Column(verticalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(dimens.spaceS),
-        ) {
-            ReportPeriod.entries.forEach { period ->
-                PeriodChip(
-                    text = stringResource(period.label()),
-                    selected = state.filters.period == period,
-                    onClick = { onEvent(ReportsEvent.PeriodSelected(period)) },
-                )
-            }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    val custom = state.filters.period == ReportPeriod.CUSTOM
+    val from = state.filters.customFrom
+    val to = state.filters.customTo
+    Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(dimens.spaceS),
+    ) {
+        ReportPeriod.entries.filter { it != ReportPeriod.CUSTOM }.forEach { period ->
+            PeriodChip(
+                text = stringResource(period.label()),
+                selected = state.filters.period == period,
+                onClick = { onEvent(ReportsEvent.PeriodSelected(period)) },
+            )
         }
-        val allLabel = stringResource(Res.string.reports_vehicle_all)
-        val options = listOf(DropdownOption(ALL_VEHICLES, allLabel)) +
-            state.vehicles.map { DropdownOption(it.id, it.label) }
-        AppDropdownField(
-            options = options,
-            selectedId = state.filters.vehicleId ?: ALL_VEHICLES,
-            onSelect = { id -> onEvent(ReportsEvent.VehicleSelected(id.takeUnless { it == ALL_VEHICLES })) },
-            placeholder = allLabel,
-            label = stringResource(Res.string.reports_vehicle_label),
-            modifier = Modifier.fillMaxWidth(),
+        // Mismo tamaño que "Este mes", con calendario: el usuario elige de qué fecha a qué fecha
+        PeriodChip(
+            text = if (custom && from != null) {
+                stringResource(
+                    Res.string.reports_custom_range,
+                    AppDates.shortDate(from),
+                    AppDates.shortDate(to ?: from),
+                )
+            } else {
+                stringResource(Res.string.reports_period_custom)
+            },
+            selected = custom,
+            onClick = { showDatePicker = true },
+            leadingIcon = AppIcons.Calendar,
+        )
+    }
+    if (showDatePicker) {
+        ReportDateRangeDialog(
+            initialFrom = from,
+            initialTo = to,
+            onDismiss = { showDatePicker = false },
+            onApply = { start, end ->
+                showDatePicker = false
+                onEvent(ReportsEvent.CustomRangeSelected(start, end))
+            },
         )
     }
 }
 
+/** Filtro de vehículo (abajo de los botones de PDF / Excel). */
 @Composable
-private fun PeriodChip(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun VehicleFilter(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
+    val allLabel = stringResource(Res.string.reports_vehicle_all)
+    val options = listOf(DropdownOption(ALL_VEHICLES, allLabel)) +
+        state.vehicles.map { DropdownOption(it.id, it.label) }
+    AppDropdownField(
+        options = options,
+        selectedId = state.filters.vehicleId ?: ALL_VEHICLES,
+        onSelect = { id -> onEvent(ReportsEvent.VehicleSelected(id.takeUnless { it == ALL_VEHICLES })) },
+        placeholder = allLabel,
+        label = stringResource(Res.string.reports_vehicle_label),
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
+@Composable
+private fun PeriodChip(text: String, selected: Boolean, onClick: () -> Unit, leadingIcon: ImageVector? = null) {
     val colors = AppTheme.colors
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(text, style = AppTheme.typography.caption) },
+        leadingIcon = leadingIcon?.let { icon ->
+            { Icon(icon, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+        },
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = colors.primary,
             selectedLabelColor = colors.onPrimary,
+            selectedLeadingIconColor = colors.onPrimary,
             containerColor = colors.background,
             labelColor = colors.text,
+            iconColor = colors.text,
         ),
     )
+}
+
+/**
+ * Calendario para elegir "de qué fecha a qué fecha". No deja elegir días futuros.
+ * El DateRangePicker trabaja en milisegundos UTC a medianoche; se convierten a "yyyy-MM-dd".
+ */
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
+@Composable
+private fun ReportDateRangeDialog(
+    initialFrom: String?,
+    initialTo: String?,
+    onDismiss: () -> Unit,
+    onApply: (from: String, to: String) -> Unit,
+) {
+    val colors = AppTheme.colors
+    // Hasta hoy (con margen por la zona horaria: el calendario usa UTC)
+    val lastSelectable = remember { Clock.System.now().toEpochMilliseconds() + 14 * 60 * 60 * 1000L }
+    val pickerState = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = ReportPeriods.utcMillisOf(initialFrom),
+        initialSelectedEndDateMillis = ReportPeriods.utcMillisOf(initialTo),
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis <= lastSelectable
+        },
+    )
+    val pickerColors = DatePickerDefaults.colors(
+        containerColor = colors.background,
+        titleContentColor = colors.title,
+        headlineContentColor = colors.title,
+        weekdayContentColor = colors.textSecondary,
+        subheadContentColor = colors.text,
+        navigationContentColor = colors.text,
+        yearContentColor = colors.text,
+        currentYearContentColor = colors.primary,
+        selectedYearContentColor = colors.onPrimary,
+        selectedYearContainerColor = colors.primary,
+        dayContentColor = colors.text,
+        selectedDayContentColor = colors.onPrimary,
+        selectedDayContainerColor = colors.primary,
+        todayContentColor = colors.primary,
+        todayDateBorderColor = colors.primary,
+        dayInSelectionRangeContentColor = colors.text,
+        dayInSelectionRangeContainerColor = colors.primary.copy(alpha = if (colors.isDark) 0.35f else 0.18f),
+    )
+    val start = pickerState.selectedStartDateMillis
+    val end = pickerState.selectedEndDateMillis
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        colors = pickerColors,
+        confirmButton = {
+            TextButton(
+                enabled = start != null,
+                onClick = {
+                    val from = ReportPeriods.dateFromUtcMillis(start ?: return@TextButton)
+                    // Si solo eligió un día, el reporte es de ese día
+                    val to = ReportPeriods.dateFromUtcMillis(end ?: start)
+                    onApply(from, to)
+                },
+            ) { Text(stringResource(Res.string.reports_date_picker_apply), color = colors.primary) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(Res.string.reports_date_picker_cancel), color = colors.text)
+            }
+        },
+    ) {
+        DateRangePicker(
+            state = pickerState,
+            modifier = Modifier.weight(1f),
+            colors = pickerColors,
+            title = {
+                Text(
+                    stringResource(Res.string.reports_date_picker_title),
+                    style = AppTheme.typography.subtitle,
+                    color = colors.title,
+                    modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp),
+                )
+            },
+        )
+    }
 }
 
 private fun ReportPeriod.label(): StringResource = when (this) {
@@ -277,6 +435,7 @@ private fun ReportPeriod.label(): StringResource = when (this) {
     ReportPeriod.LAST_3_MONTHS -> Res.string.reports_period_last_3_months
     ReportPeriod.THIS_YEAR -> Res.string.reports_period_this_year
     ReportPeriod.ALL_TIME -> Res.string.reports_period_all_time
+    ReportPeriod.CUSTOM -> Res.string.reports_period_custom
 }
 
 @Composable
@@ -390,22 +549,22 @@ private fun Downloads(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit, si
             pdf(Modifier.fillMaxWidth())
             excel(Modifier.fillMaxWidth())
         }
-        Text(
-            stringResource(Res.string.reports_download_hint),
-            style = AppTheme.typography.caption,
-            color = AppTheme.colors.textSecondary,
-        )
         state.downloadError?.let { ErrorText(stringResource(Res.string.reports_download_error, it.asText())) }
     }
 }
 
 // ---------------- Por vehículo ----------------
 
+/** Tarjeta de un carro: al tocarla se ve el reporte de ese carro (la elegida se marca en azul tenue). */
 @Composable
-private fun VehicleCard(vehicle: VehicleStats, modifier: Modifier = Modifier) {
+private fun VehicleCard(vehicle: VehicleStats, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val dimens = AppTheme.dimens
     val colors = AppTheme.colors
-    AppCard(modifier = modifier) {
+    AppCard(
+        modifier = modifier,
+        onClick = onClick,
+        containerColor = if (selected) colors.primary.copy(alpha = if (colors.isDark) 0.28f else 0.14f) else null,
+    ) {
         Column(Modifier.fillMaxWidth().padding(dimens.spaceXs), verticalArrangement = Arrangement.spacedBy(dimens.spaceXs)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {

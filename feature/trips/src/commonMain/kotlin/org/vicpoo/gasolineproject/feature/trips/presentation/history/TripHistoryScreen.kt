@@ -58,6 +58,7 @@ import org.vicpoo.gasolineproject.feature.trips.resources.trip_history_offline
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_history_title
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_km_value
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_records_value
+import org.vicpoo.gasolineproject.feature.trips.presentation.common.fuelMarkers
 
 @Composable
 fun TripHistoryRoute(
@@ -187,6 +188,7 @@ private fun TripCard(trip: Trip, onClick: () -> Unit) {
             RouteMap(
                 points = trip.route,
                 animate = true,
+                markers = trip.fuelMarkers(),
                 modifier = Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(dimens.radius)),
             )
         }

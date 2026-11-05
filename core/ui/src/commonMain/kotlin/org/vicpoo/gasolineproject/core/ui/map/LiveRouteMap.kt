@@ -6,6 +6,7 @@ import org.vicpoo.gasolineproject.core.common.GeoPoint
 
 /**
  * Mapa del viaje en curso: dibuja la ruta recorrida y la posición actual, y sigue al usuario.
+ * [fuelPoints] = dónde se cargó gasolina en este viaje (icono de bomba sobre la ruta).
  * - Android: MapLibre (maplibre-compose) con estilos de OpenFreeMap (sin API key).
  * - iOS: por ahora usa RouteMap (mosaicos OSM) hasta agregar el framework de MapLibre.
  */
@@ -15,6 +16,7 @@ expect fun LiveRouteMap(
     current: GeoPoint?,
     modifier: Modifier = Modifier,
     followCurrent: Boolean = true,
+    fuelPoints: List<GeoPoint> = emptyList(),
 )
 
 /** Estilos de mapa (cámbialos aquí para toda la app). */
