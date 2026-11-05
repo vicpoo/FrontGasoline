@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -22,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -45,19 +49,19 @@ import org.vicpoo.gasolineproject.core.ui.components.EmptyView
 import org.vicpoo.gasolineproject.core.ui.components.ImageViewerDialog
 import org.vicpoo.gasolineproject.core.ui.components.LoadingView
 import org.vicpoo.gasolineproject.core.ui.components.RouteMap
-import org.vicpoo.gasolineproject.core.ui.components.SecondaryButton
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
+import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 import org.vicpoo.gasolineproject.feature.trips.domain.FuelLoad
 import org.vicpoo.gasolineproject.feature.trips.domain.Trip
 import org.vicpoo.gasolineproject.feature.trips.presentation.common.OperatorHeader
 import org.vicpoo.gasolineproject.feature.trips.resources.Res
 import org.vicpoo.gasolineproject.feature.trips.resources.cd_close
-import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_amount
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_amount_value
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_distance
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_end
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_final_mileage
-import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_liters
+import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_liters_chip
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_loads
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_no_loads
 import org.vicpoo.gasolineproject.feature.trips.resources.trip_detail_start
@@ -207,12 +211,17 @@ private fun TripDetailSheet(trip: Trip, onViewReceipt: (String?) -> Unit, modifi
         )
         Spacer(Modifier.height(dimens.spaceL))
 
-        Text(stringResource(Res.string.trip_detail_loads), style = AppTheme.typography.body, color = colors.title)
+        Text(
+            stringResource(Res.string.trip_detail_loads).uppercase(),
+            style = AppTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp),
+            color = colors.textSecondary,
+        )
         Spacer(Modifier.height(dimens.spaceS))
         if (trip.fuelLoads.isEmpty()) {
             SecondaryText(stringResource(Res.string.trip_detail_no_loads))
         } else {
-            trip.fuelLoads.forEach { load ->
+            // De la más antigua a la más reciente
+            trip.fuelLoads.sortedBy { AppDates.sortKey(it.date) }.forEach { load ->
                 FuelLoadCard(load, onViewReceipt = { onViewReceipt(load.receiptUrl) })
                 Spacer(Modifier.height(dimens.spaceS))
             }
@@ -228,35 +237,80 @@ private fun DateTimeRow(label: String, iso: String?) {
     }
 }
 
-/** Tarjeta azul de carga (Figma): monto, litros y botón "Ver recibo" (botón de consulta = azul marino). */
+/**
+ * Tarjeta de carga: arriba la fecha y hora con reloj, abajo el monto grande con un chip de litros
+ * y a la derecha el botón de recibo (solo icono). Sin borde: se separa por contraste (colors.card).
+ */
 @Composable
 private fun FuelLoadCard(load: FuelLoad, onViewReceipt: () -> Unit) {
     val dimens = AppTheme.dimens
     val colors = AppTheme.colors
+    val shape = RoundedCornerShape(dimens.radius)
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(dimens.radius),
-        color = colors.primary,
-        contentColor = colors.onPrimary,
+        shape = shape,
+        color = colors.card,
+        contentColor = colors.text,
     ) {
         Row(Modifier.padding(dimens.spaceM), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(
-                    stringResource(Res.string.trip_detail_amount, load.amount?.let(::formatDecimal) ?: "—"),
-                    style = AppTheme.typography.caption,
-                    color = colors.onPrimary,
-                )
-                Text(
-                    stringResource(Res.string.trip_detail_liters, formatDecimal(load.liters)),
-                    style = AppTheme.typography.caption,
-                    color = colors.onPrimary,
-                )
+                val date = AppDates.shortDate(load.date)
+                if (date.isNotEmpty()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = AppIcons.Clock,
+                            contentDescription = null,
+                            tint = colors.textSecondary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(14.dp),
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "$date • ${AppDates.time12(load.date)}",
+                            style = AppTheme.typography.caption,
+                            color = colors.textSecondary.copy(alpha = 0.7f),
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(Res.string.trip_detail_amount_value, load.amount?.let(::formatDecimal) ?: "—"),
+                        style = AppTheme.typography.title.copy(fontWeight = FontWeight.Bold, fontSize = 24.sp),
+                        color = colors.primary,
+                    )
+                    Spacer(Modifier.width(dimens.spaceS))
+                    // Chip de litros
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = colors.text.copy(alpha = if (colors.isDark) 0.12f else 0.08f),
+                    ) {
+                        Text(
+                            stringResource(Res.string.trip_detail_liters_chip, formatDecimal(load.liters)),
+                            style = AppTheme.typography.caption.copy(fontWeight = FontWeight.SemiBold),
+                            color = colors.text,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        )
+                    }
+                }
             }
-            SecondaryButton(
-                text = stringResource(Res.string.trip_detail_view_receipt),
+            // Botón de recibo: solo icono, azul, sin borde
+            val enabled = load.receiptUrl != null
+            Surface(
                 onClick = onViewReceipt,
-                enabled = load.receiptUrl != null,
-            )
+                enabled = enabled,
+                shape = shape,
+                color = colors.primary.copy(alpha = if (colors.isDark) 0.22f else 0.12f),
+                border = null,
+            ) {
+                Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = AppIcons.FileDollar,
+                        contentDescription = stringResource(Res.string.trip_detail_view_receipt),
+                        tint = if (enabled) colors.primary else colors.primary.copy(alpha = 0.4f),
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            }
         }
     }
 }

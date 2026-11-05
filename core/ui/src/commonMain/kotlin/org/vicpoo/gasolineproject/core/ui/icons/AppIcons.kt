@@ -378,6 +378,23 @@ object AppIcons {
 
     // ---------------- Información ----------------
 
+    /** Reloj (hora de una carga). */
+    val Clock: ImageVector by lazy {
+        lineIcon("Clock") {
+            strokePath {
+                moveTo(21f, 12f)
+                arcTo(9f, 9f, 0f, isMoreThanHalf = true, isPositiveArc = true, x1 = 3f, y1 = 12f)
+                arcTo(9f, 9f, 0f, isMoreThanHalf = true, isPositiveArc = true, x1 = 21f, y1 = 12f)
+                close()
+            }
+            strokePath {
+                moveTo(12f, 7f)
+                lineTo(12f, 12f)
+                lineTo(15f, 14f)
+            }
+        }
+    }
+
     /** Calendario (fechas: "Solicitada el ..."). */
     val Calendar: ImageVector by lazy {
         lineIcon("Calendar") {

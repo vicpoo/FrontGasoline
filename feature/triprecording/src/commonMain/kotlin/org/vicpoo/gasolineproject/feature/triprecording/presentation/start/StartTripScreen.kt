@@ -1,6 +1,5 @@
 package org.vicpoo.gasolineproject.feature.triprecording.presentation.start
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -146,8 +145,8 @@ private fun CostCenterOption(costCenter: CostCenter, selected: Boolean, onSelect
             .fillMaxWidth()
             .selectable(selected = selected, onClick = onSelect, role = Role.RadioButton),
         shape = RoundedCornerShape(dimens.radius),
-        color = colors.background,
-        border = BorderStroke(if (selected) 2.dp else 1.dp, if (selected) colors.primary else colors.divider),
+        // Sin borde: la opción elegida se marca con un fondo azul tenue
+        color = if (selected) colors.primary.copy(alpha = if (colors.isDark) 0.28f else 0.14f) else colors.card,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = dimens.spaceS, vertical = dimens.spaceS),

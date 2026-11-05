@@ -1,6 +1,5 @@
 package org.vicpoo.gasolineproject.feature.vehicles.presentation.detail
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -231,8 +230,7 @@ private fun RequestReasonSheet(vehicle: Vehicle?, state: VehicleDetailUiState, o
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(dimens.radius),
-                color = colors.background,
-                border = BorderStroke(1.dp, colors.textSecondary.copy(alpha = if (colors.isDark) 0.45f else 0.25f)),
+                color = colors.card,
             ) {
                 Row(Modifier.padding(dimens.spaceM), verticalAlignment = Alignment.CenterVertically) {
                     AppImage(

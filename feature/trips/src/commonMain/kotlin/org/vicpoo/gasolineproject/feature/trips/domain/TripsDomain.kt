@@ -25,6 +25,8 @@ data class FuelLoad(
     val liters: Double,
     val amount: Double?,
     val receiptUrl: String?,
+    /** Fecha de la carga (fechaCarga de la API). */
+    val date: String? = null,
 )
 
 enum class TripStatus {

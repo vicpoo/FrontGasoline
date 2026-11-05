@@ -24,6 +24,9 @@ object AppPalette {
     val Ink = Color(0xFF1F1F1F)         // Texto general y secundario
     val White = Color(0xFFFFFFFF)       // Fondo
     val Black = Color(0xFF000000)       // Fondo del tema oscuro
+    val CardLight = Color(0xFFF2F3F5)   // Fondo de tarjetas en tema claro (contraste suave sobre el blanco)
+    val CardDark = Color(0xFF1C1C1E)    // Fondo de tarjetas en tema oscuro (se separa del negro sin borde)
+    val LineDark = Color(0xFF3A3A3C)    // Líneas divisoras en tema oscuro (gris tenue)
     val LightBlue = Color(0xFF476D9E)   // Bordes de tarjetas y divisores en el tema oscuro (se distingue sobre el negro)
 }
 
@@ -32,6 +35,8 @@ data class AppColors(
     // Fondos
     val background: Color,
     val surface: Color,
+    /** Fondo de tarjetas: se distinguen por contraste, sin borde. */
+    val card: Color,
     // Textos
     val title: Color,
     val subtitle: Color,
@@ -64,6 +69,7 @@ data class AppColors(
 val LightAppColors = AppColors(
     background = AppPalette.White,
     surface = AppPalette.White,
+    card = AppPalette.CardLight,
     title = AppPalette.Navy,
     subtitle = AppPalette.Navy,
     text = AppPalette.Ink,
@@ -95,6 +101,7 @@ val LightAppColors = AppColors(
 val DarkAppColors = AppColors(
     background = AppPalette.Black,
     surface = AppPalette.Black,
+    card = AppPalette.CardDark,
     title = AppPalette.White,
     subtitle = AppPalette.White,
     text = AppPalette.Gray,
@@ -114,7 +121,7 @@ val DarkAppColors = AppColors(
     onInput = AppPalette.Ink,
     inputPlaceholder = AppPalette.Ink.copy(alpha = 0.5f),
     error = AppPalette.Crimson,
-    divider = AppPalette.LightBlue,
+    divider = AppPalette.LineDark,   // Líneas divisoras en gris tenue
     illustration = AppPalette.Gray,
     isDark = true,
 )

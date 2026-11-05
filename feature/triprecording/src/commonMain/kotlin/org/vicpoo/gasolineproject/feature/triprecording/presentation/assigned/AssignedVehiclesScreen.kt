@@ -1,7 +1,6 @@
 package org.vicpoo.gasolineproject.feature.triprecording.presentation.assigned
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -216,7 +215,6 @@ private fun ReleaseIconButton(block: ReleaseBlock?, isOffline: Boolean, onReleas
             .size(dimens.buttonHeight)
             .clip(shape)
             .background(colors.danger.copy(alpha = if (enabled) 0.15f else 0.06f))
-            .border(1.dp, colors.danger.copy(alpha = if (enabled) 0.45f else 0.15f), shape)
             .clickable(role = Role.Button) { if (enabled) onRelease() else showReason = true },
         contentAlignment = Alignment.Center,
     ) {

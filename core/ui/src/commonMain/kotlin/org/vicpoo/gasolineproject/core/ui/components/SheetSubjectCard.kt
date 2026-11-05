@@ -1,6 +1,5 @@
 package org.vicpoo.gasolineproject.core.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,8 +39,7 @@ fun SheetSubjectCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(dimens.radius),
-        color = colors.background,
-        border = BorderStroke(1.dp, colors.textSecondary.copy(alpha = if (colors.isDark) 0.45f else 0.25f)),
+        color = colors.card,
     ) {
         Row(Modifier.padding(dimens.spaceM), verticalAlignment = Alignment.CenterVertically) {
             AppImage(

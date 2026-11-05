@@ -1,7 +1,6 @@
 package org.vicpoo.gasolineproject.core.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -51,14 +50,13 @@ import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
 // - EditSheet: hoja que sube desde abajo con título grande, X, "Cancelar" y "Guardar".
 // =====================================================================================
 
-/** Tarjeta con borde redondeado (contiene filas ReviewRow). */
+/** Tarjeta redondeada sin borde, separada por contraste (contiene filas ReviewRow). */
 @Composable
 fun ReviewCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(AppTheme.dimens.radius),
-        color = AppTheme.colors.background,
-        border = BorderStroke(1.dp, AppTheme.colors.divider),
+        color = AppTheme.colors.card,
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = AppTheme.dimens.spaceL, vertical = AppTheme.dimens.spaceS)) {
             content()

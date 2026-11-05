@@ -1,6 +1,5 @@
 package org.vicpoo.gasolineproject.feature.reservations.presentation.common
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -172,7 +171,6 @@ internal fun ResolutionBox(title: String, message: String, tone: Color, showWarn
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(dimens.radius),
         color = background,
-        border = BorderStroke(1.dp, tone.copy(alpha = 0.3f)),
     ) {
         Row(Modifier.padding(dimens.spaceM)) {
             if (showWarning) {
