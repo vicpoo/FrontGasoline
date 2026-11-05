@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
  * Rutas del NavHost RAÍZ (rutas tipadas con @Serializable).
  *
  *  Raíz
- *  ├── AuthGraph ............ Welcome → Login → UploadLicense
+ *  ├── AuthGraph ............ (Welcome, desactivada) → Login → UploadLicense
  *  └── HomeRoute ............ contenedor con pestañas y su propio NavHost anidado:
  *       ├── CatalogGraph .............. List → Detail (solicitar)          🏠 Inicio      (feature/vehicles)
  *       ├── TripRecordingGraph ........ AssignedVehicles → StartTrip → ActiveTrip → FinishTrip / FuelRecordForm   🚗 Viajes
@@ -21,6 +21,16 @@ import kotlinx.serialization.Serializable
 /** Subgrafo de autenticación (sin sesión o falta la licencia). */
 @Serializable
 data object AuthGraph
+
+/**
+ * La pantalla de bienvenida (Welcome) está DESACTIVADA: sin sesión el flujo es Splash -> Login.
+ * La pantalla y su ruta se conservan; para volver a usarla basta con poner esto en true.
+ */
+const val SHOW_WELCOME_SCREEN = false
+
+/** Primera pantalla sin sesión (y a donde se regresa al cerrar sesión). */
+val AuthEntryDestination: AuthDestination
+    get() = if (SHOW_WELCOME_SCREEN) AuthDestination.Welcome else AuthDestination.Login
 
 sealed interface AuthDestination {
     @Serializable

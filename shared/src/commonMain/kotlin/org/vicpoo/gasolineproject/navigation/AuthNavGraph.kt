@@ -19,13 +19,19 @@ fun NavGraphBuilder.authGraph(
 ) {
     navigation<AuthGraph>(startDestination = startDestination) {
 
+        // Desactivada (ver SHOW_WELCOME_SCREEN): la ruta se conserva por si se vuelve a usar
         composable<AuthDestination.Welcome> {
             WelcomeScreen(onAccess = { navController.navigate(AuthDestination.Login) })
         }
 
         composable<AuthDestination.Login> {
             LoginRoute(
-                onBack = { navController.popBackStack() },
+                // Sin bienvenida, el login es la primera pantalla: no hay a dónde regresar
+                onBack = if (SHOW_WELCOME_SCREEN) {
+                    { navController.popBackStack() }
+                } else {
+                    null
+                },
                 onGoToUploadLicense = { navController.navigateClearingBackStack(AuthDestination.UploadLicense) },
                 onGoToHome = { navController.navigateClearingBackStack(HomeRoute) },
             )

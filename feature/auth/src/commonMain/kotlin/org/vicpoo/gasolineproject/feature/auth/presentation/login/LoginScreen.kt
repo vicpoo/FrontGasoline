@@ -30,11 +30,14 @@ import org.vicpoo.gasolineproject.feature.auth.resources.login_action
 import org.vicpoo.gasolineproject.feature.auth.resources.login_password_label
 import org.vicpoo.gasolineproject.feature.auth.resources.login_title
 import org.vicpoo.gasolineproject.feature.auth.resources.login_user_label
+import org.vicpoo.gasolineproject.core.ui.components.SecondaryText
+import org.vicpoo.gasolineproject.feature.auth.resources.login_no_account
 
 /** Punto de entrada desde la navegación: conecta el ViewModel con la UI. */
 @Composable
 fun LoginRoute(
-    onBack: () -> Unit,
+    /** null = el login es la primera pantalla (sin botón de regresar). */
+    onBack: (() -> Unit)?,
     onGoToUploadLicense: () -> Unit,
     onGoToHome: () -> Unit,
     viewModel: LoginViewModel = koinViewModel(),
@@ -58,13 +61,14 @@ fun LoginRoute(
 fun LoginScreen(
     state: LoginUiState,
     onEvent: (LoginEvent) -> Unit,
-    onBack: () -> Unit,
+    /** null = sin botón de regresar (el login es la primera pantalla). */
+    onBack: (() -> Unit)?,
 ) {
     val dimens = AppTheme.dimens
     val focusManager = LocalFocusManager.current
 
     AppScreen {
-        AppBackButton(onClick = onBack)
+        if (onBack != null) AppBackButton(onClick = onBack)
         // Los dos Spacer con peso centran el formulario en el alto disponible (sin espacio muerto
         // abajo). El de abajo pesa un poco más para que quede ópticamente centrado, no caído.
         Spacer(Modifier.weight(1f))
@@ -116,8 +120,14 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             isLoading = state.isLoading,
         )
+        Spacer(Modifier.height(dimens.spaceL))
+        SecondaryText(
+            text = stringResource(Res.string.login_no_account),
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center,
+        )
         Spacer(Modifier.weight(1.3f))
         // Compensa la altura del botón de regresar para que el centro sea el de la pantalla
-        Spacer(Modifier.height(dimens.iconButtonSize))
+        if (onBack != null) Spacer(Modifier.height(dimens.iconButtonSize))
     }
 }

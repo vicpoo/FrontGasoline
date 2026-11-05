@@ -19,6 +19,7 @@
     <string name="login_password_label">Contraseña</string>
     <string name="login_title">Inicio de sesión</string>
     <string name="login_user_label">Email</string>
+    <string name="login_no_account">¿No tienes una cuenta? Contacta al administrador de tu empresa para que te dé de alta.</string>
     <string name="welcome_subtitle">¿No tienes una cuenta? Contacta al administrador de tu empresa para que te dé de alta.</string>
     <string name="welcome_title">Control total de tus vehículos, en un solo lugar.</string>
 </resources>

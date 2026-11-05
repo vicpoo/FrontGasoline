@@ -18,6 +18,8 @@
     <string name="reports_date_picker_title">Elige el periodo del reporte</string>
     <string name="reports_date_picker_apply">Aplicar</string>
     <string name="reports_date_picker_cancel">Cancelar</string>
+    <string name="reports_date_picker_start">Inicio</string>
+    <string name="reports_date_picker_end">Fin</string>
     <string name="reports_range">Del %1$s al %2$s</string>
     <string name="reports_range_all_time">Todo el historial</string>
     <string name="reports_vehicle_label">Vehículo</string>

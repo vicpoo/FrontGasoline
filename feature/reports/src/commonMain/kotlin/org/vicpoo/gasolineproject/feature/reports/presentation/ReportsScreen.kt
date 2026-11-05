@@ -48,7 +48,6 @@ import org.vicpoo.gasolineproject.core.ui.components.OfflineBanner
 import org.vicpoo.gasolineproject.core.ui.components.PrimaryButton
 import org.vicpoo.gasolineproject.core.ui.components.ScreenHeader
 import org.vicpoo.gasolineproject.core.ui.components.SecondaryButton
-import org.vicpoo.gasolineproject.core.ui.components.StatusChip
 import org.vicpoo.gasolineproject.core.ui.components.asText
 import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
 import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
@@ -56,8 +55,6 @@ import org.vicpoo.gasolineproject.feature.reports.domain.FleetReport
 import org.vicpoo.gasolineproject.feature.reports.domain.ReportFormat
 import org.vicpoo.gasolineproject.feature.reports.domain.ReportPeriod
 import org.vicpoo.gasolineproject.feature.reports.domain.ReportSummary
-import org.vicpoo.gasolineproject.feature.reports.domain.VehicleStats
-import org.vicpoo.gasolineproject.feature.reports.domain.VehicleStatus
 import org.vicpoo.gasolineproject.feature.reports.resources.Res
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_active_vehicles
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_download_error
@@ -82,10 +79,6 @@ import org.vicpoo.gasolineproject.feature.reports.resources.reports_stat_loads
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_stat_price_per_liter
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_stat_spent
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_stat_trips
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_status_available
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_status_busy
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_status_maintenance
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_status_retired
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_summary_title
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_title
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_value_km
@@ -94,13 +87,7 @@ import org.vicpoo.gasolineproject.feature.reports.resources.reports_value_liters
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_value_per_km
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_value_per_liter
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_all
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_details
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_label
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_last_trip
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicle_no_trips
-import org.vicpoo.gasolineproject.feature.reports.resources.reports_vehicles_title
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -114,7 +101,6 @@ import androidx.compose.material3.DateRangePicker
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.ui.graphics.vector.ImageVector
-import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import org.vicpoo.gasolineproject.feature.reports.domain.ReportPeriods
@@ -123,6 +109,9 @@ import org.vicpoo.gasolineproject.feature.reports.resources.reports_custom_range
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_title
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_apply
 import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_cancel
+import androidx.compose.ui.text.font.FontWeight
+import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_start
+import org.vicpoo.gasolineproject.feature.reports.resources.reports_date_picker_end
 
 /** Id del selector para "Toda la flota". */
 private const val ALL_VEHICLES = "__all__"
@@ -156,14 +145,6 @@ fun ReportsRoute(viewModel: ReportsViewModel = koinViewModel()) {
 fun ReportsScreen(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
     val dimens = AppTheme.dimens
     val wide = LocalWindowWidth.current != WindowWidth.Compact
-    val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
-    // Tocar la tarjeta de un carro = elegirlo en el filtro (otra vez = toda la flota) y subir al resumen
-    val onVehicleClick: (VehicleStats) -> Unit = { vehicle ->
-        val selected = state.filters.vehicleId == vehicle.id
-        onEvent(ReportsEvent.VehicleSelected(if (selected) null else vehicle.id))
-        scope.launch { listState.animateScrollToItem(0) }
-    }
     Box(
         modifier = Modifier.fillMaxSize().background(AppTheme.colors.background).statusBarsPadding(),
         contentAlignment = Alignment.TopCenter,
@@ -186,7 +167,6 @@ fun ReportsScreen(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
                 modifier = Modifier.fillMaxSize(),
             ) {
                 LazyColumn(
-                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = dimens.spaceL),
                     verticalArrangement = Arrangement.spacedBy(dimens.spaceM),
@@ -204,37 +184,6 @@ fun ReportsScreen(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
                         else -> {
                             item(key = "summary") { SummarySection(report.summary, columns = if (wide) 4 else 2) }
                             item(key = "downloads") { Downloads(state, onEvent, sideBySide = wide) }
-                            // El filtro de vehículo va abajo de los botones de descarga
-                            item(key = "vehicle_filter") { VehicleFilter(state, onEvent) }
-                            item(key = "vehicles_title") {
-                                Text(
-                                    stringResource(Res.string.reports_vehicles_title),
-                                    style = AppTheme.typography.subtitle,
-                                    color = AppTheme.colors.title,
-                                )
-                            }
-                            if (report.vehicles.isEmpty()) {
-                                item(key = "vehicles_empty") { EmptyView(stringResource(Res.string.reports_empty)) }
-                            } else {
-                                // Teléfono: una columna; tablet: dos tarjetas por fila
-                                val perRow = if (wide) 2 else 1
-                                val rows = report.vehicles.chunked(perRow)
-                                rows.forEachIndexed { index, row ->
-                                    item(key = "vehicle_row_${row.first().id}_$index") {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(dimens.spaceM)) {
-                                            row.forEach { vehicle ->
-                                                VehicleCard(
-                                                    vehicle = vehicle,
-                                                    selected = state.filters.vehicleId == vehicle.id,
-                                                    onClick = { onVehicleClick(vehicle) },
-                                                    modifier = Modifier.weight(1f),
-                                                )
-                                            }
-                                            repeat(perRow - row.size) { Spacer(Modifier.weight(1f)) }
-                                        }
-                                    }
-                                }
-                            }
                             item(key = "generated") {
                                 Text(
                                     stringResource(
@@ -273,32 +222,36 @@ private fun Filters(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
     val custom = state.filters.period == ReportPeriod.CUSTOM
     val from = state.filters.customFrom
     val to = state.filters.customTo
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(dimens.spaceS),
-    ) {
-        ReportPeriod.entries.filter { it != ReportPeriod.CUSTOM }.forEach { period ->
+    Column(verticalArrangement = Arrangement.spacedBy(dimens.spaceS)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(dimens.spaceS),
+        ) {
+            // Primero: mismo tamaño que "Este mes", con calendario (el usuario elige de qué fecha a qué fecha)
             PeriodChip(
-                text = stringResource(period.label()),
-                selected = state.filters.period == period,
-                onClick = { onEvent(ReportsEvent.PeriodSelected(period)) },
+                text = if (custom && from != null) {
+                    stringResource(
+                        Res.string.reports_custom_range,
+                        AppDates.shortDate(from),
+                        AppDates.shortDate(to ?: from),
+                    )
+                } else {
+                    stringResource(Res.string.reports_period_custom)
+                },
+                selected = custom,
+                onClick = { showDatePicker = true },
+                leadingIcon = AppIcons.Calendar,
             )
-        }
-        // Mismo tamaño que "Este mes", con calendario: el usuario elige de qué fecha a qué fecha
-        PeriodChip(
-            text = if (custom && from != null) {
-                stringResource(
-                    Res.string.reports_custom_range,
-                    AppDates.shortDate(from),
-                    AppDates.shortDate(to ?: from),
+            ReportPeriod.entries.filter { it != ReportPeriod.CUSTOM }.forEach { period ->
+                PeriodChip(
+                    text = stringResource(period.label()),
+                    selected = state.filters.period == period,
+                    onClick = { onEvent(ReportsEvent.PeriodSelected(period)) },
                 )
-            } else {
-                stringResource(Res.string.reports_period_custom)
-            },
-            selected = custom,
-            onClick = { showDatePicker = true },
-            leadingIcon = AppIcons.Calendar,
-        )
+            }
+        }
+        // El filtro de vehículo va abajo del filtro de fechas
+        VehicleFilter(state, onEvent)
     }
     if (showDatePicker) {
         ReportDateRangeDialog(
@@ -313,7 +266,7 @@ private fun Filters(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
     }
 }
 
-/** Filtro de vehículo (abajo de los botones de PDF / Excel). */
+/** Filtro de vehículo (abajo del filtro de fechas). */
 @Composable
 private fun VehicleFilter(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit) {
     val allLabel = stringResource(Res.string.reports_vehicle_all)
@@ -417,12 +370,27 @@ private fun ReportDateRangeDialog(
             state = pickerState,
             modifier = Modifier.weight(1f),
             colors = pickerColors,
+            // Título y fechas elegidas con letra chica (el encabezado por defecto es enorme)
             title = {
                 Text(
                     stringResource(Res.string.reports_date_picker_title),
-                    style = AppTheme.typography.subtitle,
-                    color = colors.title,
+                    style = AppTheme.typography.caption,
+                    color = colors.textSecondary,
                     modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp),
+                )
+            },
+            headline = {
+                val startText = pickerState.selectedStartDateMillis
+                    ?.let { AppDates.shortDate(ReportPeriods.dateFromUtcMillis(it)) }
+                    ?: stringResource(Res.string.reports_date_picker_start)
+                val endText = pickerState.selectedEndDateMillis
+                    ?.let { AppDates.shortDate(ReportPeriods.dateFromUtcMillis(it)) }
+                    ?: stringResource(Res.string.reports_date_picker_end)
+                Text(
+                    "$startText – $endText",
+                    style = AppTheme.typography.body.copy(fontWeight = FontWeight.SemiBold),
+                    color = colors.title,
+                    modifier = Modifier.padding(start = 24.dp, end = 12.dp, bottom = 12.dp),
                 )
             },
         )
@@ -551,81 +519,4 @@ private fun Downloads(state: ReportsUiState, onEvent: (ReportsEvent) -> Unit, si
         }
         state.downloadError?.let { ErrorText(stringResource(Res.string.reports_download_error, it.asText())) }
     }
-}
-
-// ---------------- Por vehículo ----------------
-
-/** Tarjeta de un carro: al tocarla se ve el reporte de ese carro (la elegida se marca en azul tenue). */
-@Composable
-private fun VehicleCard(vehicle: VehicleStats, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val dimens = AppTheme.dimens
-    val colors = AppTheme.colors
-    AppCard(
-        modifier = modifier,
-        onClick = onClick,
-        containerColor = if (selected) colors.primary.copy(alpha = if (colors.isDark) 0.28f else 0.14f) else null,
-    ) {
-        Column(Modifier.fillMaxWidth().padding(dimens.spaceXs), verticalArrangement = Arrangement.spacedBy(dimens.spaceXs)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(vehicle.plates, style = AppTheme.typography.subtitle, color = colors.title)
-                    val name = listOfNotNull(vehicle.brand, vehicle.model, vehicle.year?.toString())
-                        .filter { it.isNotBlank() }
-                        .joinToString(" ")
-                    if (name.isNotBlank()) {
-                        Text(name, style = AppTheme.typography.bodySecondary, color = colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    }
-                }
-                VehicleStatusChip(vehicle)
-            }
-
-            // Lo principal: km, cargas y dinero
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                MiniStat(stringResource(Res.string.reports_stat_km), ReportFormatting.number(vehicle.km))
-                MiniStat(stringResource(Res.string.reports_stat_loads), ReportFormatting.integer(vehicle.fuelLoads))
-                MiniStat(stringResource(Res.string.reports_stat_spent), ReportFormatting.money(vehicle.spent))
-            }
-
-            Text(
-                stringResource(
-                    Res.string.reports_vehicle_details,
-                    ReportFormatting.integer(vehicle.trips),
-                    stringResource(Res.string.reports_value_liters, ReportFormatting.number(vehicle.liters)),
-                    vehicle.kmPerLiter?.let { stringResource(Res.string.reports_value_km_per_liter, ReportFormatting.number(it)) } ?: "— km/L",
-                    vehicle.costPerKm?.let { stringResource(Res.string.reports_value_per_km, ReportFormatting.money(it)) } ?: "— /km",
-                ),
-                style = AppTheme.typography.caption,
-                color = colors.textSecondary,
-            )
-            Text(
-                vehicle.lastTripAt
-                    ?.let { stringResource(Res.string.reports_vehicle_last_trip, AppDates.shortDate(it)) }
-                    ?: stringResource(Res.string.reports_vehicle_no_trips),
-                style = AppTheme.typography.caption,
-                color = colors.textSecondary,
-            )
-        }
-    }
-}
-
-@Composable
-private fun MiniStat(label: String, value: String) {
-    Column {
-        Text(label, style = AppTheme.typography.caption, color = AppTheme.colors.textSecondary)
-        Text(value, style = AppTheme.typography.body, color = AppTheme.colors.title)
-    }
-}
-
-@Composable
-private fun VehicleStatusChip(vehicle: VehicleStats) {
-    val colors = AppTheme.colors
-    val (text, container, content) = when {
-        // Mismos colores que los estados en la pestaña de vehículos (VehicleUi)
-        vehicle.retired -> Triple(Res.string.reports_status_retired, colors.labelBackground, colors.onLabel)
-        vehicle.status == VehicleStatus.AVAILABLE -> Triple(Res.string.reports_status_available, colors.primary, colors.onPrimary)
-        vehicle.status == VehicleStatus.BUSY -> Triple(Res.string.reports_status_busy, colors.secondary, colors.onSecondary)
-        vehicle.status == VehicleStatus.MAINTENANCE -> Triple(Res.string.reports_status_maintenance, colors.danger, colors.onDanger)
-        else -> return
-    }
-    StatusChip(text = stringResource(text), containerColor = container, contentColor = content)
 }

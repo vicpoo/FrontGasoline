@@ -21,10 +21,10 @@ fun AppNavHost(
     isLoggedIn: Boolean?,
     navController: NavHostController = rememberNavController(),
 ) {
-    // Si la sesión se cierra (Salir o token vencido -> 401), regresa a la bienvenida
+    // Si la sesión se cierra (Salir o token vencido -> 401), regresa al inicio de sesión
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn == false && !navController.isInAuthGraph()) {
-            navController.navigateClearingBackStack(AuthDestination.Welcome)
+            navController.navigateClearingBackStack(AuthEntryDestination)
         }
     }
 
@@ -37,12 +37,12 @@ fun AppNavHost(
             startDestination = if (startStatus == AuthStatus.NeedsLicense) {
                 AuthDestination.UploadLicense
             } else {
-                AuthDestination.Welcome
+                AuthEntryDestination
             },
         )
 
         composable<HomeRoute> {
-            MainScreen(onLoggedOut = { navController.navigateClearingBackStack(AuthDestination.Welcome) })
+            MainScreen(onLoggedOut = { navController.navigateClearingBackStack(AuthEntryDestination) })
         }
     }
 }
