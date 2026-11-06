@@ -19,6 +19,8 @@ object ApiConfig {
 object ApiRoutes {
     // Autenticación (AuthController)
     const val LOGIN = "auth/login"
+    const val REFRESH = "auth/refresh"
+    const val LOGOUT = "auth/logout"
     const val PROFILE = "auth/perfil"
     const val PRIVILEGES = "auth/privilegios"
 

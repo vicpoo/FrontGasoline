@@ -14,7 +14,7 @@ import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
 import okio.fakefilesystem.FakeFileSystem
 import org.vicpoo.gasolineproject.core.network.TokenProvider
-import org.vicpoo.gasolineproject.core.network.UnauthorizedHandler
+import org.vicpoo.gasolineproject.core.network.TokenRefresher
 import org.vicpoo.gasolineproject.core.network.createHttpClient
 import org.vicpoo.gasolineproject.core.platform.AppDirectories
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
@@ -31,8 +31,12 @@ val testJson = Json {
  *
  * - [handler] decide la respuesta de cada petición (cámbialo en cada prueba).
  * - [requests] guarda "MÉTODO ruta" de cada petición, ej. "POST carros".
+ * - [tokenProvider] / [tokenRefresher]: por defecto sin sesión; las pruebas de la sesión pasan el AuthTokenManager.
  */
-class FakeApiServer {
+class FakeApiServer(
+    tokenProvider: TokenProvider = TokenProvider { null },
+    tokenRefresher: TokenRefresher = TokenRefresher.None,
+) {
     val requests = mutableListOf<String>()
 
     var handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData = {
@@ -44,8 +48,8 @@ class FakeApiServer {
             requests += "${request.method.value} ${request.url.encodedPath.removePrefix("/api/")}"
             handler(request)
         },
-        tokenProvider = TokenProvider { null },
-        unauthorizedHandler = UnauthorizedHandler { },
+        tokenProvider = tokenProvider,
+        tokenRefresher = tokenRefresher,
         json = testJson,
     )
 }

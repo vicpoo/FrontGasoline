@@ -16,7 +16,10 @@ import org.vicpoo.gasolineproject.core.platform.IosImageCompressor
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
 import org.vicpoo.gasolineproject.core.push.IosPushTokenProvider
 import org.vicpoo.gasolineproject.core.push.PushTokenProvider
+import org.vicpoo.gasolineproject.core.session.CachedTokenStore
 import org.vicpoo.gasolineproject.core.session.DATASTORE_FILE_NAME
+import org.vicpoo.gasolineproject.core.session.KeychainTokenStore
+import org.vicpoo.gasolineproject.core.session.TokenStore
 import org.vicpoo.gasolineproject.core.session.createDataStore
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.core.sync.IosSyncScheduler
@@ -32,6 +35,9 @@ actual val platformModule: Module = module {
         val directories = get<AppDirectories>()
         createDataStore { "${directories.filesDir}/$DATASTORE_FILE_NAME" }
     }
+
+    // Tokens de la sesión en el Keychain (solo este dispositivo)
+    single<TokenStore> { CachedTokenStore(KeychainTokenStore(json = get())) }
 
     single<LocationProvider> { IosLocationProvider() }
     single<ImageCompressor> { IosImageCompressor() }

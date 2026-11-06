@@ -5,12 +5,12 @@ import kotlinx.serialization.Serializable
 /**
  * Sesión del usuario guardada en el dispositivo (permite abrir la app sin red).
  * Se arma con la respuesta de POST /api/auth/login.
+ *
+ * Los tokens NO están aquí: viven cifrados en el [TokenStore] (Keystore / Keychain).
+ * Este objeto solo tiene datos del perfil, que se pueden guardar en el DataStore.
  */
 @Serializable
 data class Session(
-    val token: String,
-    /** Fecha de expiración del JWT en UTC (ISO-8601, viene de expiraEnUtc). */
-    val expiresAtUtc: String? = null,
     val userId: String,
     val email: String,
     val name: String? = null,

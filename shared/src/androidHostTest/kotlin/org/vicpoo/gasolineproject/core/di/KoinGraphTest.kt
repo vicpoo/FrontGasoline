@@ -27,6 +27,8 @@ import org.vicpoo.gasolineproject.core.push.PushTokenProvider
 import org.vicpoo.gasolineproject.core.rbac.AccessGateViewModel
 import org.vicpoo.gasolineproject.core.rbac.AccessRule
 import org.vicpoo.gasolineproject.core.session.DATASTORE_FILE_NAME
+import org.vicpoo.gasolineproject.core.session.InMemoryTokenStore
+import org.vicpoo.gasolineproject.core.session.TokenStore
 import org.vicpoo.gasolineproject.core.session.LogoutListener
 import org.vicpoo.gasolineproject.core.session.createDataStore
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
@@ -93,6 +95,7 @@ class KoinGraphTest {
         single<FileSystem> { FileSystem.SYSTEM }
         single<ConnectivityMonitor> { FakeConnectivityMonitor() }
         single { createDataStore { "$filesDir/$DATASTORE_FILE_NAME" } }
+        single<TokenStore> { InMemoryTokenStore() }
         single<LocationProvider> { NoLocationProvider }
         single<ImageCompressor> { ImageCompressor { it } }
         single<TrackingServiceController> { NoTrackingService }

@@ -3,6 +3,7 @@ package org.vicpoo.gasolineproject.feature.auth.domain.usecase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppError
 import org.vicpoo.gasolineproject.core.common.AppResult
 import org.vicpoo.gasolineproject.core.common.ValidationReason
@@ -12,11 +13,10 @@ import org.vicpoo.gasolineproject.core.session.LogoutAction
 import org.vicpoo.gasolineproject.core.session.Session
 import org.vicpoo.gasolineproject.core.session.SessionReader
 import org.vicpoo.gasolineproject.core.session.SessionWriter
+import org.vicpoo.gasolineproject.core.session.TokenStore
+import org.vicpoo.gasolineproject.core.session.isSessionExpired
 import org.vicpoo.gasolineproject.core.session.mustUploadLicense
 import org.vicpoo.gasolineproject.feature.auth.domain.repository.AuthRepository
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 /** Inicia sesión (la API pide email). */
 class LoginUseCase(private val repository: AuthRepository) {
@@ -54,12 +54,12 @@ class RefreshPrivilegesUseCase(private val repository: AuthRepository) {
     suspend operator fun invoke(): AppResult<Unit> = repository.refreshPrivileges()
 }
 
-/** Cierra sesión (borra la sesión local). */
+/** Cierra sesión: revoca el refresh token en la API (si hay red) y borra la sesión y los tokens locales. */
 class LogoutUseCase(private val repository: AuthRepository) : LogoutAction {
     override suspend operator fun invoke() = repository.logout()
 }
 
-/** true mientras haya sesión; cambia a false al cerrar sesión o si el token venció (401). */
+/** true mientras haya sesión; cambia a false al cerrar sesión o si la API rechazó el refresh token. */
 class ObserveIsLoggedInUseCase(private val sessionReader: SessionReader) {
     operator fun invoke(): Flow<Boolean> = sessionReader.session.map { it != null }.distinctUntilChanged()
 }
@@ -72,26 +72,30 @@ class ObserveMustUploadLicenseUseCase(private val sessionReader: SessionReader) 
 /** En qué estado está el usuario al abrir la app. */
 enum class AuthStatus { LoggedOut, NeedsLicense, LoggedIn }
 
+/**
+ * Decide por dónde entra la app. Funciona SIN red (offline-first):
+ * - Que el JWT de 15 min haya vencido NO importa: se renueva solo en la primera petición con red.
+ * - Lo que cuenta es el refresh token: si venció (30 días sin abrir la app, o el tope de 90) hay que
+ *   iniciar sesión. Si la API lo revocó, se sabrá en la primera petición con red (401 -> login).
+ * - Sin tokens guardados (por ejemplo, la sesión de una versión anterior de la app, que guardaba el token
+ *   sin cifrar) se borra todo y se pide iniciar sesión.
+ */
 class GetAuthStatusUseCase(
     private val sessionReader: SessionReader,
     private val sessionWriter: SessionWriter,
+    private val tokenStore: TokenStore,
+    private val clock: AppClock,
 ) {
     suspend operator fun invoke(): AuthStatus {
-        val session = sessionReader.current() ?: return AuthStatus.LoggedOut
-        if (session.isExpired()) {
-            sessionWriter.clear()
+        val session = sessionReader.current()
+        val tokens = tokenStore.read()
+
+        if (session == null || tokens == null || tokens.isSessionExpired(clock.nowMillis())) {
+            if (session != null) sessionWriter.clear()
+            if (tokens != null) tokenStore.clear()
             return AuthStatus.LoggedOut
         }
         // Solo a quien maneja (viaje.registrar) se le pide la licencia
         return if (session.mustUploadLicense) AuthStatus.NeedsLicense else AuthStatus.LoggedIn
     }
-}
-
-/** true si el JWT ya venció (si la fecha no se puede leer, se asume vigente y la API decidirá con 401). */
-@OptIn(ExperimentalTime::class)
-private fun Session.isExpired(): Boolean {
-    val raw = expiresAtUtc ?: return false
-    val normalized = if (raw.endsWith("Z") || raw.contains('+')) raw else "${raw}Z"
-    val expiresAt = runCatching { Instant.parse(normalized) }.getOrNull() ?: return false
-    return Clock.System.now() >= expiresAt
 }

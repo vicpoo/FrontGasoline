@@ -15,7 +15,10 @@ import org.vicpoo.gasolineproject.core.push.AndroidPushTokenProvider
 import org.vicpoo.gasolineproject.core.push.PushTokenProvider
 import org.vicpoo.gasolineproject.core.platform.AndroidImageCompressor
 import org.vicpoo.gasolineproject.core.platform.ImageCompressor
+import org.vicpoo.gasolineproject.core.session.CachedTokenStore
 import org.vicpoo.gasolineproject.core.session.DATASTORE_FILE_NAME
+import org.vicpoo.gasolineproject.core.session.KeystoreTokenStore
+import org.vicpoo.gasolineproject.core.session.TokenStore
 import org.vicpoo.gasolineproject.core.session.createDataStore
 import org.vicpoo.gasolineproject.core.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.core.sync.WorkManagerSyncScheduler
@@ -28,6 +31,9 @@ actual val platformModule: Module = module {
         val directories = get<AppDirectories>()
         createDataStore { "${directories.filesDir}/$DATASTORE_FILE_NAME" }
     }
+
+    // Tokens de la sesión cifrados con una llave del Android Keystore
+    single<TokenStore> { CachedTokenStore(KeystoreTokenStore(dataStore = get(), json = get())) }
 
     // GPS del viaje en curso
     single<LocationProvider> { AndroidLocationProvider(androidContext()) }

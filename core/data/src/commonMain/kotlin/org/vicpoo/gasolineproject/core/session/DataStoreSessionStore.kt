@@ -18,8 +18,8 @@ fun createDataStore(producePath: () -> String): DataStore<Preferences> =
     PreferenceDataStoreFactory.createWithPath(produceFile = { producePath().toPath() })
 
 /**
- * Sesión persistida con DataStore como JSON.
- * TODO (seguridad): en producción cifrar el token (EncryptedFile / Keychain).
+ * Sesión persistida con DataStore como JSON (solo datos del perfil).
+ * Los tokens van aparte, cifrados en el TokenStore (Keystore / Keychain).
  */
 class DataStoreSessionStore(
     private val dataStore: DataStore<Preferences>,

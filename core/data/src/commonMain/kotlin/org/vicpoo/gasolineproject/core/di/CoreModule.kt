@@ -13,9 +13,11 @@ import org.vicpoo.gasolineproject.core.session.LogoutListener
 import org.vicpoo.gasolineproject.core.common.AppClock
 import org.vicpoo.gasolineproject.core.common.AppScope
 import org.vicpoo.gasolineproject.core.common.SystemAppClock
-import org.vicpoo.gasolineproject.core.network.TokenProvider
-import org.vicpoo.gasolineproject.core.network.UnauthorizedHandler
+import org.vicpoo.gasolineproject.core.network.AuthTokenManager
+import org.vicpoo.gasolineproject.core.network.KtorSessionApi
+import org.vicpoo.gasolineproject.core.network.SessionApi
 import org.vicpoo.gasolineproject.core.network.createHttpClient
+import org.vicpoo.gasolineproject.core.network.createSessionHttpClient
 import org.vicpoo.gasolineproject.core.network.httpEngine
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.rbac.SessionPermissionChecker
@@ -32,7 +34,7 @@ import org.vicpoo.gasolineproject.core.sync.SyncAllPendingUseCase
  * Módulos de infraestructura compartida, uno por responsabilidad (SRP):
  * - coreModule:    JSON, scope de la app y reloj.
  * - sessionModule: sesión guardada en el teléfono (lectura / escritura por separado, ISP).
- * - networkModule: cliente Ktor con token y manejo del 401.
+ * - networkModule: cliente Ktor con token, renovación automática de la sesión (refresh token) y manejo del 401.
  * - rbacModule:    consulta de privilegios.
  * - syncModule:    sincronización offline-first en segundo plano.
  * Las features solo piden interfaces; nunca crean estas clases (DIP).
@@ -67,19 +69,25 @@ val sessionModule = module {
 }
 
 val networkModule = module {
-    single<TokenProvider> {
-        val reader = get<SessionReader>()
-        TokenProvider { reader.current()?.token }
-    }
-    single<UnauthorizedHandler> {
-        val writer = get<SessionWriter>()
-        UnauthorizedHandler { writer.clear() } // token vencido: se cierra la sesión
+    // Renovar / cerrar sesión con el refresh token: cliente propio, sin AuthPlugin
+    single<SessionApi> { KtorSessionApi(createSessionHttpClient(engine = httpEngine(), json = get())) }
+
+    // Dueño de los tokens (TokenStore cifrado del platformModule): da el JWT, lo renueva y cierra la sesión si la API lo rechaza
+    single {
+        val clock = get<AppClock>()
+        AuthTokenManager(
+            store = get(),
+            api = get(),
+            sessionWriter = get(),
+            nowMillis = { clock.nowMillis() },
+        )
     }
     single {
+        val tokens = get<AuthTokenManager>()
         createHttpClient(
             engine = httpEngine(),
-            tokenProvider = get(),
-            unauthorizedHandler = get(),
+            tokenProvider = tokens,
+            tokenRefresher = tokens,
             json = get(),
         )
     }

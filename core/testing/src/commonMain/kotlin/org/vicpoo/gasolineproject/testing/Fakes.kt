@@ -10,6 +10,7 @@ import org.vicpoo.gasolineproject.core.network.ConnectivityMonitor
 import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.core.session.Session
 import org.vicpoo.gasolineproject.core.session.SessionReader
+import org.vicpoo.gasolineproject.core.session.SessionStore
 
 /** Sesión de prueba con los privilegios indicados. */
 fun testSession(
@@ -17,7 +18,6 @@ fun testSession(
     employeeId: String? = "emp-1",
     requiresLicense: Boolean = false,
 ) = Session(
-    token = "token",
     userId = "user-1",
     email = "test@polarsoft.mx",
     employeeId = employeeId,
@@ -31,6 +31,20 @@ class FakeSessionReader(initial: Session? = null) : SessionReader {
     val state = MutableStateFlow(initial)
     override val session: Flow<Session?> = state
     override suspend fun current(): Session? = state.value
+}
+
+/** SessionStore en memoria (lectura y escritura): para probar login, logout y fin de sesión. */
+class FakeSessionStore(initial: Session? = null) : SessionStore {
+    val state = MutableStateFlow(initial)
+    override val session: Flow<Session?> = state
+    override suspend fun current(): Session? = state.value
+    override suspend fun save(session: Session) { state.value = session }
+    override suspend fun markLicenseUploaded() { state.value = state.value?.copy(requiresLicense = false) }
+    override suspend fun updatePrivileges(privileges: Set<String>, version: String?) {
+        state.value = state.value?.copy(privileges = privileges, privilegesVersion = version)
+    }
+    override suspend fun update(transform: (Session) -> Session) { state.value = state.value?.let(transform) }
+    override suspend fun clear() { state.value = null }
 }
 
 /** PermissionChecker en memoria. */

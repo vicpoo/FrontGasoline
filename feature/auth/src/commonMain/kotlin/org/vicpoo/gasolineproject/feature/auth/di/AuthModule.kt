@@ -33,6 +33,8 @@ val authModule = module {
             api = get(),
             sessionReader = get(),
             sessionWriter = get(),
+            tokenManager = get(),
+            sessionApi = get(),
             logoutListeners = getAll<LogoutListener>(),
         )
     }

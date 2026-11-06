@@ -55,7 +55,16 @@ interface BackgroundSyncScheduler {
     fun cancel()
 }
 
-/** true si el error significa "sin red / sesión vencida": se detiene y se reintenta después. */
+/**
+ * true si el error significa "sin red / sesión terminada": se detiene y se reintenta después.
+ *
+ * Con el refresh token, un 401 ya NO llega aquí por un JWT vencido: el AuthPlugin renueva la sesión y
+ * reintenta la petición solo. Así que:
+ * - [AppError.Unauthorized] = la API rechazó también el refresh token (sesión revocada o vencida);
+ *   la app ya cerró la sesión y no tiene caso seguir.
+ * - [AppError.NoConnection] = sin red, o el JWT venció y no hubo red para renovarlo
+ *   (SessionRefreshUnavailableException): la sesión sigue y se reintenta al volver la conexión.
+ */
 fun AppError.stopsSync(): Boolean = this == AppError.NoConnection || this == AppError.Unauthorized
 
 /**
