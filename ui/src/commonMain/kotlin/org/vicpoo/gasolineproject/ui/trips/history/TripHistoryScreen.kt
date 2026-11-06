@@ -1,0 +1,196 @@
+package org.vicpoo.gasolineproject.ui.trips.history
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.viewmodel.koinViewModel
+import org.vicpoo.gasolineproject.domain.common.AppDates
+import org.vicpoo.gasolineproject.domain.common.formatDecimal
+import org.vicpoo.gasolineproject.ui.common.components.AppCard
+import org.vicpoo.gasolineproject.ui.common.components.EmptyView
+import org.vicpoo.gasolineproject.ui.common.components.ErrorText
+import org.vicpoo.gasolineproject.ui.common.components.LoadingView
+import org.vicpoo.gasolineproject.ui.common.components.OfflineBanner
+import org.vicpoo.gasolineproject.ui.common.components.RouteMap
+import org.vicpoo.gasolineproject.ui.common.components.ScreenHeader
+import org.vicpoo.gasolineproject.ui.common.components.asText
+import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
+import org.vicpoo.gasolineproject.domain.trips.Trip
+import org.vicpoo.gasolineproject.ui.trips.common.OperatorHeader
+import org.vicpoo.gasolineproject.ui.resources.Res
+import org.vicpoo.gasolineproject.ui.resources.trip_history_empty
+import org.vicpoo.gasolineproject.ui.resources.trip_history_offline
+import org.vicpoo.gasolineproject.ui.resources.trip_history_title
+import org.vicpoo.gasolineproject.ui.resources.trip_km_value
+import org.vicpoo.gasolineproject.ui.resources.trip_records_value
+import org.vicpoo.gasolineproject.ui.trips.common.fuelMarkers
+
+@Composable
+fun TripHistoryRoute(
+    onTripClick: (String) -> Unit,
+    viewModel: TripHistoryViewModel = koinViewModel(),
+) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    // Se vuelve a pedir el historial cada vez que la pestaña se muestra (al cambiar de pestaña,
+    // al regresar del detalle o al volver a la app), no solo la primera vez que se crea el ViewModel.
+    LifecycleResumeEffect(viewModel) {
+        viewModel.refreshSilently()
+        onPauseOrDispose { }
+    }
+    TripHistoryScreen(
+        state = state,
+        onRefresh = viewModel::refresh,
+        onLoadMore = viewModel::loadMore,
+        onTripClick = onTripClick,
+    )
+}
+
+/** Figma: "Historial" — tarjetas con operador, fecha, km, duración, registros y mapa. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TripHistoryScreen(
+    state: TripHistoryUiState,
+    onRefresh: () -> Unit,
+    onLoadMore: () -> Unit,
+    onTripClick: (String) -> Unit,
+) {
+    val dimens = AppTheme.dimens
+    val gridState = rememberLazyGridState()
+    // Al llegar al final de lo que se ve, se piden los 4 siguientes
+    val currentOnLoadMore by rememberUpdatedState(onLoadMore)
+    LaunchedEffect(gridState, state.hasMore) {
+        if (!state.hasMore) return@LaunchedEffect
+        snapshotFlow {
+            val info = gridState.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull()?.index ?: -1
+            info.totalItemsCount > 0 && last >= info.totalItemsCount - 2
+        }
+            .distinctUntilChanged()
+            .filter { it }
+            .collect { currentOnLoadMore() }
+    }
+    Box(
+        modifier = Modifier.fillMaxSize().background(AppTheme.colors.background).statusBarsPadding(),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .widthIn(max = dimens.maxContentWidthWide)
+                .padding(horizontal = dimens.screenPadding),
+        ) {
+            ScreenHeader(title = stringResource(Res.string.trip_history_title))
+            if (state.isOffline) {
+                Spacer(Modifier.height(dimens.spaceS))
+                OfflineBanner(stringResource(Res.string.trip_history_offline), lastUpdatedAtMillis = state.lastUpdatedAtMillis)
+            }
+            state.error?.let {
+                Spacer(Modifier.height(dimens.spaceS))
+                ErrorText(it.asText())
+            }
+            Spacer(Modifier.height(dimens.spaceM))
+
+            PullToRefreshBox(
+                isRefreshing = state.isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                when {
+                    state.isInitialLoading -> LoadingView()
+                    state.trips.isEmpty() -> EmptyView(stringResource(Res.string.trip_history_empty))
+                    else -> LazyVerticalGrid(
+                        state = gridState,
+                        columns = GridCells.Adaptive(minSize = 320.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = dimens.spaceL),
+                        verticalArrangement = Arrangement.spacedBy(dimens.spaceM),
+                        horizontalArrangement = Arrangement.spacedBy(dimens.spaceM),
+                    ) {
+                        items(state.trips, key = { it.id }) { trip ->
+                            TripCard(trip = trip, onClick = { onTripClick(trip.id) })
+                        }
+                        // Indicador mientras faltan viajes por mostrar
+                        if (state.hasMore) {
+                            item(key = "loading_more", span = { GridItemSpan(maxLineSpan) }) {
+                                Box(Modifier.fillMaxWidth().padding(vertical = dimens.spaceM), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        color = AppTheme.colors.primary,
+                                        strokeWidth = 3.dp,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TripCard(trip: Trip, onClick: () -> Unit) {
+    val dimens = AppTheme.dimens
+    val colors = AppTheme.colors
+    AppCard(modifier = Modifier.fillMaxWidth(), onClick = onClick) {
+        Column(Modifier.fillMaxWidth().padding(dimens.spaceXs)) {
+            OperatorHeader(name = trip.operatorName, photoUrl = trip.operatorPhotoUrl)
+            Spacer(Modifier.height(dimens.spaceXs))
+            Text(AppDates.longDate(trip.startedAt), style = AppTheme.typography.bodySecondary, color = colors.text)
+            Row(Modifier.fillMaxWidth().padding(vertical = dimens.spaceXs), horizontalArrangement = Arrangement.SpaceBetween) {
+                val small = AppTheme.typography.caption
+                Text(
+                    trip.distanceKm?.let { stringResource(Res.string.trip_km_value, formatDecimal(it)) } ?: "—",
+                    style = small,
+                    color = colors.text,
+                )
+                // Duración real: sin el tiempo en pausa
+                val minutes = AppDates.minutesBetween(trip.startedAt, trip.endedAt)?.let { (it - trip.pausedSeconds / 60).coerceAtLeast(0) }
+                Text(AppDates.formatDuration(minutes), style = small, color = colors.text)
+                Text(stringResource(Res.string.trip_records_value, trip.fuelLoads.size), style = small, color = colors.text)
+            }
+            // La ruta se va pintando la primera vez que aparece la tarjeta
+            RouteMap(
+                points = trip.route,
+                animate = true,
+                markers = trip.fuelMarkers(),
+                modifier = Modifier.fillMaxWidth().height(170.dp).clip(RoundedCornerShape(dimens.radius)),
+            )
+        }
+    }
+}

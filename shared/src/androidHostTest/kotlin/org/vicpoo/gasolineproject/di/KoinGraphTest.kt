@@ -1,0 +1,215 @@
+package org.vicpoo.gasolineproject.di
+
+import io.ktor.client.HttpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
+import okio.FileSystem
+import org.koin.core.Koin
+import org.koin.core.module.Module
+import org.koin.core.parameter.parametersOf
+import org.koin.dsl.koinApplication
+import org.koin.dsl.module
+import org.vicpoo.gasolineproject.domain.common.AppScope
+import org.vicpoo.gasolineproject.domain.location.LocationFix
+import org.vicpoo.gasolineproject.domain.location.LocationProvider
+import org.vicpoo.gasolineproject.domain.location.TrackingServiceController
+import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
+import org.vicpoo.gasolineproject.domain.files.AppDirectories
+import org.vicpoo.gasolineproject.domain.files.ImageCompressor
+import org.vicpoo.gasolineproject.domain.push.PushTokenProvider
+import org.vicpoo.gasolineproject.ui.common.rbac.AccessGateViewModel
+import org.vicpoo.gasolineproject.domain.rbac.AccessRule
+import org.vicpoo.gasolineproject.domain.session.InMemoryTokenStore
+import org.vicpoo.gasolineproject.domain.session.TokenStore
+import org.vicpoo.gasolineproject.domain.session.LogoutListener
+import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
+import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
+import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
+import org.vicpoo.gasolineproject.data.di.dataPlatformModule
+import org.vicpoo.gasolineproject.platform.di.platformModule
+import org.vicpoo.gasolineproject.ui.license.LicenseGateViewModel
+import org.vicpoo.gasolineproject.ui.license.LicenseViewModel
+import org.vicpoo.gasolineproject.ui.auth.LoginViewModel
+import org.vicpoo.gasolineproject.ui.profile.ProfileViewModel
+import org.vicpoo.gasolineproject.ui.profile.editname.EditNameViewModel
+import org.vicpoo.gasolineproject.ui.reports.ReportsViewModel
+import org.vicpoo.gasolineproject.ui.reservations.bell.ReservationsBellViewModel
+import org.vicpoo.gasolineproject.ui.reservations.assignmentdetail.AssignmentDetailViewModel
+import org.vicpoo.gasolineproject.ui.reservations.assignments.AssignmentsViewModel
+import org.vicpoo.gasolineproject.ui.reservations.company.CompanyReservationsViewModel
+import org.vicpoo.gasolineproject.ui.reservations.detail.ReservationDetailViewModel
+import org.vicpoo.gasolineproject.ui.reservations.list.MyReservationsViewModel
+import org.vicpoo.gasolineproject.ui.triprecording.active.ActiveTripViewModel
+import org.vicpoo.gasolineproject.ui.triprecording.assigned.AssignedVehiclesViewModel
+import org.vicpoo.gasolineproject.ui.triprecording.finish.FinishTripViewModel
+import org.vicpoo.gasolineproject.ui.triprecording.fuel.FuelRecordFormArgs
+import org.vicpoo.gasolineproject.ui.triprecording.fuel.FuelRecordFormViewModel
+import org.vicpoo.gasolineproject.ui.triprecording.start.StartTripArgs
+import org.vicpoo.gasolineproject.ui.triprecording.start.StartTripViewModel
+import org.vicpoo.gasolineproject.ui.triprecording.syncstatus.SyncStatusViewModel
+import org.vicpoo.gasolineproject.ui.trips.detail.TripDetailArgs
+import org.vicpoo.gasolineproject.ui.trips.detail.TripDetailViewModel
+import org.vicpoo.gasolineproject.ui.trips.history.TripHistoryViewModel
+import org.vicpoo.gasolineproject.ui.vehicles.detail.VehicleDetailArgs
+import org.vicpoo.gasolineproject.ui.vehicles.detail.VehicleDetailViewModel
+import org.vicpoo.gasolineproject.ui.vehicles.form.VehicleFormArgs
+import org.vicpoo.gasolineproject.ui.vehicles.form.VehicleFormViewModel
+import org.vicpoo.gasolineproject.ui.vehicles.list.VehicleListArgs
+import org.vicpoo.gasolineproject.ui.vehicles.list.VehicleListViewModel
+import org.vicpoo.gasolineproject.ui.vehicles.list.VehiclesMode
+import org.vicpoo.gasolineproject.navigation.MainViewModel
+import org.vicpoo.gasolineproject.navigation.StartViewModel
+import org.vicpoo.gasolineproject.testing.FakeApiServer
+import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
+import org.vicpoo.gasolineproject.testing.RecordingSyncScheduler
+import java.nio.file.Files
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+/**
+ * Red de seguridad del refactor multimódulo: arma el grafo REAL de Koin (appModules) y pide
+ * cada ViewModel. Si al mover un módulo se pierde una definición, esta prueba falla con el
+ * nombre de la clase que falta.
+ *
+ * Solo se reemplaza lo que depende del teléfono (platformModule y dataPlatformModule) y lo que haría trabajo real:
+ * - AppScope: un scope que nunca avanza (nada corre en segundo plano).
+ * - HttpClient: API falsa (ninguna petición sale a internet).
+ * - Dispatchers.Main: dispatcher de pruebas que no avanza (los init de los ViewModels no corren).
+ */
+@OptIn(ExperimentalCoroutinesApi::class)
+class KoinGraphTest {
+
+    private val filesDir = Files.createTempDirectory("koin-graph").toString()
+
+    private val testPlatformModule = module {
+        single { AppDirectories(filesDir = filesDir) }
+        single<FileSystem> { FileSystem.SYSTEM }
+        single<ConnectivityMonitor> { FakeConnectivityMonitor() }
+        single<TokenStore> { InMemoryTokenStore() }
+        single<LocationProvider> { NoLocationProvider }
+        single<ImageCompressor> { ImageCompressor { it } }
+        single<TrackingServiceController> { NoTrackingService }
+        single<BackgroundSyncScheduler> { RecordingSyncScheduler() }
+        single<PushTokenProvider> { NoPushTokenProvider }
+    }
+
+    private val noRealWorkModule = module {
+        single { AppScope(CoroutineScope(SupervisorJob() + StandardTestDispatcher())) }
+        single<HttpClient> { FakeApiServer().client }
+    }
+
+    private fun testModules(): List<Module> =
+        appModules.filterNot { it === platformModule || it === dataPlatformModule } + testPlatformModule + noRealWorkModule
+
+    @BeforeTest
+    fun setUp() = Dispatchers.setMain(StandardTestDispatcher())
+
+    @AfterTest
+    fun tearDown() = Dispatchers.resetMain()
+
+    @Test
+    fun elGrafoCompletoSeArma_yCadaViewModelSePuedeCrear() {
+        // koinApplication también crea los createdAtStart (BackgroundSyncCoordinator, GpsTripTracker, DeviceRegistrar)
+        val app = koinApplication {
+            allowOverride(true)
+            modules(testModules())
+        }
+        try {
+            val koin = app.koin
+            koin.get<SyncAllPendingUseCase>()
+            resolveAllViewModels(koin)
+        } finally {
+            app.close()
+        }
+    }
+
+    @Test
+    fun lasFeaturesSiguenRegistradasEnSincronizacionYCierreDeSesion() {
+        val app = koinApplication {
+            allowOverride(true)
+            modules(testModules())
+        }
+        try {
+            // vehicles, triprecording, push y la cola de solicitudes de reservas.
+            // Si cambia el número, revisa que no se haya perdido un `bind`.
+            assertEquals(4, app.koin.getAll<PendingSyncTask>().size)
+            // lastRefresh, push, reports, reservations, tripRecording, trips y vehicles.
+            assertEquals(7, app.koin.getAll<LogoutListener>().size)
+        } finally {
+            app.close()
+        }
+    }
+
+    private fun resolveAllViewModels(koin: Koin) {
+        // core / navegación
+        koin.get<AccessGateViewModel> { parametersOf(AccessRule.Everyone) }
+        koin.get<StartViewModel>()
+        koin.get<MainViewModel>()
+
+        // auth
+        koin.get<LoginViewModel>()
+        koin.get<LicenseViewModel>()
+        koin.get<LicenseGateViewModel>()
+
+        // profile
+        koin.get<ProfileViewModel>()
+        koin.get<EditNameViewModel>()
+
+        // vehicles
+        VehiclesMode.entries.forEach { mode ->
+            koin.get<VehicleListViewModel> { parametersOf(VehicleListArgs(mode)) }
+            koin.get<VehicleDetailViewModel> { parametersOf(VehicleDetailArgs(vehicleId = "loc-1", mode = mode)) }
+        }
+        koin.get<VehicleFormViewModel> { parametersOf(VehicleFormArgs(vehicleId = null)) }
+
+        // reservations
+        koin.get<MyReservationsViewModel>()
+        koin.get<ReservationsBellViewModel>()
+        koin.get<CompanyReservationsViewModel>()
+        koin.get<AssignmentsViewModel>()
+        koin.get<AssignmentDetailViewModel> { parametersOf("r:res-1") }
+        koin.get<ReservationDetailViewModel> { parametersOf("res-1") }
+
+        // trips
+        koin.get<TripHistoryViewModel>()
+        koin.get<TripDetailViewModel> { parametersOf(TripDetailArgs(tripId = "trip-1")) }
+
+        // triprecording
+        koin.get<AssignedVehiclesViewModel>()
+        koin.get<ActiveTripViewModel>()
+        koin.get<FinishTripViewModel>()
+        koin.get<StartTripViewModel> { parametersOf(StartTripArgs(reservationId = "res-1")) }
+        koin.get<FuelRecordFormViewModel> { parametersOf(FuelRecordFormArgs(recordId = null)) }
+        koin.get<SyncStatusViewModel>()
+
+        // reports
+        koin.get<ReportsViewModel>()
+    }
+
+    private object NoLocationProvider : LocationProvider {
+        override fun hasPermission(): Boolean = false
+        override fun isLocationEnabled(): Boolean = false
+        override fun updates(intervalMillis: Long, minDistanceMeters: Float): Flow<LocationFix> = emptyFlow()
+        override suspend fun lastKnown(): LocationFix? = null
+    }
+
+    private object NoTrackingService : TrackingServiceController {
+        override fun start() = Unit
+        override fun stop() = Unit
+    }
+
+    private object NoPushTokenProvider : PushTokenProvider {
+        override val platform: String = "test"
+        override suspend fun currentToken(): String? = null
+        override suspend fun deleteToken() = Unit
+    }
+}

@@ -1,7 +1,7 @@
 rootProject.name = "GasolineProject"
 
 pluginManagement {
-    // Plugins de convención: gasoline.kmp.library, gasoline.kmp.compose, gasoline.kmp.feature
+    // Plugins de convención: gasoline.kmp.library, gasoline.kmp.compose
     includeBuild("build-logic")
     repositories {
         google {
@@ -32,18 +32,9 @@ dependencyResolutionManagement {
 include(":androidApp")
 include(":shared")
 
-// Fase 2: módulos de core
-include(":core:common")
-include(":core:data")
-include(":core:ui")
-include(":core:testing")
-
-// Fase 2: módulos de features
-include(":feature:reservations:api")
-include(":feature:trips")
-include(":feature:profile")
-include(":feature:reservations")
-include(":feature:vehicles")
-include(":feature:triprecording")
-include(":feature:auth")
-include(":feature:reports")
+// Etapa 2: un módulo por capa; cada capa tiene una carpeta por feature
+include(":domain")
+include(":data")
+include(":platform")
+include(":ui")
+include(":testing")

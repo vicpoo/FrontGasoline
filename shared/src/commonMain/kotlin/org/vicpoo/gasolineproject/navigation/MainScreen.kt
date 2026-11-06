@@ -19,27 +19,27 @@ import kotlinx.coroutines.flow.first
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import org.vicpoo.gasolineproject.core.push.PushEvents
-import org.vicpoo.gasolineproject.core.push.PushTarget
-import org.vicpoo.gasolineproject.core.push.PushType
-import org.vicpoo.gasolineproject.core.push.RequestNotificationPermission
-import org.vicpoo.gasolineproject.core.ui.adaptive.AdaptiveNavScaffold
-import org.vicpoo.gasolineproject.core.ui.adaptive.NavDestination as TabItem
-import org.vicpoo.gasolineproject.core.ui.components.LoadingView
-import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseRoute
-import org.vicpoo.gasolineproject.feature.auth.presentation.license.RequireLicense
-import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.profileGraph
-import org.vicpoo.gasolineproject.feature.reports.presentation.navigation.reportsGraph
-import org.vicpoo.gasolineproject.feature.reservations.presentation.bell.ReservationsBell
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.MyReservationsDestination
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.assignmentsGraph
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.companyReservationsGraph
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.myReservationsDestination
-import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.tripRecordingGraph
-import org.vicpoo.gasolineproject.feature.trips.presentation.navigation.tripHistoryGraph
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.catalogGraph
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.vehiclesGraph
+import org.vicpoo.gasolineproject.domain.push.PushEvents
+import org.vicpoo.gasolineproject.domain.push.PushTarget
+import org.vicpoo.gasolineproject.domain.push.PushType
+import org.vicpoo.gasolineproject.platform.push.RequestNotificationPermission
+import org.vicpoo.gasolineproject.ui.common.adaptive.AdaptiveNavScaffold
+import org.vicpoo.gasolineproject.ui.common.adaptive.NavDestination as TabItem
+import org.vicpoo.gasolineproject.ui.common.components.LoadingView
+import org.vicpoo.gasolineproject.ui.license.LicenseRoute
+import org.vicpoo.gasolineproject.ui.license.RequireLicense
+import org.vicpoo.gasolineproject.ui.profile.navigation.profileGraph
+import org.vicpoo.gasolineproject.ui.reports.navigation.reportsGraph
+import org.vicpoo.gasolineproject.ui.reservations.bell.ReservationsBell
+import org.vicpoo.gasolineproject.ui.reservations.navigation.CompanyReservationsDestination
+import org.vicpoo.gasolineproject.ui.reservations.navigation.MyReservationsDestination
+import org.vicpoo.gasolineproject.ui.reservations.navigation.assignmentsGraph
+import org.vicpoo.gasolineproject.ui.reservations.navigation.companyReservationsGraph
+import org.vicpoo.gasolineproject.ui.reservations.navigation.myReservationsDestination
+import org.vicpoo.gasolineproject.ui.triprecording.navigation.tripRecordingGraph
+import org.vicpoo.gasolineproject.ui.trips.navigation.tripHistoryGraph
+import org.vicpoo.gasolineproject.ui.vehicles.navigation.catalogGraph
+import org.vicpoo.gasolineproject.ui.vehicles.navigation.vehiclesGraph
 
 /**
  * Pantalla principal con NAVEGACIÓN ANIDADA:

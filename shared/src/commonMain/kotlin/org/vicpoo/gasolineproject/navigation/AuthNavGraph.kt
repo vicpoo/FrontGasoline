@@ -4,10 +4,10 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import org.vicpoo.gasolineproject.core.navigation.navigateClearingBackStack
-import org.vicpoo.gasolineproject.feature.auth.presentation.license.LicenseRoute
-import org.vicpoo.gasolineproject.feature.auth.presentation.login.LoginRoute
-import org.vicpoo.gasolineproject.feature.auth.presentation.welcome.WelcomeScreen
+import org.vicpoo.gasolineproject.ui.common.navigation.navigateClearingBackStack
+import org.vicpoo.gasolineproject.ui.license.LicenseRoute
+import org.vicpoo.gasolineproject.ui.auth.LoginRoute
+import org.vicpoo.gasolineproject.ui.welcome.WelcomeScreen
 
 /**
  * Subgrafo de autenticación.

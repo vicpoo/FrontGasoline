@@ -44,13 +44,13 @@
 
         <!-- Mantiene vivo el registro GPS del viaje en segundo plano (muestra una notificación) -->
         <service
-            android:name="org.vicpoo.gasolineproject.core.location.TripTrackingService"
+            android:name="org.vicpoo.gasolineproject.platform.location.TripTrackingService"
             android:exported="false"
             android:foregroundServiceType="location" />
 
         <!-- Notificaciones push (Firebase Cloud Messaging): solicitudes de vehículos -->
         <service
-            android:name="org.vicpoo.gasolineproject.core.push.GasolineMessagingService"
+            android:name="org.vicpoo.gasolineproject.platform.push.GasolineMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />

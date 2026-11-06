@@ -42,17 +42,10 @@ kotlin {
         commonMain.dependencies {
             // shared es el ensamblador de la app: App.kt, navegación raíz, KoinInit y el framework de iOS.
             // Todo lo demás vive en :core:* y :feature:*.
-            implementation(project(":core:common"))
-            implementation(project(":core:data"))
-            implementation(project(":core:ui"))
-            implementation(project(":feature:reservations:api"))
-            implementation(project(":feature:auth"))
-            implementation(project(":feature:profile"))
-            implementation(project(":feature:reservations"))
-            implementation(project(":feature:trips"))
-            implementation(project(":feature:triprecording"))
-            implementation(project(":feature:vehicles"))
-            implementation(project(":feature:reports"))
+            implementation(project(":domain"))
+            implementation(project(":data"))
+            implementation(project(":platform"))
+            implementation(project(":ui"))
 
             // UI (App.kt, MainScreen y los textos de las pestañas)
             implementation(libs.compose.runtime)
@@ -80,7 +73,7 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
-            implementation(project(":core:testing")) // fakes, API falsa y archivos en memoria
+            implementation(project(":testing")) // fakes, API falsa y archivos en memoria
         }
     }
 }

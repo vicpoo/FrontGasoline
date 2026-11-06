@@ -13,13 +13,13 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import org.koin.compose.viewmodel.koinViewModel
-import org.vicpoo.gasolineproject.core.ui.adaptive.ProvideWindowWidth
+import org.vicpoo.gasolineproject.ui.common.adaptive.ProvideWindowWidth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
-import org.vicpoo.gasolineproject.core.startup.AppStartup
-import org.vicpoo.gasolineproject.core.ui.theme.AppTheme
+import org.vicpoo.gasolineproject.startup.AppStartup
+import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
 import org.vicpoo.gasolineproject.navigation.AppNavHost
 import org.vicpoo.gasolineproject.navigation.StartViewModel
 

@@ -15,7 +15,8 @@ kotlin {
 }
 dependencies {
     implementation(project(":shared"))
-    implementation(project(":core:data")) // MainActivity y GasolineApplication usan PushEvents / PushNotifications
+    implementation(project(":domain")) // MainActivity usa PushEvents
+    implementation(project(":platform")) // MainActivity y GasolineApplication usan PushNotifications
 
     implementation(libs.androidx.activity.compose)
     // Pantalla de inicio con el logo (Android 12+ y versiones anteriores)
@@ -46,7 +47,10 @@ android {
     }
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: quita el código y los recursos que no se usan y optimiza el resto (APK más chico y rápido).
+            // Si algo falla SOLO en release, revisa logcat y agrega la regla en proguard-rules.pro.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

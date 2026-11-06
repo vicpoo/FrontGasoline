@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.AuthStatus
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.GetAuthStatusUseCase
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.ObserveIsLoggedInUseCase
+import org.vicpoo.gasolineproject.domain.auth.usecase.AuthStatus
+import org.vicpoo.gasolineproject.domain.auth.usecase.GetAuthStatusUseCase
+import org.vicpoo.gasolineproject.domain.auth.usecase.ObserveIsLoggedInUseCase
 
 /** Decide por dónde entra la app según la sesión guardada (funciona sin red). */
 class StartViewModel(

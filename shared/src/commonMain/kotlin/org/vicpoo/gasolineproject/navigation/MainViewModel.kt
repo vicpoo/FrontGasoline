@@ -7,8 +7,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.vicpoo.gasolineproject.core.rbac.PermissionChecker
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.RefreshPrivilegesUseCase
+import org.vicpoo.gasolineproject.domain.rbac.PermissionChecker
+import org.vicpoo.gasolineproject.domain.auth.usecase.RefreshPrivilegesUseCase
 
 /**
  * Privilegios del usuario para armar las pestañas (RBAC).

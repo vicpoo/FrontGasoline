@@ -1,0 +1,52 @@
+package org.vicpoo.gasolineproject.ui.trips.common
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import org.vicpoo.gasolineproject.ui.common.components.UserAvatar
+import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
+import androidx.compose.runtime.remember
+import org.jetbrains.compose.resources.stringResource
+import org.vicpoo.gasolineproject.domain.common.AppDates
+import org.vicpoo.gasolineproject.ui.common.components.MapMarker
+import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
+import org.vicpoo.gasolineproject.domain.trips.Trip
+import org.vicpoo.gasolineproject.ui.resources.Res
+import org.vicpoo.gasolineproject.ui.resources.trip_fuel_marker
+
+/** Foto circular + nombre del operador (encabezado de tarjeta y detalle del viaje). */
+@Composable
+fun OperatorHeader(
+    name: String,
+    photoUrl: String?,
+    modifier: Modifier = Modifier,
+    avatarSize: Dp = 36.dp,
+    textStyle: TextStyle = AppTheme.typography.body,
+) {
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        UserAvatar(photoUrl = photoUrl, size = avatarSize)
+        Spacer(Modifier.width(AppTheme.dimens.spaceS))
+        Text(name, style = textStyle, color = AppTheme.colors.title)
+    }
+}
+
+/**
+ * Cargas del viaje que tienen ubicación, como marcadores para el mapa (icono de gasolina).
+ * Las que no tienen ubicación simplemente no se dibujan.
+ */
+@Composable
+fun Trip.fuelMarkers(): List<MapMarker> {
+    val description = stringResource(Res.string.trip_fuel_marker)
+    return remember(fuelLoads, description) {
+        fuelLoads
+            .sortedBy { AppDates.sortKey(it.date) }
+            .mapNotNull { load -> load.location?.let { MapMarker(point = it, icon = AppIcons.Fuel, description = description) } }
+    }
+}

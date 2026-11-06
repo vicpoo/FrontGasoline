@@ -34,9 +34,5 @@ gradlePlugin {
             id = "gasoline.kmp.compose"
             implementationClass = "KmpComposeConventionPlugin"
         }
-        register("kmpFeature") {
-            id = "gasoline.kmp.feature"
-            implementationClass = "KmpFeatureConventionPlugin"
-        }
     }
 }

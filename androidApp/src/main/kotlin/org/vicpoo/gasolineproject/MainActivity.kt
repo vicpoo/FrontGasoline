@@ -7,9 +7,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import org.koin.android.ext.android.inject
-import org.vicpoo.gasolineproject.core.push.PushEvents
-import org.vicpoo.gasolineproject.core.push.PushNotifications
-import org.vicpoo.gasolineproject.core.startup.AppStartup
+import org.vicpoo.gasolineproject.domain.push.PushEvents
+import org.vicpoo.gasolineproject.platform.push.PushNotifications
+import org.vicpoo.gasolineproject.startup.AppStartup
 
 class MainActivity : ComponentActivity() {
 

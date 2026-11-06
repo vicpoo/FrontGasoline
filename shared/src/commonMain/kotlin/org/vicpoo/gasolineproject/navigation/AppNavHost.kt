@@ -8,8 +8,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import org.vicpoo.gasolineproject.core.navigation.navigateClearingBackStack
-import org.vicpoo.gasolineproject.feature.auth.domain.usecase.AuthStatus
+import org.vicpoo.gasolineproject.ui.common.navigation.navigateClearingBackStack
+import org.vicpoo.gasolineproject.domain.auth.usecase.AuthStatus
 
 /**
  * NavHost raíz: solo decide entre el subgrafo de autenticación y la pantalla principal.

@@ -11,25 +11,25 @@ import gasolineproject.shared.generated.resources.nav_trips
 import gasolineproject.shared.generated.resources.nav_history
 import gasolineproject.shared.generated.resources.nav_reports
 import org.jetbrains.compose.resources.StringResource
-import org.vicpoo.gasolineproject.core.rbac.AccessRule
-import org.vicpoo.gasolineproject.core.rbac.AppAccess
-import org.vicpoo.gasolineproject.core.ui.icons.AppIcons
-import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.ProfileDestination
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.AssignmentsDestination
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.AssignmentsGraph
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsDestination
-import org.vicpoo.gasolineproject.feature.reservations.presentation.navigation.CompanyReservationsGraph
-import org.vicpoo.gasolineproject.feature.profile.presentation.navigation.ProfileGraph
-import org.vicpoo.gasolineproject.feature.reports.presentation.navigation.ReportsDestination
-import org.vicpoo.gasolineproject.feature.reports.presentation.navigation.ReportsGraph
-import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.TripRecordingDestination
-import org.vicpoo.gasolineproject.feature.triprecording.presentation.navigation.TripRecordingGraph
-import org.vicpoo.gasolineproject.feature.trips.presentation.navigation.TripHistoryDestination
-import org.vicpoo.gasolineproject.feature.trips.presentation.navigation.TripHistoryGraph
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.CatalogDestination
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.CatalogGraph
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.VehiclesDestination
-import org.vicpoo.gasolineproject.feature.vehicles.presentation.navigation.VehiclesGraph
+import org.vicpoo.gasolineproject.domain.rbac.AccessRule
+import org.vicpoo.gasolineproject.domain.rbac.AppAccess
+import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
+import org.vicpoo.gasolineproject.ui.profile.navigation.ProfileDestination
+import org.vicpoo.gasolineproject.ui.reservations.navigation.AssignmentsDestination
+import org.vicpoo.gasolineproject.ui.reservations.navigation.AssignmentsGraph
+import org.vicpoo.gasolineproject.ui.reservations.navigation.CompanyReservationsDestination
+import org.vicpoo.gasolineproject.ui.reservations.navigation.CompanyReservationsGraph
+import org.vicpoo.gasolineproject.ui.profile.navigation.ProfileGraph
+import org.vicpoo.gasolineproject.ui.reports.navigation.ReportsDestination
+import org.vicpoo.gasolineproject.ui.reports.navigation.ReportsGraph
+import org.vicpoo.gasolineproject.ui.triprecording.navigation.TripRecordingDestination
+import org.vicpoo.gasolineproject.ui.triprecording.navigation.TripRecordingGraph
+import org.vicpoo.gasolineproject.ui.trips.navigation.TripHistoryDestination
+import org.vicpoo.gasolineproject.ui.trips.navigation.TripHistoryGraph
+import org.vicpoo.gasolineproject.ui.vehicles.navigation.CatalogDestination
+import org.vicpoo.gasolineproject.ui.vehicles.navigation.CatalogGraph
+import org.vicpoo.gasolineproject.ui.vehicles.navigation.VehiclesDestination
+import org.vicpoo.gasolineproject.ui.vehicles.navigation.VehiclesGraph
 
 /**
  * Pestañas de la pantalla principal. Cada una abre el subgrafo de su feature.
