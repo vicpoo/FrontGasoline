@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Splash de Gridway en Android 12+ (claro/oscuro según el teléfono): igual que values/themes.xml
+        y además el nombre "Gridway" en la parte de abajo (branding).
+    -->
+    <style name="Theme.Gasoline.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/window_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/gridway_splash</item>
+        <item name="android:windowSplashScreenBrandingImage">@drawable/gridway_splash_branding</item>
+        <item name="postSplashScreenTheme">@style/Theme.Gasoline</item>
+    </style>
+</resources>

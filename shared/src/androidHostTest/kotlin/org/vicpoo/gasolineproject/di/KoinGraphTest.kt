@@ -25,6 +25,7 @@ import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.push.PushTokenProvider
 import org.vicpoo.gasolineproject.ui.common.rbac.AccessGateViewModel
+import org.vicpoo.gasolineproject.ui.common.theme.ThemeViewModel
 import org.vicpoo.gasolineproject.domain.rbac.AccessRule
 import org.vicpoo.gasolineproject.domain.session.InMemoryTokenStore
 import org.vicpoo.gasolineproject.domain.session.TokenStore
@@ -153,6 +154,7 @@ class KoinGraphTest {
         // core / navegación
         koin.get<AccessGateViewModel> { parametersOf(AccessRule.Everyone) }
         koin.get<StartViewModel>()
+        koin.get<ThemeViewModel>()
         koin.get<MainViewModel>()
 
         // auth

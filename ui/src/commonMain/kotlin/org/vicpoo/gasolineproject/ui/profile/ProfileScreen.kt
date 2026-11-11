@@ -1,5 +1,12 @@
 package org.vicpoo.gasolineproject.ui.profile
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,6 +55,8 @@ import org.vicpoo.gasolineproject.ui.resources.action_retry
 import org.vicpoo.gasolineproject.ui.resources.cd_change_photo
 import org.vicpoo.gasolineproject.ui.resources.cd_close
 import org.vicpoo.gasolineproject.ui.resources.cd_edit_name
+import org.vicpoo.gasolineproject.ui.resources.cd_theme_to_dark
+import org.vicpoo.gasolineproject.ui.resources.cd_theme_to_light
 import org.vicpoo.gasolineproject.ui.resources.logout_pending_cancel
 import org.vicpoo.gasolineproject.ui.resources.logout_pending_confirm
 import org.vicpoo.gasolineproject.ui.resources.logout_pending_message
@@ -118,6 +127,8 @@ fun ProfileScreen(
             title = stringResource(Res.string.profile_title),
             topSpacing = 0.dp,
             action = {
+                // Apariencia: sol = se ve claro, luna = se ve oscuro. Al tocarlo cambia al otro modo
+                ThemeToggleButton(onToggle = { currentlyDark -> onEvent(ProfileEvent.ToggleTheme(currentlyDark)) })
                 IconButton(onClick = { onEvent(ProfileEvent.Logout) }, enabled = !state.isCheckingLogout) {
                     if (state.isCheckingLogout) {
                         // Mandando lo pendiente antes de salir
@@ -243,5 +254,31 @@ fun ProfileScreen(
             onButtonClick = { onEvent(ProfileEvent.RetryPhoto) },
             onDismiss = { onEvent(ProfileEvent.DismissPhotoError) },
         )
+    }
+}
+
+/**
+ * Botón de apariencia junto a "Salir": muestra un sol si la app se ve clara y una luna si se ve oscura.
+ * El ícono cambia con un desvanecido + escala; los colores de la app hacen su propia transición (AppTheme).
+ */
+@Composable
+private fun ThemeToggleButton(onToggle: (currentlyDark: Boolean) -> Unit) {
+    val isDark = AppTheme.colors.isDark
+    IconButton(onClick = { onToggle(isDark) }) {
+        AnimatedContent(
+            targetState = isDark,
+            transitionSpec = {
+                (fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.6f)) togetherWith
+                    (fadeOut(tween(200)) + scaleOut(tween(200), targetScale = 0.6f))
+            },
+            label = "themeIcon",
+        ) { dark ->
+            Icon(
+                imageVector = if (dark) AppIcons.Moon else AppIcons.Sun,
+                contentDescription = stringResource(if (dark) Res.string.cd_theme_to_light else Res.string.cd_theme_to_dark),
+                tint = AppTheme.colors.title,
+                modifier = Modifier.size(26.dp),
+            )
+        }
     }
 }

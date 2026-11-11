@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import org.vicpoo.gasolineproject.startup.AppStartup
 import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
+import org.vicpoo.gasolineproject.ui.common.theme.ThemeViewModel
+import org.vicpoo.gasolineproject.ui.common.theme.isDarkTheme
 import org.vicpoo.gasolineproject.navigation.AppNavHost
 import org.vicpoo.gasolineproject.navigation.StartViewModel
 
@@ -37,7 +39,11 @@ fun App() {
             .build()
     }
 
-    AppTheme {
+    // Apariencia elegida en Perfil (claro / oscuro / igual que el teléfono)
+    val themeViewModel = koinViewModel<ThemeViewModel>()
+    val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
+
+    AppTheme(darkTheme = themeMode.isDarkTheme()) {
         ProvideWindowWidth {
             val startViewModel = koinViewModel<StartViewModel>()
             val startStatus by startViewModel.startStatus.collectAsStateWithLifecycle()
@@ -55,7 +61,8 @@ fun App() {
             }
 
             val status = startStatus
-            if (status == null || !minTimeDone) {
+            // También espera la apariencia guardada para no pintar un instante con el modo equivocado
+            if (status == null || !minTimeDone || themeMode == null) {
                 Box(Modifier.fillMaxSize().background(AppTheme.colors.background))
             } else {
                 LaunchedEffect(Unit) { AppStartup.markReady() }

@@ -5,6 +5,7 @@ import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.ui.auth.LoginViewModel
 import org.vicpoo.gasolineproject.ui.common.rbac.AccessGateViewModel
+import org.vicpoo.gasolineproject.ui.common.theme.ThemeViewModel
 import org.vicpoo.gasolineproject.ui.license.LicenseGateViewModel
 import org.vicpoo.gasolineproject.ui.license.LicenseViewModel
 import org.vicpoo.gasolineproject.ui.profile.ProfileViewModel
@@ -36,6 +37,11 @@ import org.vicpoo.gasolineproject.ui.vehicles.list.VehicleListViewModel
 /** RequirePrivilege: una instancia por regla (la llave del ViewModel es AccessRule.key). */
 val rbacUiModule = module {
     viewModel { params -> AccessGateViewModel(permissionChecker = get(), rule = params.get()) }
+}
+
+/** Apariencia de toda la app (claro / oscuro / igual que el teléfono). */
+val themeUiModule = module {
+    viewModelOf(::ThemeViewModel)
 }
 
 val authUiModule = module {
@@ -88,6 +94,7 @@ val reportsUiModule = module {
 /** Todos los módulos de la capa ui (los junta shared al iniciar Koin). */
 val uiModules = listOf(
     rbacUiModule,
+    themeUiModule,
     authUiModule,
     licenseUiModule,
     profileUiModule,

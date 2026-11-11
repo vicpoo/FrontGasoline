@@ -13,7 +13,7 @@ androidApp/ Application, MainActivity y el Manifest.
 ```
 
 Features: `welcome`, `auth`, `license`, `profile`, `vehicles`, `reservations`, `trips`, `triprecording`, `reports`.
-Piezas compartidas: `domain/common`, `session`, `rbac`, `sync`, `push`, `location`, `files`, `connectivity`;
+Piezas compartidas: `domain/common`, `session`, `settings` (apariencia claro / oscuro), `rbac`, `sync`, `push`, `location`, `files`, `connectivity`;
 `ui/common` (tema, componentes, íconos, mapa, RBAC en la UI).
 
 ## Quién puede usar a quién

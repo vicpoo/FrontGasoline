@@ -45,6 +45,8 @@ import org.vicpoo.gasolineproject.domain.reservations.RequestVehicleUseCase
 import org.vicpoo.gasolineproject.domain.reservations.UnlinkAssignmentUseCase
 import org.vicpoo.gasolineproject.domain.reservations.VehicleRequester
 import org.vicpoo.gasolineproject.domain.session.LogoutAction
+import org.vicpoo.gasolineproject.domain.settings.ObserveThemeModeUseCase
+import org.vicpoo.gasolineproject.domain.settings.SetThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncCoordinator
 import org.vicpoo.gasolineproject.domain.sync.CountPendingUseCase
 import org.vicpoo.gasolineproject.domain.sync.ObservePendingSummaryUseCase
@@ -135,6 +137,12 @@ val profileDomainModule = module {
     factoryOf(::UpdateProfilePhotoUseCase)
 }
 
+/** Apariencia (claro / oscuro / igual que el teléfono) que se elige en Perfil. */
+val settingsDomainModule = module {
+    factoryOf(::ObserveThemeModeUseCase)
+    factoryOf(::SetThemeModeUseCase)
+}
+
 val vehiclesDomainModule = module {
     factoryOf(::VehicleFormValidator)
     factoryOf(::ObserveVehiclesUseCase)
@@ -221,6 +229,7 @@ val domainModules = listOf(
     authDomainModule,
     licenseDomainModule,
     profileDomainModule,
+    settingsDomainModule,
     vehiclesDomainModule,
     reservationsDomainModule,
     tripsDomainModule,

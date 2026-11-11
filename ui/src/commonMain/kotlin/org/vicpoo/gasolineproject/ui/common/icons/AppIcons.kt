@@ -297,6 +297,40 @@ object AppIcons {
         }
     }
 
+    /** Modo claro (botón de apariencia en Perfil). */
+    val Sun: ImageVector by lazy {
+        lineIcon("Sun") {
+            strokePath {
+                moveTo(16f, 12f)
+                arcTo(4f, 4f, 0f, true, true, 8f, 12f)
+                arcTo(4f, 4f, 0f, true, true, 16f, 12f)
+                close()
+            }
+            strokePath {
+                moveTo(12f, 2.5f); lineTo(12f, 4.5f)
+                moveTo(12f, 19.5f); lineTo(12f, 21.5f)
+                moveTo(2.5f, 12f); lineTo(4.5f, 12f)
+                moveTo(19.5f, 12f); lineTo(21.5f, 12f)
+                moveTo(5.3f, 5.3f); lineTo(6.7f, 6.7f)
+                moveTo(17.3f, 17.3f); lineTo(18.7f, 18.7f)
+                moveTo(5.3f, 18.7f); lineTo(6.7f, 17.3f)
+                moveTo(17.3f, 6.7f); lineTo(18.7f, 5.3f)
+            }
+        }
+    }
+
+    /** Modo oscuro (botón de apariencia en Perfil). */
+    val Moon: ImageVector by lazy {
+        lineIcon("Moon") {
+            strokePath {
+                moveTo(21f, 12.8f)
+                arcTo(9f, 9f, 0f, true, true, 11.2f, 3f)
+                arcTo(7f, 7f, 0f, false, false, 21f, 12.8f)
+                close()
+            }
+        }
+    }
+
     val ChevronDown: ImageVector by lazy {
         lineIcon("ChevronDown") {
             strokePath {

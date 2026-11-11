@@ -13,6 +13,8 @@ import org.vicpoo.gasolineproject.domain.session.LocalDataOwnerStore
 import org.vicpoo.gasolineproject.domain.session.Session
 import org.vicpoo.gasolineproject.domain.session.SessionReader
 import org.vicpoo.gasolineproject.domain.session.SessionStore
+import org.vicpoo.gasolineproject.domain.settings.ThemeMode
+import org.vicpoo.gasolineproject.domain.settings.ThemePreferenceStore
 
 /** Sesión de prueba con los privilegios indicados. */
 fun testSession(
@@ -81,5 +83,14 @@ class FakeLocalDataOwnerStore(var owner: LocalDataOwner? = null) : LocalDataOwne
 
     override suspend fun clear() {
         owner = null
+    }
+}
+
+/** Apariencia guardada en memoria (claro / oscuro / igual que el teléfono). */
+class FakeThemePreferenceStore(initial: ThemeMode = ThemeMode.SYSTEM) : ThemePreferenceStore {
+    val mode = MutableStateFlow(initial)
+    override fun observe(): Flow<ThemeMode> = mode
+    override suspend fun save(mode: ThemeMode) {
+        this.mode.value = mode
     }
 }

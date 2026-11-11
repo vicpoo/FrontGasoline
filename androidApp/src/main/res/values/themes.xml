@@ -10,14 +10,16 @@
     </style>
 
     <!--
-        Pantalla de inicio (splash) con el logo, como Airbnb.
-        El fondo usa @color/window_background: blanco en modo claro y negro en modo oscuro
-        (values-night/colors.xml). El logo es el mismo en ambos modos.
+        Pantalla de inicio (splash) de Gridway. Se adapta al modo del teléfono:
+        - Claro: fondo blanco, logo GW azul (#476D9E) y nombre Navy (drawable/).
+        - Oscuro: fondo negro, logo GW blanco y nombre gris claro (drawable-night/).
+        El fondo usa @color/window_background (values-night/colors.xml para el oscuro).
+        En Android 12+ además se muestra el nombre "Gridway" abajo (values-v31/themes.xml).
         Al terminar de arrancar cambia a Theme.Gasoline.
     -->
     <style name="Theme.Gasoline.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/window_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/gridway_splash</item>
         <item name="postSplashScreenTheme">@style/Theme.Gasoline</item>
     </style>
 </resources>

@@ -19,6 +19,8 @@ import org.vicpoo.gasolineproject.domain.sync.PendingBeforeLogoutUseCase
 import org.vicpoo.gasolineproject.domain.profile.ObserveProfileUseCase
 import org.vicpoo.gasolineproject.domain.profile.RefreshProfileUseCase
 import org.vicpoo.gasolineproject.domain.profile.UpdateProfilePhotoUseCase
+import org.vicpoo.gasolineproject.domain.settings.SetThemeModeUseCase
+import org.vicpoo.gasolineproject.domain.settings.ThemeMode
 
 class ProfileViewModel(
     observeProfile: ObserveProfileUseCase,
@@ -26,6 +28,7 @@ class ProfileViewModel(
     private val updatePhoto: UpdateProfilePhotoUseCase,
     private val logout: LogoutAction,
     private val pendingBeforeLogout: PendingBeforeLogoutUseCase,
+    private val setThemeMode: SetThemeModeUseCase,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(ProfileUiState())
@@ -58,6 +61,10 @@ class ProfileViewModel(
                 doLogout()
             }
             ProfileEvent.DismissLogoutWarning -> local.update { it.copy(logoutPendingCount = null) }
+            // Se guarda en el teléfono; App() lo escucha y los colores cambian con una transición suave
+            is ProfileEvent.ToggleTheme -> viewModelScope.launch {
+                setThemeMode(if (event.currentlyDark) ThemeMode.LIGHT else ThemeMode.DARK)
+            }
         }
     }
 

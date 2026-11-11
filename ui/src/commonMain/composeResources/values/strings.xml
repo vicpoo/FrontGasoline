@@ -57,6 +57,8 @@
     <string name="logout_pending_confirm">Sí, salir y borrarlos</string>
     <string name="cd_change_photo">Cambiar foto de perfil</string>
     <string name="cd_edit_name">Editar nombre</string>
+    <string name="cd_theme_to_dark">Cambiar a modo oscuro</string>
+    <string name="cd_theme_to_light">Cambiar a modo claro</string>
     <string name="edit_name_error_message">No pudimos guardar el nombre. Por favor revisa tu conexión e inténtalo de nuevo.</string>
     <string name="edit_name_error_title">¡Error al guardar!</string>
     <string name="edit_name_hint">Ej. Juan Pérez López</string>
