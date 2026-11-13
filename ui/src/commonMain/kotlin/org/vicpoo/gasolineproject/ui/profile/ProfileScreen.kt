@@ -8,7 +8,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,6 +48,7 @@ import org.vicpoo.gasolineproject.ui.common.components.SubtitleText
 import org.vicpoo.gasolineproject.ui.common.components.asText
 import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
 import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
+import org.vicpoo.gasolineproject.ui.common.theme.isPhoneInDarkTheme
 import org.vicpoo.gasolineproject.domain.profile.UpdateProfilePhotoUseCase
 import org.vicpoo.gasolineproject.ui.resources.Res
 import org.vicpoo.gasolineproject.ui.resources.action_logout
@@ -265,7 +265,7 @@ fun ProfileScreen(
 @Composable
 private fun ThemeToggleButton(onToggle: (currentlyDark: Boolean, systemDark: Boolean) -> Unit) {
     val isDark = AppTheme.colors.isDark
-    val systemDark = isSystemInDarkTheme()
+    val systemDark = isPhoneInDarkTheme()
     IconButton(onClick = { onToggle(isDark, systemDark) }) {
         AnimatedContent(
             targetState = isDark,

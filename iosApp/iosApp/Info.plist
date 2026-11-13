@@ -5,7 +5,7 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDisplayName</key>
-	<string>Gridway</string>
+	<string>Octrak</string>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

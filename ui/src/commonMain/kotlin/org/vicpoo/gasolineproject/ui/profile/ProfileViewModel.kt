@@ -61,8 +61,8 @@ class ProfileViewModel(
                 doLogout()
             }
             ProfileEvent.DismissLogoutWarning -> local.update { it.copy(logoutPendingCount = null) }
-            // Solo mientras la app está abierta; App() lo escucha y los colores cambian con una transición suave.
-            // Si el modo elegido es el mismo que el del teléfono se vuelve a SYSTEM (sigue al teléfono).
+            // Se guarda en el teléfono; App() lo escucha y los colores cambian con una transición suave.
+            // Si el modo elegido es el mismo que el del teléfono se guarda SYSTEM: la app vuelve a seguir al teléfono.
             is ProfileEvent.ToggleTheme -> viewModelScope.launch {
                 val wantDark = !event.currentlyDark
                 setThemeMode(

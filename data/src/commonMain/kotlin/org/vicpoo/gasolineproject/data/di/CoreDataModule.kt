@@ -19,7 +19,7 @@ import org.vicpoo.gasolineproject.data.session.DATASTORE_FILE_NAME
 import org.vicpoo.gasolineproject.data.session.DataStoreLocalDataOwnerStore
 import org.vicpoo.gasolineproject.data.session.DataStoreSessionStore
 import org.vicpoo.gasolineproject.data.session.createDataStore
-import org.vicpoo.gasolineproject.data.settings.SessionThemePreferenceStore
+import org.vicpoo.gasolineproject.data.settings.DataStoreThemePreferenceStore
 import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.LastRefreshStore
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
@@ -73,8 +73,8 @@ val coreDataModule = module {
         LogoutListener { store.clear() }
     }
 
-    // Apariencia: siempre arranca igual que el teléfono; el botón de Perfil solo la cambia mientras la app está abierta
-    single<ThemePreferenceStore> { SessionThemePreferenceStore() }
+    // Apariencia: igual que el teléfono hasta que el usuario elige otra en Perfil; se guarda y NO se borra al cerrar sesión
+    single<ThemePreferenceStore> { DataStoreThemePreferenceStore(dataStore = get()) }
 }
 
 val networkDataModule = module {

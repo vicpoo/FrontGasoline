@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Octrak · logo a color (aro Blue, reserva Crimson, aguja Navy). Uso: painterResource(Res.drawable.octrak_logo) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+    <group android:scaleX="1.0" android:scaleY="1.0" android:translateX="0" android:translateY="0">
+        <!-- Aro del medidor -->
+        <path android:pathData="M23.13,76.87A38,38 0,1 1,76.87,76.87" android:fillColor="#00000000" android:strokeColor="#476D9E" android:strokeWidth="14" android:strokeLineCap="round" />
+        <!-- Reserva -->
+        <path android:pathData="M23.13,76.87A38,38 0,0 1,12.37,55.29" android:fillColor="#00000000" android:strokeColor="#A83F50" android:strokeWidth="14" android:strokeLineCap="round" />
+        <!-- Aguja, centro y gota -->
+        <path android:pathData="M47,55.2L63,27.48" android:fillColor="#00000000" android:strokeColor="#080D38" android:strokeWidth="6" android:strokeLineCap="round" />
+        <path android:pathData="M43.5,50a6.5,6.5 0,1 1,13,0a6.5,6.5 0,1 1,-13,0Z" android:fillColor="#080D38" />
+        <path android:pathData="M50,72C50,72 44.5,78.5 44.5,82.5A5.5,5.5 0,0 0,55.5,82.5C55.5,78.5 50,72 50,72Z" android:fillColor="#080D38" />
+    </group>
+</vector>
