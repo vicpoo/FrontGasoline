@@ -15,6 +15,8 @@ import coil3.request.crossfade
 import org.koin.compose.viewmodel.koinViewModel
 import org.vicpoo.gasolineproject.ui.common.adaptive.ProvideWindowWidth
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
@@ -39,9 +41,19 @@ fun App() {
             .build()
     }
 
-    // Apariencia elegida en Perfil (claro / oscuro / igual que el teléfono)
+    // Apariencia: siempre arranca igual que el teléfono. El botón de Perfil la cambia mientras la app está abierta.
     val themeViewModel = koinViewModel<ThemeViewModel>()
     val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
+
+    // Si el teléfono cambia de claro a oscuro (o al revés) la app lo vuelve a seguir, aunque se haya usado el botón
+    val systemDark = isSystemInDarkTheme()
+    var lastSystemDark by remember { mutableStateOf(systemDark) }
+    LaunchedEffect(systemDark) {
+        if (systemDark != lastSystemDark) {
+            lastSystemDark = systemDark
+            themeViewModel.followSystem()
+        }
+    }
 
     AppTheme(darkTheme = themeMode.isDarkTheme()) {
         ProvideWindowWidth {
@@ -66,7 +78,11 @@ fun App() {
                 Box(Modifier.fillMaxSize().background(AppTheme.colors.background))
             } else {
                 LaunchedEffect(Unit) { AppStartup.markReady() }
-                AppNavHost(startStatus = status, isLoggedIn = isLoggedIn)
+                // Fondo del tema detrás de TODAS las pantallas: lo que no pinta su propio fondo
+                // ya no deja ver el fondo de la ventana (que se quedaba con el color anterior)
+                Box(Modifier.fillMaxSize().background(AppTheme.colors.background)) {
+                    AppNavHost(startStatus = status, isLoggedIn = isLoggedIn)
+                }
             }
         }
     }

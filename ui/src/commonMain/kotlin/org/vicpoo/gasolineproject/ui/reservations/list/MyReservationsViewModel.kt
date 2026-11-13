@@ -15,6 +15,7 @@ import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushType
+import org.vicpoo.gasolineproject.domain.reservations.LoadMoreMyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.MarkReservationUpdatesSeenUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ObserveMyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.RefreshMyReservationsUseCase
@@ -23,6 +24,8 @@ import org.vicpoo.gasolineproject.domain.reservations.RefreshMyReservationsUseCa
 class MyReservationsViewModel(
     observeRequests: ObserveMyReservationsUseCase,
     private val refreshRequests: RefreshMyReservationsUseCase,
+    /** Al bajar al final se piden las 10 siguientes. */
+    private val loadMoreRequests: LoadMoreMyReservationsUseCase,
     private val markUpdatesSeen: MarkReservationUpdatesSeenUseCase,
     pushEvents: PushEvents,
     /** Se recarga sola al volver la red y marca "sin conexión" en cuanto se pierde. */
@@ -38,6 +41,7 @@ class MyReservationsViewModel(
     )
 
     private val loading = MutableStateFlow(LoadState())
+    private val loadingMore = MutableStateFlow(false)
     private val filter = MutableStateFlow(MyReservationsFilter.ALL)
     private val _state = MutableStateFlow(MyReservationsUiState())
     val state: StateFlow<MyReservationsUiState> = _state.asStateFlow()
@@ -53,13 +57,14 @@ class MyReservationsViewModel(
                 loading,
                 connectivity.isOnline,
                 lastRefresh.observe(REFRESH_KEY),
-                filter,
-            ) { requests, load, online, lastUpdated, selected ->
+                combine(filter, loadMoreRequests.hasMore(), ::Pair),
+            ) { requests, load, online, lastUpdated, (selected, hasMore) ->
                 MyReservationsUiState(
                     requests = requests,
                     filter = selected,
                     counts = MyReservationsGrouping.counts(requests),
                     groups = MyReservationsGrouping.group(requests, selected),
+                    hasMore = hasMore,
                     isInitialLoading = !load.firstLoadDone && requests.isEmpty(),
                     isRefreshing = load.refreshing,
                     isOffline = load.offline || !online,
@@ -77,6 +82,7 @@ class MyReservationsViewModel(
     fun onEvent(event: MyReservationsEvent) {
         when (event) {
             MyReservationsEvent.Refresh -> refresh(initial = false)
+            MyReservationsEvent.LoadMore -> loadMore()
             is MyReservationsEvent.FilterSelected -> filter.value = event.filter
         }
     }
@@ -97,6 +103,19 @@ class MyReservationsViewModel(
                 offline = failure == AppError.NoConnection,
                 error = failure?.takeIf { it != AppError.NoConnection },
             )
+        }
+    }
+
+    /** El usuario llegó al final de la lista: se piden las 10 siguientes. */
+    private fun loadMore() {
+        if (loadingMore.value || !_state.value.hasMore) return
+        loadingMore.value = true
+        viewModelScope.launch {
+            val failure = (loadMoreRequests() as? AppResult.Failure)?.error
+            if (failure != null) {
+                loading.update { it.copy(offline = failure == AppError.NoConnection, error = failure.takeIf { e -> e != AppError.NoConnection }) }
+            }
+            loadingMore.value = false
         }
     }
 

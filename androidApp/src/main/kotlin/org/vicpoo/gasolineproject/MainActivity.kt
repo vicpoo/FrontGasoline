@@ -36,7 +36,13 @@ class MainActivity : ComponentActivity() {
         // Se abrió tocando una notificación push (al girar la pantalla no se vuelve a abrir)
         if (savedInstanceState == null) openPushTarget(intent)
 
-        // Apariencia elegida en Perfil: barras del sistema y (Android 12+) el splash y el fondo de la ventana
+        // Android 12+: versiones anteriores forzaban el modo de la app en el sistema (setApplicationNightMode)
+        // y eso se quedaba guardado aunque se reinstalara. Se regresa a "igual que el teléfono".
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            getSystemService(UiModeManager::class.java)?.setApplicationNightMode(UiModeManager.MODE_NIGHT_AUTO)
+        }
+
+        // Apariencia actual (teléfono o botón de Perfil): íconos de las barras del sistema
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 observeThemeMode().collect(::applyThemeMode)
@@ -56,24 +62,9 @@ class MainActivity : ComponentActivity() {
             ThemeMode.DARK -> SystemBarStyle.dark(transparent)
             ThemeMode.SYSTEM -> SystemBarStyle.auto(transparent, transparent)
         }
+        // Solo cambia lo que pinta Compose (no la configuración de Android): así ninguna vista se queda
+        // con el color anterior ni la Activity se recrea. El splash siempre sigue al teléfono.
         enableEdgeToEdge(statusBarStyle = barStyle, navigationBarStyle = barStyle)
-
-        // Android 12+: el sistema recuerda el modo de la app, así el splash también lo sigue.
-        // La Activity NO se recrea (configChanges="uiMode" en el Manifest): Compose hace la transición suave.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && mode != appliedNightMode) {
-            appliedNightMode = mode
-            val nightMode = when (mode) {
-                ThemeMode.LIGHT -> UiModeManager.MODE_NIGHT_NO
-                ThemeMode.DARK -> UiModeManager.MODE_NIGHT_YES
-                ThemeMode.SYSTEM -> UiModeManager.MODE_NIGHT_AUTO
-            }
-            getSystemService(UiModeManager::class.java)?.setApplicationNightMode(nightMode)
-        }
-    }
-
-    private companion object {
-        /** Último modo mandado al sistema en este proceso (evita recrear la Activity en bucle). */
-        var appliedNightMode: ThemeMode? = null
     }
 
     /** La app ya estaba abierta (launchMode singleTop) y se tocó una notificación. */

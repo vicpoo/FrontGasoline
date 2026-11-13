@@ -13,6 +13,12 @@ class RefreshMyReservationsUseCase(private val repository: ReservationRepository
     suspend operator fun invoke(): AppResult<Unit> = repository.refreshMine()
 }
 
+/** "Mis solicitudes": al bajar al final se piden las 10 siguientes. */
+class LoadMoreMyReservationsUseCase(private val repository: ReservationRepository) {
+    fun hasMore(): Flow<Boolean> = repository.observeMineHasMore()
+    suspend operator fun invoke(): AppResult<Unit> = repository.loadMoreMine()
+}
+
 /** Número del badge de la campana (respuestas a mis solicitudes que no he visto). */
 class ObserveUnseenReservationUpdatesUseCase(private val repository: ReservationRepository) {
     operator fun invoke(): Flow<Int> = repository.observeUnseenUpdates()

@@ -26,6 +26,10 @@ data class ReservationRequestEntity(
 @Serializable
 data class CompanyReservationsSnapshot(
     val requests: List<ReservationRequestEntity> = emptyList(),
+    /** Páginas de 10 ya pedidas a la API (al recargar se vuelven a pedir todas en una petición). */
+    val loadedPages: Int = 0,
+    /** La API tiene más solicitudes después de las guardadas. */
+    val hasMore: Boolean = false,
 )
 
 /** Mis solicitudes (campana) y el último número del badge. */
@@ -33,4 +37,8 @@ data class CompanyReservationsSnapshot(
 data class MyReservationsSnapshot(
     val requests: List<ReservationRequestEntity> = emptyList(),
     val unseenUpdates: Int = 0,
+    /** Páginas de 10 ya pedidas a la API (al recargar se vuelven a pedir todas en una petición). */
+    val loadedPages: Int = 0,
+    /** La API tiene más solicitudes después de las guardadas. */
+    val hasMore: Boolean = false,
 )

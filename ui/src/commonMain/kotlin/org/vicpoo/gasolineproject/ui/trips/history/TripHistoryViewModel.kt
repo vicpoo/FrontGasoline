@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -14,14 +15,17 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.LastRefreshStore
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
+import org.vicpoo.gasolineproject.domain.trips.LoadMoreTripsUseCase
 import org.vicpoo.gasolineproject.domain.trips.LoadTripDetailsUseCase
 import org.vicpoo.gasolineproject.domain.trips.ObserveTripsUseCase
 import org.vicpoo.gasolineproject.domain.trips.RefreshTripsUseCase
 
 class TripHistoryViewModel(
-    observeTrips: ObserveTripsUseCase,
+    private val observeTrips: ObserveTripsUseCase,
     private val refreshTrips: RefreshTripsUseCase,
     private val loadTripDetails: LoadTripDetailsUseCase,
+    /** Pide a la API los 10 viajes siguientes cuando el usuario llega al final. */
+    private val loadMoreTrips: LoadMoreTripsUseCase,
     /** Se recarga sola al volver la red y marca "sin conexión" en cuanto se pierde. */
     private val connectivity: ConnectivityMonitor,
     private val lastRefresh: LastRefreshStore,
@@ -45,16 +49,21 @@ class TripHistoryViewModel(
     /** Todos los viajes guardados (para saber qué ids pedir al mostrar el siguiente bloque). */
     private val allTrips = observeTrips().stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /** Hay una petición de "los 10 siguientes" en curso. */
+    private val loadingMore = MutableStateFlow(false)
+
+    /** La API tiene más viajes después de los guardados. */
+    private val remoteHasMore = loadMoreTrips.hasMore().stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val state: StateFlow<TripHistoryUiState> = combine(
-        allTrips,
-        visibleCount,
+        combine(allTrips, visibleCount, remoteHasMore, ::Triple),
         status,
         connectivity.isOnline,
         lastRefresh.observe(REFRESH_KEY),
-    ) { trips, visible, s, online, lastUpdated ->
+    ) { (trips, visible, moreInApi), s, online, lastUpdated ->
         TripHistoryUiState(
             trips = trips.take(visible),
-            hasMore = trips.size > visible,
+            hasMore = trips.size > visible || moreInApi,
             isInitialLoading = trips.isEmpty() && !s.loadedOnce,
             isRefreshing = s.isRefreshing,
             isOffline = s.isOffline || !online,
@@ -69,16 +78,36 @@ class TripHistoryViewModel(
     }
 
     /**
-     * El usuario llegó al final de lo que se ve: se muestran 4 más y se piden sus cargas y su ruta.
-     * Así no se descargan los mapas y cargas de TODO el historial de golpe.
+     * El usuario llegó al final de lo que se ve: se muestran 10 más y se piden sus cargas y su ruta.
+     * Si ya se mostraron todos los guardados, primero se piden los 10 siguientes a la API.
+     * Así no se descarga TODO el historial (ni sus mapas y cargas) de golpe.
      */
     fun loadMore() {
-        val total = allTrips.value.size
         val current = visibleCount.value
-        if (current >= total) return
-        val next = (current + PAGE_SIZE).coerceAtMost(total)
+        if (allTrips.value.size > current) {
+            reveal(current, allTrips.value)
+            return
+        }
+        if (!remoteHasMore.value || loadingMore.value) return
+        loadingMore.value = true
+        viewModelScope.launch {
+            val failure = (loadMoreTrips() as? AppResult.Failure)?.error
+            if (failure != null) {
+                status.update {
+                    it.copy(isOffline = failure == AppError.NoConnection, error = failure.takeIf { e -> e != AppError.NoConnection })
+                }
+            }
+            // Lectura directa del caché: ya trae los que se acaban de agregar
+            reveal(current, observeTrips().first())
+            loadingMore.value = false
+        }
+    }
+
+    private fun reveal(current: Int, trips: List<org.vicpoo.gasolineproject.domain.trips.Trip>) {
+        if (trips.size <= current) return
+        val next = (current + PAGE_SIZE).coerceAtMost(trips.size)
         visibleCount.value = next
-        loadDetailsOf(allTrips.value.subList(current, next).map { it.id })
+        loadDetailsOf(trips.subList(current, next).map { it.id })
     }
 
     private fun loadDetailsOf(ids: List<String>) {
@@ -118,7 +147,7 @@ class TripHistoryViewModel(
         /** Llave de "Actualizado hace X" de esta lista. */
         const val REFRESH_KEY = "trips.history"
 
-        /** Viajes por bloque: se muestran 4 y al bajar se agregan 4 más. */
-        const val PAGE_SIZE = 4
+        /** Viajes por bloque: se muestran los 10 más recientes y al bajar se agregan 10 más. */
+        const val PAGE_SIZE = 10
     }
 }

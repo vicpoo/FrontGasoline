@@ -4,6 +4,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.domain.common.AppError
@@ -11,9 +12,13 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.AppDates
 import org.vicpoo.gasolineproject.domain.common.getOrNull
 import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.network.LIST_PAGE_SIZE
+import org.vicpoo.gasolineproject.data.network.hasMoreAfter
+import org.vicpoo.gasolineproject.data.network.refreshSize
 import org.vicpoo.gasolineproject.data.network.safeApiCall
 import org.vicpoo.gasolineproject.domain.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
+import org.vicpoo.gasolineproject.domain.session.Session
 import org.vicpoo.gasolineproject.domain.session.SessionReader
 import org.vicpoo.gasolineproject.domain.common.GeoPoint
 import org.vicpoo.gasolineproject.data.trips.remote.TripsApi
@@ -26,7 +31,13 @@ import org.vicpoo.gasolineproject.domain.trips.TripsRepository
 // ---------- Lo que se guarda en el caché offline ----------
 
 @Serializable
-data class TripsSnapshot(val trips: List<TripEntity> = emptyList())
+data class TripsSnapshot(
+    val trips: List<TripEntity> = emptyList(),
+    /** Páginas de 10 ya pedidas a la API (al recargar se vuelven a pedir todas en una petición). */
+    val loadedPages: Int = 0,
+    /** La API tiene más viajes después de los guardados. */
+    val hasMore: Boolean = false,
+)
 
 @Serializable
 data class TripEntity(
@@ -81,25 +92,76 @@ class TripsRepositoryImpl(
     override fun observeTrip(id: String): Flow<Trip?> =
         cache.data.map { snapshot -> snapshot.trips.firstOrNull { it.id == id }?.toDomain() }
 
+    override fun observeHasMore(): Flow<Boolean> = cache.data.map { it.hasMore }.distinctUntilChanged()
+
+    /**
+     * Vuelve a pedir los viajes que ya se veían (los 10 más recientes, o más si el usuario ya
+     * había bajado) en UNA petición. Las cargas y la ruta se piden aparte con loadDetails().
+     */
     override suspend fun refresh(): AppResult<Unit> {
         val session = sessionReader.current() ?: return AppResult.Success(Unit)
-        val seeAll = permissionChecker.has(Privileges.VIAJE_VER_TODOS)
-        val companyId = session.companyId
-        val operatorFilter = if (seeAll) null else session.employeeId
-
-        // El historial solo muestra viajes cerrados (finalizados o interrumpidos): un viaje en curso
-        // o en pausa todavía no termina y su ruta está incompleta. Ese se ve en "Registrar viaje".
-        val trips = when (val result = safeApiCall { api.getTrips(companyId, operatorFilter) }) {
+        val previous = cache.current()
+        val size = refreshSize(previous.loadedPages)
+        val page = when (val result = safeApiCall { api.getTrips(session.companyId, operatorFilter(session), page = 1, pageSize = size) }) {
             is AppResult.Failure -> return result
-            is AppResult.Success -> result.data.filter { it.isClosed() }
+            is AppResult.Success -> result.data
         }
+        val snapshot = TripsSnapshot(
+            trips = toEntities(page.items, session, previous.trips.associateBy { it.id }),
+            loadedPages = size / LIST_PAGE_SIZE,
+            hasMore = hasMoreAfter(size, page.items.size, size, page.total),
+        )
+        cache.save(snapshot)
+        // Si en esos no hubo ningún viaje cerrado (todos en curso) se piden los siguientes
+        if (snapshot.trips.isEmpty() && snapshot.hasMore) return loadMore()
+        return AppResult.Success(Unit)
+    }
 
-        val cached = cache.current().trips.associateBy { it.id }
+    /**
+     * El usuario llegó al final del historial: se piden los 10 viajes siguientes a la API y se agregan
+     * al final. Si en esa página no hay ningún viaje cerrado se pide la siguiente (hasta que haya uno).
+     */
+    override suspend fun loadMore(): AppResult<Unit> {
+        val session = sessionReader.current() ?: return AppResult.Success(Unit)
+        var snapshot = cache.current()
+        while (snapshot.hasMore) {
+            val nextPage = snapshot.loadedPages + 1
+            val page = when (val result = safeApiCall {
+                api.getTrips(session.companyId, operatorFilter(session), page = nextPage, pageSize = LIST_PAGE_SIZE)
+            }) {
+                is AppResult.Failure -> return result
+                is AppResult.Success -> result.data
+            }
+            val known = snapshot.trips.map { it.id }.toSet()
+            val added = toEntities(page.items, session, snapshot.trips.associateBy { it.id }).filter { it.id !in known }
+            // Se vuelve a leer el caché: pudo cambiar (loadDetails) mientras se descargaba
+            val current = cache.current()
+            snapshot = current.copy(
+                trips = current.trips + added.filter { a -> current.trips.none { it.id == a.id } },
+                loadedPages = nextPage,
+                hasMore = hasMoreAfter(nextPage * LIST_PAGE_SIZE, page.items.size, LIST_PAGE_SIZE, page.total),
+            )
+            cache.save(snapshot)
+            if (added.isNotEmpty()) break
+        }
+        return AppResult.Success(Unit)
+    }
 
-        // Solo la lista (1 petición). Las cargas y la ruta de cada viaje NO se piden aquí:
-        // se piden por bloques con loadDetails() cuando el viaje aparece en pantalla.
-        // Mientras tanto se muestran las guardadas (si había).
-        val entities = trips
+    /** Con viaje.ver_todos se ven los de toda la empresa; si no, solo los propios. */
+    private suspend fun operatorFilter(session: Session): String? =
+        if (permissionChecker.has(Privileges.VIAJE_VER_TODOS)) null else session.employeeId
+
+    /**
+     * El historial solo muestra viajes cerrados (finalizados o interrumpidos): un viaje en curso
+     * o en pausa todavía no termina y su ruta está incompleta. Ese se ve en "Registrar viaje".
+     * Las cargas y la ruta NO se piden aquí: mientras tanto se muestran las guardadas (si había).
+     */
+    private fun toEntities(
+        dtos: List<ViajeDto>,
+        session: Session,
+        cached: Map<String, TripEntity>,
+    ): List<TripEntity> =
+        dtos.filter { it.isClosed() }
             .sortedByDescending { AppDates.sortKey(it.fechaInicio) }
             .map { trip ->
                 val operator = trip.operador
@@ -125,10 +187,6 @@ class TripsRepositoryImpl(
                     detailsLoaded = false,
                 )
             }
-
-        cache.save(TripsSnapshot(entities))
-        return AppResult.Success(Unit)
-    }
 
     /**
      * Descarga las cargas y la ruta SOLO de [tripIds] (un bloque de 4 del historial, o el viaje
@@ -165,7 +223,8 @@ class TripsRepositoryImpl(
         }.associateBy { it.id }
 
         // Se vuelve a leer el caché: pudo cambiar mientras se descargaba
-        cache.save(TripsSnapshot(cache.current().trips.map { loaded[it.id] ?: it }))
+        val latest = cache.current()
+        cache.save(latest.copy(trips = latest.trips.map { loaded[it.id] ?: it }))
         return if (noConnection) AppResult.Failure(AppError.NoConnection) else AppResult.Success(Unit)
     }
 

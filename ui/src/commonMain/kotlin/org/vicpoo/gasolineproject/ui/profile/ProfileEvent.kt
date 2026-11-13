@@ -15,5 +15,5 @@ sealed interface ProfileEvent {
     data object DismissLogoutWarning : ProfileEvent
 
     /** Botón sol / luna: cambia a oscuro si ahora se ve claro, y al revés. */
-    data class ToggleTheme(val currentlyDark: Boolean) : ProfileEvent
+    data class ToggleTheme(val currentlyDark: Boolean, val systemDark: Boolean) : ProfileEvent
 }

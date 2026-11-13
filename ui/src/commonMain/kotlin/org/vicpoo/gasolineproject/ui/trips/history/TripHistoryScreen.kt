@@ -25,12 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,6 +39,7 @@ import org.vicpoo.gasolineproject.domain.common.formatDecimal
 import org.vicpoo.gasolineproject.ui.common.components.AppCard
 import org.vicpoo.gasolineproject.ui.common.components.EmptyView
 import org.vicpoo.gasolineproject.ui.common.components.ErrorText
+import org.vicpoo.gasolineproject.ui.common.components.LoadMoreOnScrollEnd
 import org.vicpoo.gasolineproject.ui.common.components.LoadingView
 import org.vicpoo.gasolineproject.ui.common.components.OfflineBanner
 import org.vicpoo.gasolineproject.ui.common.components.RouteMap
@@ -91,19 +87,8 @@ fun TripHistoryScreen(
 ) {
     val dimens = AppTheme.dimens
     val gridState = rememberLazyGridState()
-    // Al llegar al final de lo que se ve, se piden los 4 siguientes
-    val currentOnLoadMore by rememberUpdatedState(onLoadMore)
-    LaunchedEffect(gridState, state.hasMore) {
-        if (!state.hasMore) return@LaunchedEffect
-        snapshotFlow {
-            val info = gridState.layoutInfo
-            val last = info.visibleItemsInfo.lastOrNull()?.index ?: -1
-            info.totalItemsCount > 0 && last >= info.totalItemsCount - 2
-        }
-            .distinctUntilChanged()
-            .filter { it }
-            .collect { currentOnLoadMore() }
-    }
+    // Al llegar al final de lo que se ve, se piden los 10 siguientes
+    LoadMoreOnScrollEnd(gridState, hasMore = state.hasMore, onLoadMore = onLoadMore)
     Box(
         modifier = Modifier.fillMaxSize().background(AppTheme.colors.background).statusBarsPadding(),
         contentAlignment = Alignment.TopCenter,

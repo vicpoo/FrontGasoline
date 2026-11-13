@@ -1,5 +1,11 @@
 package org.vicpoo.gasolineproject.ui.reservations.company
 
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import org.vicpoo.gasolineproject.ui.common.components.LoadMoreOnScrollEnd
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -79,6 +85,9 @@ fun CompanyReservationsScreen(
     onRequestClick: (String) -> Unit,
 ) {
     val dimens = AppTheme.dimens
+    val gridState = rememberLazyGridState()
+    // Al llegar al final se piden las 10 siguientes
+    LoadMoreOnScrollEnd(gridState, hasMore = state.hasMore, onLoadMore = { onEvent(CompanyReservationsEvent.LoadMore) })
     Box(
         modifier = Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = dimens.screenPadding),
         contentAlignment = Alignment.TopCenter,
@@ -124,6 +133,7 @@ fun CompanyReservationsScreen(
                         ),
                     )
                     else -> LazyVerticalGrid(
+                        state = gridState,
                         columns = GridCells.Adaptive(minSize = 300.dp),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = dimens.spaceXl),
@@ -136,6 +146,18 @@ fun CompanyReservationsScreen(
                                 showRequester = true,
                                 onClick = { onRequestClick(request.id) },
                             )
+                        }
+                        // Indicador mientras faltan solicitudes por pedir a la API
+                        if (state.hasMore) {
+                            item(key = "loading_more", span = { GridItemSpan(maxLineSpan) }) {
+                                Box(Modifier.fillMaxWidth().padding(vertical = dimens.spaceM), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        color = AppTheme.colors.primary,
+                                        strokeWidth = 3.dp,
+                                    )
+                                }
+                            }
                         }
                     }
                 }

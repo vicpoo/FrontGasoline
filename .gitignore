@@ -21,3 +21,4 @@ node_modules/
 keystore.properties
 *.jks
 *.keystore
+Claude outputs/

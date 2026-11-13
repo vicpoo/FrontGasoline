@@ -31,6 +31,8 @@ import org.vicpoo.gasolineproject.domain.reports.RefreshReportUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ApproveReservationUseCase
 import org.vicpoo.gasolineproject.domain.reservations.GetAssignmentsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.GetReservationDetailUseCase
+import org.vicpoo.gasolineproject.domain.reservations.LoadMoreCompanyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.LoadMoreMyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.MarkReservationUpdatesSeenUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ObserveAssignmentDetailUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ObserveCompanyReservationUseCase
@@ -83,6 +85,7 @@ import org.vicpoo.gasolineproject.domain.triprecording.SyncPendingTripsUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.UndoStopTripUseCase
 import org.vicpoo.gasolineproject.domain.trips.LoadTripDetailsUseCase
 import org.vicpoo.gasolineproject.domain.trips.ObserveTripUseCase
+import org.vicpoo.gasolineproject.domain.trips.LoadMoreTripsUseCase
 import org.vicpoo.gasolineproject.domain.trips.ObserveTripsUseCase
 import org.vicpoo.gasolineproject.domain.trips.RefreshTripsUseCase
 import org.vicpoo.gasolineproject.domain.vehicles.usecase.DeleteVehicleUseCase
@@ -160,6 +163,7 @@ val reservationsDomainModule = module {
     // Campana: mis solicitudes y su estado
     factoryOf(::ObserveMyReservationsUseCase)
     factoryOf(::RefreshMyReservationsUseCase)
+    factoryOf(::LoadMoreMyReservationsUseCase)
     factoryOf(::ObserveUnseenReservationUpdatesUseCase)
     factoryOf(::RefreshUnseenReservationUpdatesUseCase)
     factoryOf(::MarkReservationUpdatesSeenUseCase)
@@ -167,6 +171,7 @@ val reservationsDomainModule = module {
     // Pestaña llave: solicitudes de la empresa y su detalle
     factoryOf(::ObserveCompanyReservationsUseCase)
     factoryOf(::RefreshCompanyReservationsUseCase)
+    factoryOf(::LoadMoreCompanyReservationsUseCase)
     factoryOf(::ObserveCompanyReservationUseCase)
     factoryOf(::GetReservationDetailUseCase)
     factoryOf(::ApproveReservationUseCase)
@@ -183,6 +188,7 @@ val tripsDomainModule = module {
     factoryOf(::ObserveTripUseCase)
     factoryOf(::RefreshTripsUseCase)
     factoryOf(::LoadTripDetailsUseCase)
+    factoryOf(::LoadMoreTripsUseCase)
 }
 
 val tripRecordingDomainModule = module {

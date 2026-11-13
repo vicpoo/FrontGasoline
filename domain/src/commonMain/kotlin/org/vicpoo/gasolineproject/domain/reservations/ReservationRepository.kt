@@ -15,10 +15,18 @@ interface ReservationRepository {
     /** Las vuelve a pedir a la API y actualiza la copia del teléfono. */
     suspend fun refreshMine(): AppResult<Unit>
 
+    /** "Mis solicitudes": la API tiene más después de las guardadas / pedir las 10 siguientes. */
+    fun observeMineHasMore(): Flow<Boolean>
+    suspend fun loadMoreMine(): AppResult<Unit>
+
     /** Solicitudes de toda la empresa (pestaña llave), copia del teléfono. */
     fun observeCompany(): Flow<List<ReservationRequest>>
 
     suspend fun refreshCompany(): AppResult<Unit>
+
+    /** Solicitudes de la empresa: la API tiene más después de las guardadas / pedir las 10 siguientes. */
+    fun observeCompanyHasMore(): Flow<Boolean>
+    suspend fun loadMoreCompany(): AppResult<Unit>
 
     /** Una solicitud de la copia del teléfono (para abrir el detalle sin red). */
     fun observeCompanyRequest(reservationId: String): Flow<ReservationRequest?>

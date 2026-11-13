@@ -1,5 +1,9 @@
 package org.vicpoo.gasolineproject.ui.reservations.list
 
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import org.vicpoo.gasolineproject.ui.common.components.LoadMoreOnScrollEnd
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -110,6 +114,9 @@ fun MyReservationsScreen(
     onRequestClick: (String) -> Unit,
 ) {
     val dimens = AppTheme.dimens
+    val gridState = rememberLazyGridState()
+    // Al llegar al final se piden las 10 siguientes
+    LoadMoreOnScrollEnd(gridState, hasMore = state.hasMore, onLoadMore = { onEvent(MyReservationsEvent.LoadMore) })
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -151,6 +158,7 @@ fun MyReservationsScreen(
                     state.groups.isEmpty() -> EmptyView(stringResource(Res.string.requests_empty_filter))
                     // Teléfono: una columna; tablet: varias tarjetas por fila (los meses ocupan toda la fila)
                     else -> LazyVerticalGrid(
+                        state = gridState,
                         columns = GridCells.Adaptive(minSize = 320.dp),
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(top = dimens.spaceL, bottom = dimens.spaceXl),
@@ -165,6 +173,18 @@ fun MyReservationsScreen(
                                 // Las que aún no llegan a la API (sin red / no se pudieron enviar) no tienen detalle
                                 val sent = request.status != ReservationStatus.NOT_SENT && request.status != ReservationStatus.SEND_FAILED
                                 MyReservationCard(request, onClick = if (sent) ({ onRequestClick(request.id) }) else null)
+                            }
+                        }
+                        // Indicador mientras faltan solicitudes por pedir a la API
+                        if (state.hasMore) {
+                            item(key = "loading_more", span = { GridItemSpan(maxLineSpan) }) {
+                                Box(Modifier.fillMaxWidth().padding(vertical = dimens.spaceM), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(28.dp),
+                                        color = AppTheme.colors.primary,
+                                        strokeWidth = 3.dp,
+                                    )
+                                }
                             }
                         }
                     }

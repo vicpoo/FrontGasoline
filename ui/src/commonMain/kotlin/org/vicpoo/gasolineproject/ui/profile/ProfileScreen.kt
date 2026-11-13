@@ -8,6 +8,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -128,7 +129,7 @@ fun ProfileScreen(
             topSpacing = 0.dp,
             action = {
                 // Apariencia: sol = se ve claro, luna = se ve oscuro. Al tocarlo cambia al otro modo
-                ThemeToggleButton(onToggle = { currentlyDark -> onEvent(ProfileEvent.ToggleTheme(currentlyDark)) })
+                ThemeToggleButton(onToggle = { currentlyDark, systemDark -> onEvent(ProfileEvent.ToggleTheme(currentlyDark, systemDark)) })
                 IconButton(onClick = { onEvent(ProfileEvent.Logout) }, enabled = !state.isCheckingLogout) {
                     if (state.isCheckingLogout) {
                         // Mandando lo pendiente antes de salir
@@ -262,9 +263,10 @@ fun ProfileScreen(
  * El ícono cambia con un desvanecido + escala; los colores de la app hacen su propia transición (AppTheme).
  */
 @Composable
-private fun ThemeToggleButton(onToggle: (currentlyDark: Boolean) -> Unit) {
+private fun ThemeToggleButton(onToggle: (currentlyDark: Boolean, systemDark: Boolean) -> Unit) {
     val isDark = AppTheme.colors.isDark
-    IconButton(onClick = { onToggle(isDark) }) {
+    val systemDark = isSystemInDarkTheme()
+    IconButton(onClick = { onToggle(isDark, systemDark) }) {
         AnimatedContent(
             targetState = isDark,
             transitionSpec = {

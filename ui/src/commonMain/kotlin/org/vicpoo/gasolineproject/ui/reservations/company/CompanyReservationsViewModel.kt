@@ -15,6 +15,7 @@ import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushType
+import org.vicpoo.gasolineproject.domain.reservations.LoadMoreCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ObserveCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.RefreshCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
@@ -26,6 +27,8 @@ import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
 class CompanyReservationsViewModel(
     observeRequests: ObserveCompanyReservationsUseCase,
     private val refreshRequests: RefreshCompanyReservationsUseCase,
+    /** Al bajar al final se piden las 10 siguientes. */
+    private val loadMoreRequests: LoadMoreCompanyReservationsUseCase,
     pushEvents: PushEvents,
     /** Se recarga sola al volver la red y marca "sin conexión" en cuanto se pierde. */
     private val connectivity: ConnectivityMonitor,
@@ -40,6 +43,7 @@ class CompanyReservationsViewModel(
     )
 
     private val loading = MutableStateFlow(LoadState())
+    private val loadingMore = MutableStateFlow(false)
     private val filter = MutableStateFlow(CompanyReservationsFilter.PENDING)
     private val _state = MutableStateFlow(CompanyReservationsUiState())
     val state: StateFlow<CompanyReservationsUiState> = _state.asStateFlow()
@@ -53,10 +57,10 @@ class CompanyReservationsViewModel(
             combine(
                 observeRequests(),
                 loading,
-                filter,
+                combine(filter, loadMoreRequests.hasMore(), ::Pair),
                 connectivity.isOnline,
                 lastRefresh.observe(REFRESH_KEY),
-            ) { requests, load, selected, online, lastUpdated ->
+            ) { requests, load, (selected, hasMore), online, lastUpdated ->
                 CompanyReservationsUiState(
                     requests = when (selected) {
                         CompanyReservationsFilter.PENDING -> requests.filter { it.status == ReservationStatus.PENDING }
@@ -64,6 +68,8 @@ class CompanyReservationsViewModel(
                     },
                     filter = selected,
                     pendingCount = requests.count { it.status == ReservationStatus.PENDING },
+                    // Las pendientes ya llegan todas; "Todas" se va completando de 10 en 10 al bajar
+                    hasMore = selected == CompanyReservationsFilter.ALL && hasMore,
                     isInitialLoading = !load.firstLoadDone && requests.isEmpty(),
                     isRefreshing = load.refreshing,
                     isOffline = load.offline || !online,
@@ -79,6 +85,7 @@ class CompanyReservationsViewModel(
     fun onEvent(event: CompanyReservationsEvent) {
         when (event) {
             CompanyReservationsEvent.Refresh -> refresh(initial = false)
+            CompanyReservationsEvent.LoadMore -> loadMore()
             is CompanyReservationsEvent.FilterChanged -> filter.value = event.filter
         }
     }
@@ -98,6 +105,19 @@ class CompanyReservationsViewModel(
                 offline = failure == AppError.NoConnection,
                 error = failure?.takeIf { it != AppError.NoConnection },
             )
+        }
+    }
+
+    /** El usuario llegó al final de la lista: se piden las 10 siguientes. */
+    private fun loadMore() {
+        if (loadingMore.value || !_state.value.hasMore) return
+        loadingMore.value = true
+        viewModelScope.launch {
+            val failure = (loadMoreRequests() as? AppResult.Failure)?.error
+            if (failure != null) {
+                loading.update { it.copy(offline = failure == AppError.NoConnection, error = failure.takeIf { e -> e != AppError.NoConnection }) }
+            }
+            loadingMore.value = false
         }
     }
 

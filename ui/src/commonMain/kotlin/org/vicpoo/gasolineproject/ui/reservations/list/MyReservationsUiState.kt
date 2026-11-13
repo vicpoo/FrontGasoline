@@ -10,6 +10,8 @@ data class MyReservationsUiState(
     val counts: Map<MyReservationsFilter, Int> = emptyMap(),
     /** Solicitudes del filtro agrupadas por mes. */
     val groups: List<ReservationMonthGroup> = emptyList(),
+    /** La API tiene más solicitudes (al bajar al final se piden las 10 siguientes). */
+    val hasMore: Boolean = false,
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     /** Sin conexión: se muestra la última copia guardada. */

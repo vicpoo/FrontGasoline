@@ -2,7 +2,7 @@ package org.vicpoo.gasolineproject.domain.settings
 
 import kotlinx.coroutines.flow.Flow
 
-/** Apariencia de la app que el usuario elige en Perfil. */
+/** Apariencia de la app. Siempre arranca igual que el teléfono; el botón de Perfil la cambia mientras la app está abierta. */
 enum class ThemeMode {
     /** Igual que el teléfono (por defecto). */
     SYSTEM,
@@ -11,8 +11,7 @@ enum class ThemeMode {
 }
 
 /**
- * Dónde se guarda la apariencia (lo implementa data con DataStore).
- * Es del teléfono, no de la cuenta: NO se borra al cerrar sesión.
+ * Dónde vive la apariencia (en data: solo en memoria, así cada vez que se abre la app sigue al teléfono).
  */
 interface ThemePreferenceStore {
     fun observe(): Flow<ThemeMode>

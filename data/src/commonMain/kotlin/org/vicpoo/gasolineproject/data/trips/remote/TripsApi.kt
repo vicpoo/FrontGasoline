@@ -6,6 +6,8 @@ import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.data.network.ApiRoutes
+import org.vicpoo.gasolineproject.data.network.PageDto
+import org.vicpoo.gasolineproject.data.network.toPage
 
 /** ViajeDto de APIGasoline (GET /api/viajes). Fechas en hora local del servidor. */
 @Serializable
@@ -59,7 +61,8 @@ data class MapaRutaDto(
 )
 
 interface TripsApi {
-    suspend fun getTrips(companyId: String?, operatorId: String?): List<ViajeDto>
+    /** Una página de viajes, del más reciente al más antiguo (?pagina=&tamanoPagina=). */
+    suspend fun getTrips(companyId: String?, operatorId: String?, page: Int, pageSize: Int): PageDto<ViajeDto>
 
     /** Cargas de UN viaje (GET /api/cargas-combustible?viajeId=): así funciona con viaje.ver_propios. */
     suspend fun getFuelLoads(tripId: String): List<CargaCombustibleDto>
@@ -68,11 +71,13 @@ interface TripsApi {
 
 class KtorTripsApi(private val client: HttpClient) : TripsApi {
 
-    override suspend fun getTrips(companyId: String?, operatorId: String?): List<ViajeDto> =
+    override suspend fun getTrips(companyId: String?, operatorId: String?, page: Int, pageSize: Int): PageDto<ViajeDto> =
         client.get(ApiRoutes.TRIPS) {
             companyId?.let { parameter("empresaId", it) }
             operatorId?.let { parameter("empleadoOperadorId", it) }
-        }.body()
+            parameter("pagina", page)
+            parameter("tamanoPagina", pageSize)
+        }.toPage()
 
     override suspend fun getFuelLoads(tripId: String): List<CargaCombustibleDto> =
         client.get(ApiRoutes.FUEL_LOADS) { parameter("viajeId", tripId) }.body()

@@ -50,7 +50,13 @@ interface TripsRepository {
     fun observeTrip(id: String): Flow<Trip?>
     suspend fun refresh(): AppResult<Unit>
 
-    /** Cargas y ruta de esos viajes (el historial las pide de 4 en 4). */
+    /** La API tiene más viajes después de los guardados. */
+    fun observeHasMore(): Flow<Boolean>
+
+    /** Pide a la API los 10 viajes siguientes y los agrega al final. */
+    suspend fun loadMore(): AppResult<Unit>
+
+    /** Cargas y ruta de esos viajes (el historial las pide por bloques conforme se muestran). */
     suspend fun loadDetails(tripIds: List<String>): AppResult<Unit>
 }
 
@@ -64,6 +70,12 @@ class ObserveTripUseCase(private val repository: TripsRepository) {
 
 class RefreshTripsUseCase(private val repository: TripsRepository) {
     suspend operator fun invoke(): AppResult<Unit> = repository.refresh()
+}
+
+/** Historial: al bajar al final se piden los 10 viajes siguientes. */
+class LoadMoreTripsUseCase(private val repository: TripsRepository) {
+    fun hasMore(): Flow<Boolean> = repository.observeHasMore()
+    suspend operator fun invoke(): AppResult<Unit> = repository.loadMore()
 }
 
 class LoadTripDetailsUseCase(private val repository: TripsRepository) {

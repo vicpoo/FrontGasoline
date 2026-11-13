@@ -11,7 +11,10 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import org.vicpoo.gasolineproject.data.network.API_MAX_PAGE_SIZE
 import org.vicpoo.gasolineproject.data.network.ApiRoutes
+import org.vicpoo.gasolineproject.data.network.PageDto
+import org.vicpoo.gasolineproject.data.network.toPage
 import org.vicpoo.gasolineproject.data.network.singleFileMultipart
 
 /** CarroDto de APIGasoline (GET /api/carros). Ids Guid -> String; decimal -> Double; enums en camelCase. */
@@ -61,11 +64,27 @@ interface VehicleApi {
 
 class KtorVehicleApi(private val client: HttpClient) : VehicleApi {
 
-    /** Los empleados solo ven los carros de su empresa (?empresaId=...). */
-    override suspend fun getAll(companyId: String?): List<CarroDto> =
-        client.get(ApiRoutes.VEHICLES) {
-            if (companyId != null) parameter("empresaId", companyId)
-        }.body()
+    /**
+     * Los empleados solo ven los carros de su empresa (?empresaId=...).
+     * La API pagina (50 por defecto): la flota es un catálogo que se busca y se ordena en el teléfono,
+     * así que se piden TODAS las páginas (de 200 en 200) para que no falte ningún carro.
+     */
+    override suspend fun getAll(companyId: String?): List<CarroDto> {
+        val all = mutableListOf<CarroDto>()
+        var page = 1
+        while (true) {
+            val result: PageDto<CarroDto> = client.get(ApiRoutes.VEHICLES) {
+                if (companyId != null) parameter("empresaId", companyId)
+                parameter("pagina", page)
+                parameter("tamanoPagina", API_MAX_PAGE_SIZE)
+            }.toPage()
+            all += result.items
+            val total = result.total
+            val done = if (total != null) all.size >= total else result.items.size < API_MAX_PAGE_SIZE
+            if (done || result.items.isEmpty()) return all
+            page++
+        }
+    }
 
     override suspend fun create(request: CarroRequestDto): CarroDto =
         client.post(ApiRoutes.VEHICLES) {

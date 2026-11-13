@@ -4,7 +4,7 @@ import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.trips.Trip
 
 data class TripHistoryUiState(
-    /** Solo los viajes que ya se muestran (se agregan de 4 en 4 al bajar). */
+    /** Solo los viajes que ya se muestran (se agregan de 10 en 10 al bajar). */
     val trips: List<Trip> = emptyList(),
     /** Faltan viajes por mostrar (se muestra el indicador al final de la lista). */
     val hasMore: Boolean = false,

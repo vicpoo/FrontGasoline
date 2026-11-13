@@ -19,8 +19,8 @@ class ThemeViewModelTest : MainDispatcherTest() {
     @Test
     fun followsThePhoneByDefaultAndChangesWhenTheUserPicksAMode() = runTest {
         val store = FakeThemePreferenceStore()
-        val viewModel = ThemeViewModel(ObserveThemeModeUseCase(store))
         val setThemeMode = SetThemeModeUseCase(store)
+        val viewModel = ThemeViewModel(ObserveThemeModeUseCase(store), setThemeMode)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.themeMode.collect {} }
 
         // Sin elegir nada: igual que el teléfono
@@ -31,5 +31,9 @@ class ThemeViewModelTest : MainDispatcherTest() {
 
         setThemeMode(ThemeMode.LIGHT)
         assertEquals(ThemeMode.LIGHT, viewModel.themeMode.value)
+
+        // El teléfono cambió de modo: se vuelve a seguir al teléfono
+        viewModel.followSystem()
+        assertEquals(ThemeMode.SYSTEM, viewModel.themeMode.value)
     }
 }

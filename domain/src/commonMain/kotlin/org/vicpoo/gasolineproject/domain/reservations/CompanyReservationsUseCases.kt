@@ -14,6 +14,12 @@ class RefreshCompanyReservationsUseCase(private val repository: ReservationRepos
     suspend operator fun invoke(): AppResult<Unit> = repository.refreshCompany()
 }
 
+/** Pestaña llave: al bajar al final se piden las 10 siguientes. */
+class LoadMoreCompanyReservationsUseCase(private val repository: ReservationRepository) {
+    fun hasMore(): Flow<Boolean> = repository.observeCompanyHasMore()
+    suspend operator fun invoke(): AppResult<Unit> = repository.loadMoreCompany()
+}
+
 /** Detalle de la solicitud: lo guardado en el teléfono se ve al instante; el detalle completo llega de la API. */
 class ObserveCompanyReservationUseCase(private val repository: ReservationRepository) {
     operator fun invoke(reservationId: String): Flow<ReservationRequest?> = repository.observeCompanyRequest(reservationId)

@@ -9,7 +9,10 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
+import org.vicpoo.gasolineproject.data.network.API_MAX_PAGE_SIZE
 import org.vicpoo.gasolineproject.data.network.ApiRoutes
+import org.vicpoo.gasolineproject.data.network.PageDto
+import org.vicpoo.gasolineproject.data.network.toPage
 
 /** CreateSolicitudReservaRequest de APIGasoline (POST /api/solicitudes-reserva). El motivo es obligatorio. */
 @Serializable
@@ -127,11 +130,17 @@ data class ReservationNotificationDto(
 interface ReservationApi {
     suspend fun create(request: CreateReservationRequestDto)
 
-    /** GET /api/solicitudes-reserva?empleadoSolicitanteId= (la API solo regresa las propias sin solicitud.ver_todas). */
-    suspend fun getByEmployee(employeeId: String): List<ReservationRequestDto>
+    /**
+     * GET /api/solicitudes-reserva?empleadoSolicitanteId=&pagina=&tamanoPagina= (la API solo regresa las
+     * propias sin solicitud.ver_todas). De la más reciente a la más antigua.
+     */
+    suspend fun getByEmployee(employeeId: String, page: Int, pageSize: Int): PageDto<ReservationRequestDto>
 
-    /** GET /api/solicitudes-reserva (con solicitud.ver_todas: todas las de la empresa del token). */
-    suspend fun getCompany(): List<ReservationRequestDto>
+    /** GET /api/solicitudes-reserva?pagina=&tamanoPagina= (con solicitud.ver_todas: las de la empresa del token). */
+    suspend fun getCompany(page: Int, pageSize: Int): PageDto<ReservationRequestDto>
+
+    /** GET /api/solicitudes-reserva?estado=Pendiente: TODAS las pendientes de la empresa (las que hay que decidir). */
+    suspend fun getCompanyPending(): List<ReservationRequestDto>
 
     suspend fun getDetail(reservationId: String): ReservationDetailDto
 
@@ -154,11 +163,24 @@ class KtorReservationApi(private val client: HttpClient) : ReservationApi {
         }
     }
 
-    override suspend fun getByEmployee(employeeId: String): List<ReservationRequestDto> =
-        client.get(ApiRoutes.RESERVATION_REQUESTS) { parameter("empleadoSolicitanteId", employeeId) }.body()
+    override suspend fun getByEmployee(employeeId: String, page: Int, pageSize: Int): PageDto<ReservationRequestDto> =
+        client.get(ApiRoutes.RESERVATION_REQUESTS) {
+            parameter("empleadoSolicitanteId", employeeId)
+            parameter("pagina", page)
+            parameter("tamanoPagina", pageSize)
+        }.toPage()
 
-    override suspend fun getCompany(): List<ReservationRequestDto> =
-        client.get(ApiRoutes.RESERVATION_REQUESTS).body()
+    override suspend fun getCompany(page: Int, pageSize: Int): PageDto<ReservationRequestDto> =
+        client.get(ApiRoutes.RESERVATION_REQUESTS) {
+            parameter("pagina", page)
+            parameter("tamanoPagina", pageSize)
+        }.toPage()
+
+    override suspend fun getCompanyPending(): List<ReservationRequestDto> =
+        client.get(ApiRoutes.RESERVATION_REQUESTS) {
+            parameter("estado", "Pendiente")
+            parameter("tamanoPagina", API_MAX_PAGE_SIZE)
+        }.body()
 
     override suspend fun getDetail(reservationId: String): ReservationDetailDto =
         client.get(ApiRoutes.reservation(reservationId)).body()

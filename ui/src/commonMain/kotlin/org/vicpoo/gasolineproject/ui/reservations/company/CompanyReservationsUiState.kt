@@ -10,6 +10,8 @@ data class CompanyReservationsUiState(
     val requests: List<ReservationRequest> = emptyList(),
     val filter: CompanyReservationsFilter = CompanyReservationsFilter.PENDING,
     val pendingCount: Int = 0,
+    /** La API tiene más solicitudes (al bajar al final se piden las 10 siguientes). */
+    val hasMore: Boolean = false,
     val isInitialLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val isOffline: Boolean = false,
