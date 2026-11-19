@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.session.LogoutAction
+import org.vicpoo.gasolineproject.domain.session.OpenTripCheck
 import org.vicpoo.gasolineproject.domain.sync.PendingBeforeLogoutUseCase
 import org.vicpoo.gasolineproject.domain.profile.ObserveProfileUseCase
 import org.vicpoo.gasolineproject.domain.profile.RefreshProfileUseCase
@@ -29,6 +30,7 @@ class ProfileViewModel(
     private val logout: LogoutAction,
     private val pendingBeforeLogout: PendingBeforeLogoutUseCase,
     private val setThemeMode: SetThemeModeUseCase,
+    private val openTrip: OpenTripCheck,
 ) : ViewModel() {
 
     private val local = MutableStateFlow(ProfileUiState())
@@ -57,10 +59,10 @@ class ProfileViewModel(
             ProfileEvent.DismissPhotoError -> local.update { it.copy(photoError = null, pendingPhoto = null) }
             ProfileEvent.Logout -> checkPendingAndLogout()
             ProfileEvent.LogoutAnyway -> {
-                local.update { it.copy(logoutPendingCount = null) }
+                local.update { it.copy(logoutWarning = null) }
                 doLogout()
             }
-            ProfileEvent.DismissLogoutWarning -> local.update { it.copy(logoutPendingCount = null) }
+            ProfileEvent.DismissLogoutWarning -> local.update { it.copy(logoutWarning = null) }
             // Se guarda en el teléfono; App() lo escucha y los colores cambian con una transición suave.
             // Si el modo elegido es el mismo que el del teléfono se guarda SYSTEM: la app vuelve a seguir al teléfono.
             is ProfileEvent.ToggleTheme -> viewModelScope.launch {
@@ -77,17 +79,23 @@ class ProfileViewModel(
     }
 
     /**
-     * Cerrar sesión borra lo guardado en el teléfono. Si hay viajes, recargas o solicitudes que todavía
-     * no llegan a la API, primero se intenta mandarlos; si siguen pendientes (sin red o rechazados) se
-     * avisa en lugar de borrarlos sin decir nada.
+     * Antes de cerrar sesión se intenta mandar lo pendiente y se avisa si:
+     * - Hay un viaje abierto: NO se borra; queda en pausa y se retoma al volver a entrar.
+     * - Quedan registros sin enviar que SÍ se borran (solicitudes, vehículos...).
+     * Sin nada de eso se sale directo.
      */
     private fun checkPendingAndLogout() {
         if (local.value.isCheckingLogout) return
         viewModelScope.launch {
             local.update { it.copy(isCheckingLogout = true) }
-            val pending = pendingBeforeLogout()
+            val lost = pendingBeforeLogout()
+            val trip = openTrip()
             local.update { it.copy(isCheckingLogout = false) }
-            if (pending == 0) doLogout() else local.update { it.copy(logoutPendingCount = pending) }
+            if (lost == 0 && trip == null) {
+                doLogout()
+            } else {
+                local.update { it.copy(logoutWarning = LogoutWarning(openTrip = trip, lostCount = lost)) }
+            }
         }
     }
 

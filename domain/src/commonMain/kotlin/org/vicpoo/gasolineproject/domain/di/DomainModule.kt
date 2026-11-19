@@ -50,6 +50,7 @@ import org.vicpoo.gasolineproject.domain.session.LogoutAction
 import org.vicpoo.gasolineproject.domain.settings.ObserveThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.settings.SetThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncCoordinator
+import org.vicpoo.gasolineproject.domain.sync.CountLostOnLogoutUseCase
 import org.vicpoo.gasolineproject.domain.sync.CountPendingUseCase
 import org.vicpoo.gasolineproject.domain.sync.ObservePendingSummaryUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingBeforeLogoutUseCase
@@ -112,6 +113,7 @@ val commonDomainModule = module {
     factory { SyncAllPendingUseCase(getAll<PendingSyncTask>()) }
     factory { PendingBeforeLogoutUseCase(getAll<PendingSyncTask>()) }
     factory { CountPendingUseCase(getAll<PendingSyncTask>()) }
+    factory { CountLostOnLogoutUseCase(getAll<PendingSyncTask>()) }
     factory { ObservePendingSummaryUseCase(getAll<PendingSyncTask>()) }
     single(createdAtStart = true) {
         BackgroundSyncCoordinator(sessionReader = get(), scheduler = get(), connectivity = get(), appScope = get())

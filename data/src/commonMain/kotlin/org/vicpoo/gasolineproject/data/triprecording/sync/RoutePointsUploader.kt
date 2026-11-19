@@ -35,6 +35,7 @@ import kotlin.math.round
 /**
  * Paso 2: sube los puntos GPS en lotes. La API ignora duplicados, así que reenviar un lote es seguro.
  * Un lote rechazado de forma definitiva (400) se descarta y se cuenta, para no bloquear el viaje.
+ * Un error temporal (5xx) deja el lote pendiente y devuelve [Step.Deferred].
  */
 internal class RoutePointsUploader(
     private val store: TripRecordingLocalStore,
@@ -54,8 +55,10 @@ internal class RoutePointsUploader(
                 }
                 is AppResult.Failure -> {
                     if (result.error.stopsSync()) return Step.Stop(result.error)
-                    // Error temporal (5xx): se intenta en la próxima vuelta
-                    if (!SyncRejection.isPermanent(result.error.httpCode())) return Step.Rejected
+                    // Error temporal (5xx, 408, 429; ej. 503 con Retry-After cuando la API pierde un
+                    // interbloqueo de SQL Server): no se descarta nada y se reintenta en la próxima vuelta.
+                    // Deferred (no Rejected) para que el registro de envíos lo muestre como error temporal.
+                    if (!SyncRejection.isPermanent(result.error.httpCode())) return Step.Deferred(result.error)
                     // Rechazo definitivo (400): reenviarlo daría lo mismo. Se salta el lote y se cuenta
                     sent += batch.size
                     val total = sent

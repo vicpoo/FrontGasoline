@@ -53,25 +53,37 @@ interface PendingSyncTask {
      * Cerrar sesión los borra, así que antes se avisa al usuario (ver [PendingBeforeLogoutUseCase]).
      */
     suspend fun pendingCount(): Int = 0
+
+    /**
+     * Cuántos de esos registros se BORRAN al cerrar sesión (o al entrar con otra cuenta).
+     * Por omisión, todos los pendientes. Los viajes no se borran: se guardan por cuenta y se
+     * retoman al volver a entrar, así que su feature regresa 0.
+     */
+    suspend fun lostOnLogoutCount(): Int = pendingCount()
 }
 
 /**
  * Antes de "Salir": si hay registros que solo existen en el teléfono, intenta mandarlos una vez y regresa
- * cuántos siguen pendientes (0 = se puede cerrar sesión sin perder nada).
+ * cuántos se BORRARÍAN al salir (0 = se puede cerrar sesión sin perder nada).
+ * Los viajes se intentan mandar también (así la API recibe la última ruta), pero no cuentan:
+ * se quedan guardados en el teléfono para esa cuenta (ver [PendingSyncTask.lostOnLogoutCount]).
  */
 class PendingBeforeLogoutUseCase(private val tasks: List<PendingSyncTask>) {
     suspend operator fun invoke(): Int {
-        if (countPending() == 0) return 0
+        if (tasks.sumOf { it.pendingCount() } == 0) return 0
         SyncAllPendingUseCase(tasks)()
-        return countPending()
+        return tasks.sumOf { it.lostOnLogoutCount() }
     }
-
-    private suspend fun countPending(): Int = tasks.sumOf { it.pendingCount() }
 }
 
 /** Cuántos registros de TODA la app siguen solo en el teléfono. */
 class CountPendingUseCase(private val tasks: List<PendingSyncTask>) {
     suspend operator fun invoke(): Int = tasks.sumOf { it.pendingCount() }
+}
+
+/** Cuántos registros sin enviar se borrarían si la sesión de esta cuenta se descarta (los viajes no cuentan). */
+class CountLostOnLogoutUseCase(private val tasks: List<PendingSyncTask>) {
+    suspend operator fun invoke(): Int = tasks.sumOf { it.lostOnLogoutCount() }
 }
 
 /** Pendientes de un grupo (ej. 2 vehículos sin enviar). */

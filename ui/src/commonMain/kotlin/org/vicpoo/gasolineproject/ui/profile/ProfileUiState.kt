@@ -3,6 +3,7 @@ package org.vicpoo.gasolineproject.ui.profile
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.profile.Profile
+import org.vicpoo.gasolineproject.domain.session.OpenTripSummary
 
 data class ProfileUiState(
     val profile: Profile? = null,
@@ -13,6 +14,16 @@ data class ProfileUiState(
     val pendingPhoto: PickedFile? = null,
     /** "Salir": se está intentando mandar lo pendiente antes de cerrar sesión. */
     val isCheckingLogout: Boolean = false,
-    /** Registros que solo existen en el teléfono y se perderían al salir (muestra el aviso). */
-    val logoutPendingCount: Int? = null,
+    /** Aviso antes de "Salir" (viaje abierto que queda en pausa y/o registros que se borrarían). */
+    val logoutWarning: LogoutWarning? = null,
+)
+
+/**
+ * Lo que se le dice al usuario antes de cerrar sesión.
+ * @param openTrip viaje abierto: NO se borra, queda en pausa y se retoma al volver a entrar.
+ * @param lostCount registros sin enviar (solicitudes, vehículos...) que SÍ se borran del teléfono.
+ */
+data class LogoutWarning(
+    val openTrip: OpenTripSummary?,
+    val lostCount: Int,
 )

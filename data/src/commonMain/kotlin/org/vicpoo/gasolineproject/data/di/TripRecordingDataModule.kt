@@ -22,6 +22,9 @@ import org.vicpoo.gasolineproject.data.triprecording.remote.TripRecordingApi
 import org.vicpoo.gasolineproject.data.triprecording.sync.TripRecordingSyncer
 import org.vicpoo.gasolineproject.data.triprecording.sync.TripSyncLog
 import org.vicpoo.gasolineproject.domain.session.LogoutListener
+import org.vicpoo.gasolineproject.domain.session.OpenTripCheck
+import org.vicpoo.gasolineproject.domain.session.OpenTripSummary
+import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.domain.triprecording.AssignedVehicleRepository
 import org.vicpoo.gasolineproject.domain.triprecording.CostCenterRepository
@@ -75,7 +78,7 @@ val tripRecordingDataModule = module {
 
     // Una sola instancia: la usan los casos de uso (TripRecordingSync) y el trabajo en segundo plano (PendingSyncTask)
     single {
-        TripRecordingSyncer(store = get(), api = get(), appScope = get(), scheduler = get(), log = get())
+        TripRecordingSyncer(store = get(), api = get(), appScope = get(), scheduler = get(), log = get(), sessionReader = get())
     } binds arrayOf(TripRecordingSync::class, PendingSyncTask::class)
 
     singleOf(::SyncStatusRepositoryImpl) { bind<SyncStatusRepository>() }
@@ -86,19 +89,34 @@ val tripRecordingDataModule = module {
         bind<TripTracker>()
     }
 
-    // Al cerrar sesión: se detiene el GPS y se borra todo lo guardado
+    // Al cerrar sesión (o al entrar otra cuenta): el viaje abierto queda en pausa y se apaga el GPS.
+    // Los viajes NO se borran (en curso o sin enviar): se guardan por cuenta y su dueño los retoma
+    // al volver a entrar. Antes se borraban y en la API se quedaban "en curso" para siempre.
+    // Lo demás (carros asignados, centros de costo, bitácora) se vuelve a descargar al entrar.
     single<LogoutListener>(named("tripRecording")) {
         val tracker = get<GpsTripTracker>()
-        val store = get<TripRecordingLocalStore>()
         val assigned = get<AssignedVehicleRepositoryImpl>()
         val costCenters = get<CostCenterRepositoryImpl>()
         val syncLog = get<TripSyncLog>()
         LogoutListener {
-            tracker.reset()
-            store.clearAll()
+            tracker.onSessionEnded()
             assigned.clear()
             costCenters.clear()
             syncLog.clear()
+        }
+    }
+
+    // Perfil pregunta si hay un viaje abierto antes de "Salir" (sin depender de esta feature)
+    single<OpenTripCheck> {
+        val tracker = get<TripTracker>()
+        OpenTripCheck {
+            tracker.session.value.trip?.let { trip ->
+                OpenTripSummary(
+                    vehicleTitle = trip.vehicle.title,
+                    plates = trip.vehicle.plates,
+                    waitingForFinish = trip.phase == TripPhase.STOPPED,
+                )
+            }
         }
     }
 }

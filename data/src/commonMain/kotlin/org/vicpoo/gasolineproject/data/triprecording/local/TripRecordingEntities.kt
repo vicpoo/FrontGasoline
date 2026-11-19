@@ -146,6 +146,13 @@ data class RecordingSnapshot(
     val fuel: List<FuelEntity> = emptyList(),
 ) {
     val activeTrip: TripEntity? get() = trips.firstOrNull { it.running }
+
+    /** Viaje abierto de esa cuenta (cada cuenta solo ve y retoma los suyos). */
+    fun activeTripOf(employeeId: String): TripEntity? = trips.firstOrNull { it.running && it.employeeId == employeeId }
+
+    /** Viajes de esa cuenta (en curso o pendientes de enviar). null = sin sesión: ninguno. */
+    fun tripsOf(employeeId: String?): List<TripEntity> =
+        if (employeeId == null) emptyList() else trips.filter { it.employeeId == employeeId }
 }
 
 /** Un punto GPS (una línea del archivo .jsonl del viaje). */

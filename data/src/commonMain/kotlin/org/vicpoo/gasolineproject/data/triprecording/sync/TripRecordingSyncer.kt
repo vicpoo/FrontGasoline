@@ -14,6 +14,7 @@ import org.vicpoo.gasolineproject.domain.common.httpCode
 import org.vicpoo.gasolineproject.domain.common.serverMessage
 import org.vicpoo.gasolineproject.domain.common.AppScope
 import org.vicpoo.gasolineproject.data.network.safeApiCall
+import org.vicpoo.gasolineproject.domain.session.SessionReader
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncKind
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
@@ -22,6 +23,7 @@ import org.vicpoo.gasolineproject.domain.sync.stopsSync
 import org.vicpoo.gasolineproject.data.triprecording.local.FuelEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.FuelSyncState
 import org.vicpoo.gasolineproject.data.triprecording.local.PauseEntity
+import org.vicpoo.gasolineproject.data.triprecording.local.RecordingSnapshot
 import org.vicpoo.gasolineproject.data.triprecording.local.TrackPointEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.TripEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.TripRecordingLocalStore
@@ -64,6 +66,10 @@ import kotlin.math.round
  * Un lote de puntos GPS rechazado se descarta (se cuenta en pointsDiscarded) para no bloquear el viaje.
  *
  * Cada paso queda en la bitácora [log] (pantalla "Envíos pendientes") con su resultado y duración.
+ *
+ * Solo se envían y cuentan los viajes de la cuenta con sesión ([sessionReader]): los de otra cuenta
+ * que usó el teléfono se quedan guardados hasta que su dueño vuelva a entrar (con el token de otra
+ * persona la API los rechazaría). Sin [sessionReader] (pruebas) se toman todos.
  */
 class TripRecordingSyncer(
     private val store: TripRecordingLocalStore,
@@ -71,6 +77,7 @@ class TripRecordingSyncer(
     private val appScope: AppScope,
     private val scheduler: BackgroundSyncScheduler,
     private val log: TripSyncLog? = null,
+    private val sessionReader: SessionReader? = null,
 ) : TripRecordingSync, PendingSyncTask {
 
     private val mutex = Mutex()
@@ -109,14 +116,23 @@ class TripRecordingSyncer(
      */
     override suspend fun pendingCount(): Int {
         val snapshot = store.current()
-        return snapshot.trips.size +
-            snapshot.fuel.count { it.state != FuelSyncState.SYNCED || it.syncErrorMessage != null }
+        val trips = ownTrips(snapshot)
+        val tripIds = trips.mapTo(HashSet()) { it.localId }
+        return trips.size +
+            snapshot.fuel.count { it.tripLocalId in tripIds && (it.state != FuelSyncState.SYNCED || it.syncErrorMessage != null) }
     }
+
+    /** Los viajes (y sus recargas) no se borran al cerrar sesión: se guardan para su dueño. */
+    override suspend fun lostOnLogoutCount(): Int = 0
+
+    /** Viajes de la cuenta con sesión (todos si no hay [sessionReader]). */
+    private suspend fun ownTrips(snapshot: RecordingSnapshot): List<TripEntity> =
+        if (sessionReader == null) snapshot.trips else snapshot.tripsOf(sessionReader.current()?.employeeId)
 
     override suspend fun sync(): AppResult<Unit> = mutex.withLock {
         syncing.value = true
         try {
-            for (trip in store.current().trips) {
+            for (trip in ownTrips(store.current())) {
                 val result = syncTrip(trip.localId)
                 if (result is AppResult.Failure) {
                     if (result.error == AppError.NoConnection) scheduler.requestWhenOnline()

@@ -3,6 +3,8 @@ package org.vicpoo.gasolineproject.data.triprecording
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -43,6 +45,10 @@ import kotlin.uuid.Uuid
  * - En pausa y con el viaje detenido (esperando kilometraje y foto) el GPS está apagado.
  * Vive en el AppScope (no en una pantalla), y el servicio en primer plano lo mantiene vivo
  * con la pantalla apagada.
+ *
+ * Viajes por cuenta: cada viaje guarda el empleado que lo inició. Solo se retoma el de la cuenta
+ * con sesión; al cerrar sesión (o si la sesión termina sola) el viaje se pone en pausa y se queda
+ * guardado en el teléfono hasta que su dueño vuelva a entrar (aunque entre otra cuenta en medio).
  */
 class GpsTripTracker(
     private val store: TripRecordingLocalStore,
@@ -72,12 +78,20 @@ class GpsTripTracker(
     private var lastFinishedLocalId: String? = null
 
     init {
-        // Si la app se cerró con un viaje en curso, se reanuda al abrirla
-        appScope.scope.launch { restore() }
+        // Al abrir la app y en cada inicio de sesión se retoma el viaje abierto de ESA cuenta.
+        // Sin sesión (cerró sesión o la sesión terminó sola) el viaje queda en pausa.
+        appScope.scope.launch {
+            sessionReader.session
+                .map { it?.employeeId }
+                .distinctUntilChanged()
+                .collect { employeeId -> if (employeeId == null) onSessionEnded() else restore(employeeId) }
+        }
     }
 
-    private suspend fun restore() = mutex.withLock {
-        val active = store.current().activeTrip ?: return@withLock
+    private suspend fun restore(employeeId: String) = mutex.withLock {
+        // Ya está cargado (ej. se acaba de iniciar): no se vuelve a leer
+        if (state.value.trip != null) return@withLock
+        val active = store.current().activeTripOf(employeeId) ?: return@withLock
         val route = store.readRoute(active.localId)
         routeFilter.reset(from = route.lastOrNull())
         state.value = TrackingSession(
@@ -153,10 +167,13 @@ class GpsTripTracker(
 
     // ---------------- Pausa / reanudar ----------------
 
+    override suspend fun pause(): AppResult<RecordedTrip> = mutex.withLock { pauseLocked(reason = null) }
+
+    /** Pone el viaje en pausa (llamar con [mutex] tomado). */
     @OptIn(ExperimentalUuidApi::class)
-    override suspend fun pause(): AppResult<RecordedTrip> = mutex.withLock {
-        val trip = state.value.trip ?: return@withLock AppResult.Failure(AppError.NotFound)
-        if (trip.phase != TripPhase.RUNNING) return@withLock AppResult.Success(trip)
+    private suspend fun pauseLocked(reason: String?): AppResult<RecordedTrip> {
+        val trip = state.value.trip ?: return AppResult.Failure(AppError.NotFound)
+        if (trip.phase != TripPhase.RUNNING) return AppResult.Success(trip)
 
         stopTracking()
         val now = clock.nowMillis()
@@ -168,13 +185,14 @@ class GpsTripTracker(
                     startedAtMillis = now,
                     lat = entity.lastLat,
                     lng = entity.lastLng,
+                    reason = reason,
                 ),
             )
-        } ?: return@withLock AppResult.Failure(AppError.NotFound)
+        } ?: return AppResult.Failure(AppError.NotFound)
 
         state.update { it.copy(trip = updated.toDomain(), gpsActive = false) }
         sync.requestSync()
-        AppResult.Success(updated.toDomain())
+        return AppResult.Success(updated.toDomain())
     }
 
     override suspend fun resume(): AppResult<RecordedTrip> = mutex.withLock {
@@ -389,8 +407,14 @@ class GpsTripTracker(
     private fun TripEntity.lastPoint(): GeoPoint? =
         if (lastLat != null && lastLng != null) GeoPoint(lastLat, lastLng) else null
 
-    /** Al cerrar sesión: se detiene el GPS (los datos los borra el LogoutListener). */
-    fun reset() {
+    /**
+     * Al cerrar sesión (o si la sesión termina sola): si el viaje iba en curso se pone en pausa, se
+     * apaga el GPS y se deja de mostrar. El viaje NO se borra: sigue en el teléfono (y en curso en la
+     * API) y se retoma cuando su dueño vuelva a entrar. Si estaba esperando "Registrar Viaje" se queda así.
+     */
+    suspend fun onSessionEnded() = mutex.withLock {
+        if (state.value.trip == null && gpsJob == null) return@withLock
+        pauseLocked(reason = LOGOUT_PAUSE_REASON)
         stopTracking()
         state.value = TrackingSession()
     }
@@ -406,5 +430,8 @@ class GpsTripTracker(
         const val GPS_TIMEOUT_MS = 30_000L
         const val SYNC_EVERY_TICKS = 12 // 12 x 5 s = cada minuto
         const val STALE_FIX_MS = 2 * 60_000L
+
+        /** Motivo de la pausa automática (la API lo guarda con la pausa). */
+        const val LOGOUT_PAUSE_REASON = "Cierre de sesión en la app"
     }
 }

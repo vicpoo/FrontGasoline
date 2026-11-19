@@ -9,7 +9,7 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.session.LocalDataOwner
 import org.vicpoo.gasolineproject.domain.session.Session
-import org.vicpoo.gasolineproject.domain.sync.CountPendingUseCase
+import org.vicpoo.gasolineproject.domain.sync.CountLostOnLogoutUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.testing.FakeLocalDataOwnerStore
 import org.vicpoo.gasolineproject.testing.testSession
@@ -43,7 +43,7 @@ class LoginUseCaseTest {
     private val otra = Session(userId = "user-2", email = "otra@polarsoft.mx")
 
     private fun useCase(repository: AuthRepository, owners: FakeLocalDataOwnerStore, pending: Int) =
-        LoginUseCase(repository, owners, CountPendingUseCase(listOf(Pending(pending))))
+        LoginUseCase(repository, owners, CountLostOnLogoutUseCase(listOf(Pending(pending))))
 
     @Test
     fun mismaCuenta_conservaLosPendientes() = runTest {
@@ -110,5 +110,25 @@ class LoginUseCaseTest {
 
         assertEquals(listOf("test@polarsoft.mx" to false), repository.calls)
         assertEquals("user-1", owners.owner?.userId)
+    }
+
+    /** Viaje de la otra cuenta: se guarda aparte, no se borra ni bloquea la entrada. */
+    private class KeptTrip : PendingSyncTask {
+        override suspend fun syncPending(): AppResult<Unit> = AppResult.Success(Unit)
+        override suspend fun pendingCount(): Int = 1
+        override suspend fun lostOnLogoutCount(): Int = 0
+    }
+
+    @Test
+    fun otraCuentaConSoloUnViajeGuardado_entraSinAvisar() = runTest {
+        val repository = FakeAuthRepository(AppResult.Success(otra))
+
+        val result = LoginUseCase(repository, FakeLocalDataOwnerStore(chofer), CountLostOnLogoutUseCase(listOf(KeptTrip())))(
+            "otra@polarsoft.mx",
+            "x",
+        )
+
+        assertIs<LoginResult.Success>(result)
+        assertEquals(listOf("otra@polarsoft.mx" to true), repository.calls)
     }
 }

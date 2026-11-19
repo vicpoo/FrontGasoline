@@ -61,6 +61,10 @@ import org.vicpoo.gasolineproject.ui.resources.cd_theme_to_light
 import org.vicpoo.gasolineproject.ui.resources.logout_pending_cancel
 import org.vicpoo.gasolineproject.ui.resources.logout_pending_confirm
 import org.vicpoo.gasolineproject.ui.resources.logout_pending_message
+import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_cancel
+import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_confirm
+import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_finish_message
+import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_message
 import org.vicpoo.gasolineproject.ui.resources.profile_license_ok
 import org.vicpoo.gasolineproject.ui.resources.profile_license_pending
 import org.vicpoo.gasolineproject.ui.resources.profile_license_title
@@ -233,16 +237,31 @@ fun ProfileScreen(
         )
     }
 
-    state.logoutPendingCount?.let { count ->
+    state.logoutWarning?.let { warning ->
+        val trip = warning.openTrip
+        val tripText = trip?.let {
+            val vehicle = "${it.vehicleTitle} (${it.plates})"
+            if (it.waitingForFinish) {
+                stringResource(Res.string.logout_open_trip_finish_message, vehicle)
+            } else {
+                stringResource(Res.string.logout_open_trip_message, vehicle)
+            }
+        }
+        val lostText = warning.lostCount.takeIf { it > 0 }?.let { stringResource(Res.string.logout_pending_message, it) }
         ConfirmDialog(
-            message = stringResource(Res.string.logout_pending_message, count),
+            message = listOfNotNull(tripText, lostText).joinToString("\n\n"),
             // Mismo patrón que "¿Está seguro de eliminar?": confirmar = la acción, cancelar = quedarse.
             // Tocar fuera o deslizar también cancela, así que nunca se pierde nada por accidente.
-            confirmText = stringResource(Res.string.logout_pending_confirm),
-            dismissText = stringResource(Res.string.logout_pending_cancel),
+            confirmText = stringResource(
+                if (warning.lostCount > 0) Res.string.logout_pending_confirm else Res.string.logout_open_trip_confirm,
+            ),
+            dismissText = stringResource(
+                if (warning.lostCount > 0) Res.string.logout_pending_cancel else Res.string.logout_open_trip_cancel,
+            ),
             onConfirm = { onEvent(ProfileEvent.LogoutAnyway) },
             onDismiss = { onEvent(ProfileEvent.DismissLogoutWarning) },
             icon = AppIcons.Warning,
+            iconTint = if (warning.lostCount > 0) AppTheme.colors.danger else AppTheme.colors.secondary,
         )
     }
 

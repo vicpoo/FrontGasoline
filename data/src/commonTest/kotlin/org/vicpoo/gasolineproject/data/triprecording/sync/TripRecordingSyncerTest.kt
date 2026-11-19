@@ -534,4 +534,44 @@ class TripRecordingSyncerTest {
 
         assertNull(assertNotNull(savedTrip()).serverId)
     }
+
+    @Test
+    fun soloSeMandanYCuentanLosViajesDeLaCuentaConSesion() = runTest {
+        val sessions = org.vicpoo.gasolineproject.testing.FakeSessionReader(
+            org.vicpoo.gasolineproject.testing.testSession(employeeId = "emp-2"),
+        )
+        val perAccount = TripRecordingSyncer(
+            store = store,
+            api = KtorTripRecordingApi(api.client),
+            appScope = AppScope(CoroutineScope(StandardTestDispatcher())),
+            scheduler = scheduler,
+            sessionReader = sessions,
+        )
+        seed(trip(running = true)) // es de emp-1
+        api.handler = { error("No debe mandar el viaje de otra cuenta: ${it.url.encodedPath}") }
+
+        assertEquals(AppResult.Success(Unit), perAccount.sync())
+        assertEquals(0, perAccount.pendingCount())
+        assertEquals(0, perAccount.lostOnLogoutCount(), "Los viajes nunca se borran al salir")
+        assertTrue(api.requests.isEmpty())
+
+        sessions.state.value = org.vicpoo.gasolineproject.testing.testSession(employeeId = "emp-1")
+        assertEquals(1, perAccount.pendingCount())
+    }
+
+    @Test
+    fun sinSesion_noSeMandaNada() = runTest {
+        val perAccount = TripRecordingSyncer(
+            store = store,
+            api = KtorTripRecordingApi(api.client),
+            appScope = AppScope(CoroutineScope(StandardTestDispatcher())),
+            scheduler = scheduler,
+            sessionReader = org.vicpoo.gasolineproject.testing.FakeSessionReader(null),
+        )
+        seed(trip(running = false))
+        api.handler = { error("Sin sesión no se envía nada") }
+
+        assertEquals(AppResult.Success(Unit), perAccount.sync())
+        assertEquals(1, store.current().trips.size)
+    }
 }

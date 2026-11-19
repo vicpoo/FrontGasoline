@@ -47,4 +47,31 @@ class PendingBeforeLogoutTest {
 
         assertEquals(3, PendingBeforeLogoutUseCase(listOf(trips, vehicles))())
     }
+
+    /** Viajes: se intentan mandar, pero no se borran al salir (se guardan para esa cuenta). */
+    private class KeptTask(var pending: Int) : PendingSyncTask {
+        var syncCalls = 0
+        override suspend fun syncPending(): AppResult<Unit> {
+            syncCalls++
+            return AppResult.Failure(AppError.NoConnection)
+        }
+        override suspend fun pendingCount(): Int = pending
+        override suspend fun lostOnLogoutCount(): Int = 0
+    }
+
+    @Test
+    fun viajeEnCurso_seIntentaMandar_peroNoCuentaComoPerdido() = runTest {
+        val trips = KeptTask(pending = 1)
+
+        assertEquals(0, PendingBeforeLogoutUseCase(listOf(trips))())
+        assertEquals(1, trips.syncCalls)
+    }
+
+    @Test
+    fun viajeEnCurso_masOtrosSinEnviar_soloCuentanLosQueSeBorran() = runTest {
+        val trips = KeptTask(pending = 2)
+        val reservations = FakeTask(pending = 1, sendsOk = false)
+
+        assertEquals(1, PendingBeforeLogoutUseCase(listOf(trips, reservations))())
+    }
 }

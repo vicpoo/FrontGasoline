@@ -8,7 +8,7 @@ import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.session.LocalDataOwner
 import org.vicpoo.gasolineproject.domain.session.LocalDataOwnerStore
-import org.vicpoo.gasolineproject.domain.sync.CountPendingUseCase
+import org.vicpoo.gasolineproject.domain.sync.CountLostOnLogoutUseCase
 import org.vicpoo.gasolineproject.domain.session.LogoutAction
 import org.vicpoo.gasolineproject.domain.session.Session
 import org.vicpoo.gasolineproject.domain.session.SessionReader
@@ -26,7 +26,7 @@ sealed interface LoginResult {
 
     /**
      * En el teléfono hay [pendingCount] registros sin enviar de otra cuenta ([ownerEmail]).
-     * Entrar con esta cuenta los borra: la pantalla pregunta y, si el usuario acepta, se vuelve a
+     * Entrar con esta cuenta los borra (los viajes NO: se guardan aparte para esa cuenta): la pantalla pregunta y, si el usuario acepta, se vuelve a
      * llamar con discardOtherAccountData = true.
      */
     data class OtherAccountPendingData(val ownerEmail: String, val pendingCount: Int) : LoginResult
@@ -37,11 +37,13 @@ sealed interface LoginResult {
  * - Misma cuenta que la última (ej. la sesión venció): se conserva todo y lo pendiente se envía.
  * - Otra cuenta sin nada pendiente: se borran las copias de la cuenta anterior al entrar.
  * - Otra cuenta CON registros sin enviar: primero se avisa ([LoginResult.OtherAccountPendingData]).
+ * - Los viajes de la otra cuenta (en curso o sin enviar) NO se borran ni se cuentan: se quedan
+ *   guardados aparte y solo los ve, envía y retoma su dueño cuando vuelva a entrar.
  */
 class LoginUseCase(
     private val repository: AuthRepository,
     private val ownerStore: LocalDataOwnerStore,
-    private val countPending: CountPendingUseCase,
+    private val countPending: CountLostOnLogoutUseCase,
 ) {
     suspend operator fun invoke(
         email: String,

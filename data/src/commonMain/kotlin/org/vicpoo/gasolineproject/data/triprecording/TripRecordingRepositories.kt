@@ -4,6 +4,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.vicpoo.gasolineproject.domain.common.AppClock
@@ -80,10 +81,10 @@ class AssignedVehicleRepositoryImpl(
         cache.current().vehicles.firstOrNull { it.reservationId == reservationId }?.toDomain()
 
     // Un viaje se borra del teléfono cuando todo llegó a la API: si sigue aquí, está en curso
-    // (running) o guardado pendiente de enviar.
+    // (running) o guardado pendiente de enviar. Solo cuentan los de la cuenta con sesión.
     override fun observeReleaseBlocks(): Flow<Map<String, ReleaseBlock>> =
-        store.snapshot.map { snapshot ->
-            snapshot.trips
+        combine(store.snapshot, sessionReader.session) { snapshot, session ->
+            snapshot.tripsOf(session?.employeeId)
                 .groupBy { it.vehicle.reservationId }
                 .mapValues { (_, trips) -> if (trips.any { it.running }) ReleaseBlock.ACTIVE_TRIP else ReleaseBlock.PENDING_SYNC }
         }.distinctUntilChanged()

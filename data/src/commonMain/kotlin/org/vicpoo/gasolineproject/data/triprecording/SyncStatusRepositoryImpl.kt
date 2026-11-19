@@ -2,6 +2,7 @@ package org.vicpoo.gasolineproject.data.triprecording
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import org.vicpoo.gasolineproject.domain.session.SessionReader
 import org.vicpoo.gasolineproject.domain.sync.SyncRejection
 import org.vicpoo.gasolineproject.data.triprecording.local.FuelEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.FuelSyncState
@@ -17,20 +18,24 @@ import org.vicpoo.gasolineproject.domain.triprecording.RecordSyncState
 import org.vicpoo.gasolineproject.domain.triprecording.SyncStatus
 import org.vicpoo.gasolineproject.domain.triprecording.SyncStatusRepository
 
-/** Arma el diagnóstico con lo guardado en el teléfono, la bitácora y si hay un envío en curso. */
+/**
+ * Arma el diagnóstico con lo guardado en el teléfono, la bitácora y si hay un envío en curso.
+ * Solo muestra los viajes de la cuenta con sesión (los de otra cuenta se guardan aparte).
+ */
 class SyncStatusRepositoryImpl(
     private val store: TripRecordingLocalStore,
     private val log: TripSyncLog,
     private val syncer: TripRecordingSyncer,
+    private val sessionReader: SessionReader,
 ) : SyncStatusRepository {
 
     override fun observe(): Flow<SyncStatus> =
-        combine(store.snapshot, log.entries, syncer.isSyncing) { snapshot, entries, syncing ->
-            SyncStatus(trips = pendingTrips(snapshot), log = entries, isSyncing = syncing)
+        combine(store.snapshot, log.entries, syncer.isSyncing, sessionReader.session) { snapshot, entries, syncing, session ->
+            SyncStatus(trips = pendingTrips(snapshot, session?.employeeId), log = entries, isSyncing = syncing)
         }
 
-    private suspend fun pendingTrips(snapshot: RecordingSnapshot): List<PendingTripStatus> =
-        snapshot.trips
+    private suspend fun pendingTrips(snapshot: RecordingSnapshot, employeeId: String?): List<PendingTripStatus> =
+        snapshot.tripsOf(employeeId)
             .sortedByDescending { it.startedAtMillis }
             .map { trip ->
                 val pointsPending = (store.countPoints(trip.localId) - trip.pointsSent).coerceAtLeast(0)
