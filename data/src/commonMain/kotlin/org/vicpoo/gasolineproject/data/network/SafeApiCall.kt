@@ -3,7 +3,9 @@ package org.vicpoo.gasolineproject.data.network
 import io.ktor.client.plugins.ResponseException
 import io.ktor.serialization.ContentConvertException
 import kotlinx.io.IOException
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
+import io.ktor.http.HttpHeaders
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -13,6 +15,8 @@ import kotlinx.serialization.json.jsonObject
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppLog
 import org.vicpoo.gasolineproject.domain.common.AppResult
+import org.vicpoo.gasolineproject.domain.sync.isTemporaryHttpStatus
+import org.vicpoo.gasolineproject.domain.sync.recordTemporarySyncFailure
 
 /**
  * ProblemDetails de APIGasoline (ExceptionHandlingMiddleware): { status, title, detail } y, en algunos 409,
@@ -53,6 +57,8 @@ suspend fun <T> safeApiCall(block: suspend () -> T): AppResult<T> =
         // Solo método, ruta y código: sin parámetros, encabezados ni cuerpo (pueden traer datos personales)
         val request = e.response.call.request
         AppLog.w(LOG_TAG, "HTTP $status ${request.method.value} ${request.url.encodedPath}")
+        // Si es una vuelta de sincronización en segundo plano, se vuelve a programar con backoff
+        if (isTemporaryHttpStatus(status)) recordTemporarySyncFailure(e.response.retryAfterMillis())
         val problem = runCatching { parseProblem(e.response.bodyAsText()) }.getOrNull()
         val serverMessage = problem?.message
         AppResult.Failure(
@@ -86,3 +92,7 @@ private fun logApiError(e: Throwable) {
 }
 
 private const val LOG_TAG = "API"
+
+/** Retry-After en segundos ("120"). La forma con fecha HTTP no se usa en la API, se ignora. */
+internal fun HttpResponse.retryAfterMillis(): Long? =
+    headers[HttpHeaders.RetryAfter]?.trim()?.toLongOrNull()?.takeIf { it >= 0 }?.times(1_000)

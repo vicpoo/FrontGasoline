@@ -123,6 +123,12 @@ interface BackgroundSyncScheduler {
 
     /** Cancela todo (al cerrar sesión). */
     fun cancel()
+
+    /**
+     * Una sincronización después de [delayMillis] (la API pidió esperar con Retry-After).
+     * Por omisión, en cuanto haya red (iOS y pruebas).
+     */
+    fun requestAfter(delayMillis: Long) = requestWhenOnline()
 }
 
 /**
@@ -141,7 +147,8 @@ fun AppError.stopsSync(): Boolean = this == AppError.NoConnection || this == App
  * Reglas de reintento de un registro que la API rechazó (Single Responsibility).
  * - 4xx (400, 403, 404, 409, 422...): el dato está mal; reenviarlo daría el mismo error.
  *   Se deja de intentar en automático hasta que el usuario lo edite o toque "Reintentar".
- * - 408, 429, 5xx o error desconocido: problema temporal, se reintenta en la siguiente vuelta.
+ * - 408, 429, 5xx o error desconocido: problema temporal, se reintenta en la siguiente vuelta
+ *   (el Worker la vuelve a programar con backoff; ver SyncRetry.kt).
  */
 object SyncRejection {
     /** Código que se guarda cuando el rechazo lo detecta la propia app (ej. falta la foto del recibo). */

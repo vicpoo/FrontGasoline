@@ -58,6 +58,7 @@ import org.vicpoo.gasolineproject.domain.sync.CountPendingUseCase
 import org.vicpoo.gasolineproject.domain.sync.ObservePendingSummaryUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingBeforeLogoutUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
+import org.vicpoo.gasolineproject.domain.sync.RunPendingSyncUseCase
 import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.CaptureFuelLocationUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.CheckLocationPermissionUseCase
@@ -119,6 +120,8 @@ val commonDomainModule = module {
 
     // Todas las features registradas con `bind PendingSyncTask::class`
     factory { SyncAllPendingUseCase(getAll<PendingSyncTask>()) }
+    // Una vuelta en segundo plano + si hay que reintentar (Worker de Android)
+    factory { RunPendingSyncUseCase(get()) }
     factory { PendingBeforeLogoutUseCase(getAll<PendingSyncTask>()) }
     factory { CountPendingUseCase(getAll<PendingSyncTask>()) }
     factory { CountLostOnLogoutUseCase(getAll<PendingSyncTask>()) }
