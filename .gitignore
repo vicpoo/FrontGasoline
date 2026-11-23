@@ -22,3 +22,5 @@ keystore.properties
 *.jks
 *.keystore
 Claude outputs/
+# Firebase: cada quien descarga el suyo de la consola (ver androidApp/google-services.json.example)
+androidApp/google-services.json
