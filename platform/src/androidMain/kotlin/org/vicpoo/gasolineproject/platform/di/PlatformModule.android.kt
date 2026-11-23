@@ -12,6 +12,7 @@ import org.vicpoo.gasolineproject.domain.common.AppBuildInfo
 import org.vicpoo.gasolineproject.domain.common.AppLogger
 import org.vicpoo.gasolineproject.domain.common.minLogLevel
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
+import org.vicpoo.gasolineproject.domain.database.SqlDriverFactory
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.location.LocationProvider
@@ -19,6 +20,7 @@ import org.vicpoo.gasolineproject.domain.location.TrackingServiceController
 import org.vicpoo.gasolineproject.domain.push.PushTokenProvider
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.platform.connectivity.AndroidConnectivityMonitor
+import org.vicpoo.gasolineproject.platform.database.AndroidSqlDriverFactory
 import org.vicpoo.gasolineproject.platform.files.AndroidImageCompressor
 import org.vicpoo.gasolineproject.platform.location.AndroidLocationProvider
 import org.vicpoo.gasolineproject.platform.location.AndroidTrackingServiceController
@@ -44,6 +46,9 @@ actual val platformModule: Module = module {
         LogoutListener { withContext(Dispatchers.IO) { files.clearAll() } }
     }
     single<ConnectivityMonitor> { AndroidConnectivityMonitor(androidContext()) }
+
+    // Base local cifrada con SQLCipher (contraseña protegida por el Android Keystore)
+    single<SqlDriverFactory> { AndroidSqlDriverFactory(androidContext(), get()) }
 
     // GPS del viaje en curso
     single<LocationProvider> { AndroidLocationProvider(androidContext()) }

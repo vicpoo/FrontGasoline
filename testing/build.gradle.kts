@@ -26,6 +26,11 @@ kotlin {
         androidMain.dependencies {
             // kotlin-test necesita su variante JUnit en el target Android (BeforeTest / AfterTest)
             api(libs.kotlin.testJunit)
+            // Base de datos en memoria para las pruebas en la JVM (testAndroidHostTest)
+            implementation(libs.sqldelight.sqliteDriver)
+        }
+        iosMain.dependencies {
+            implementation(libs.sqldelight.nativeDriver)
         }
     }
 }

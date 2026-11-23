@@ -1,7 +1,8 @@
 /*
  * :platform — lo que depende del sistema operativo: GPS y servicio del viaje en curso, conectividad,
  * notificaciones push (Firebase), sincronización en segundo plano (WorkManager), compresión de fotos,
- * y los lanzadores de Compose para cámara, documentos, compartir archivos y permisos.
+ * la conexión a la base local (SQLCipher en Android), y los lanzadores de Compose para cámara,
+ * documentos, compartir archivos y permisos.
  * Implementa interfaces de :domain; no conoce :data ni :ui.
  * Paquetes: org.vicpoo.gasolineproject.platform.<location|connectivity|push|sync|files|di>.
  */
@@ -40,6 +41,15 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
+
+            // Base local cifrada: SQLDelight sobre SQLCipher
+            implementation(libs.sqldelight.androidDriver)
+            implementation(libs.sqlcipher.android)
+            implementation(libs.androidx.sqlite)
+        }
+        iosMain.dependencies {
+            // TODO(iOS): sin cifrado por ahora (iOS fuera del alcance de la revisión); ver docs/ARQUITECTURA.md
+            implementation(libs.sqldelight.nativeDriver)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

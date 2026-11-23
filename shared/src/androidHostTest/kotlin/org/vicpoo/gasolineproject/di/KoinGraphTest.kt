@@ -26,6 +26,7 @@ import org.vicpoo.gasolineproject.domain.location.LocationFix
 import org.vicpoo.gasolineproject.domain.location.LocationProvider
 import org.vicpoo.gasolineproject.domain.location.TrackingServiceController
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
+import org.vicpoo.gasolineproject.domain.database.SqlDriverFactory
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.push.PushTokenProvider
@@ -75,6 +76,7 @@ import org.vicpoo.gasolineproject.navigation.MainViewModel
 import org.vicpoo.gasolineproject.navigation.StartViewModel
 import org.vicpoo.gasolineproject.testing.FakeApiServer
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
+import org.vicpoo.gasolineproject.testing.InMemorySqlDriverFactory
 import org.vicpoo.gasolineproject.testing.RecordingSyncScheduler
 import org.vicpoo.gasolineproject.testing.TEST_API_BASE_URL
 import java.nio.file.Files
@@ -111,6 +113,7 @@ class KoinGraphTest {
         single<BackgroundSyncScheduler> { RecordingSyncScheduler() }
         single<PushTokenProvider> { NoPushTokenProvider }
         single<AppLogger> { SilentAppLogger }
+        single<SqlDriverFactory> { InMemorySqlDriverFactory() }
     }
 
     private val noRealWorkModule = module {

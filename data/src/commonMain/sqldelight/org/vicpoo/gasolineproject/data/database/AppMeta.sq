@@ -1,0 +1,15 @@
+-- Valores sueltos de la base local que no son de ningún usuario: por ejemplo, qué cachés JSON
+-- viejos ya se pasaron a la base (fase 6F). No se borra al cerrar sesión.
+CREATE TABLE app_meta (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+valueOf:
+SELECT value FROM app_meta WHERE key = ?;
+
+put:
+INSERT OR REPLACE INTO app_meta(key, value) VALUES (?, ?);
+
+remove:
+DELETE FROM app_meta WHERE key = ?;

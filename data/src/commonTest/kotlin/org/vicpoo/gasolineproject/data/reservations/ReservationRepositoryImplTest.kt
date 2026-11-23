@@ -161,7 +161,7 @@ class ReservationRepositoryImplTest {
 
         repository.refreshMine()
 
-        assertEquals(listOf("10", "10", "20"), sizes)
+        assertEquals(listOf<String?>("10", "10", "20"), sizes)
     }
 
     @Test

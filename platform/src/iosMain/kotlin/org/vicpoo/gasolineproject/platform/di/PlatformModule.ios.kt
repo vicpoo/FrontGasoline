@@ -7,6 +7,7 @@ import org.vicpoo.gasolineproject.domain.common.AppBuildInfo
 import org.vicpoo.gasolineproject.domain.common.AppLogger
 import org.vicpoo.gasolineproject.domain.common.minLogLevel
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
+import org.vicpoo.gasolineproject.domain.database.SqlDriverFactory
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.location.LocationProvider
@@ -15,6 +16,7 @@ import org.vicpoo.gasolineproject.domain.push.PushTokenProvider
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
 import org.vicpoo.gasolineproject.platform.connectivity.IosConnectivityMonitor
+import org.vicpoo.gasolineproject.platform.database.IosSqlDriverFactory
 import org.vicpoo.gasolineproject.platform.files.IosImageCompressor
 import org.vicpoo.gasolineproject.platform.location.IosLocationProvider
 import org.vicpoo.gasolineproject.platform.location.IosTrackingServiceController
@@ -34,6 +36,9 @@ actual val platformModule: Module = module {
     // TODO(iOS, punto 4.9): filesDir debería ir en Application Support y excluirse del respaldo de iCloud
     single { AppDirectories(filesDir = iosDirectoryPath(NSDocumentDirectory), cacheDir = iosDirectoryPath(NSCachesDirectory)) }
     single<ConnectivityMonitor> { IosConnectivityMonitor() }
+
+    // Base local (TODO iOS: sin cifrar por ahora)
+    single<SqlDriverFactory> { IosSqlDriverFactory() }
 
     single<LocationProvider> { IosLocationProvider() }
     single<ImageCompressor> { IosImageCompressor() }

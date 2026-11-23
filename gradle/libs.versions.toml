@@ -35,6 +35,10 @@ androidx-work = "2.10.2"
 # Notificaciones push (Firebase Cloud Messaging)
 google-services = "4.4.2"
 firebase-bom = "33.7.0"
+# Base de datos local (fase 6). SQLCipher cifra el archivo en Android (16 KB de página desde la 4.6.1).
+sqldelight = "2.1.0"
+sqlcipher-android = "4.9.0"
+androidx-sqlite = "2.4.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -95,6 +99,16 @@ androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 
+# Base de datos local: SQLDelight genera el código desde los .sq de :data
+sqldelight-runtime = { module = "app.cash.sqldelight:runtime", version.ref = "sqldelight" }
+sqldelight-coroutines = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-androidDriver = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
+sqldelight-nativeDriver = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+# Solo pruebas en la JVM: base en memoria (JdbcSqliteDriver)
+sqldelight-sqliteDriver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher-android" }
+androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
+
 # Pruebas de corrutinas (runTest)
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
@@ -116,3 +130,4 @@ kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 # Lee androidApp/google-services.json (proyecto de Firebase)
 googleServices = { id = "com.google.gms.google-services", version.ref = "google-services" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }

@@ -1,5 +1,11 @@
 package org.vicpoo.gasolineproject.ui.triprecording.active
 
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.test.TestResult
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
@@ -36,7 +42,28 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     private val sync = FakeTripRecordingSync()
     private val permissions = FakePermissionChecker(setOf(Privileges.CARGA_REGISTRAR, Privileges.CARGA_ELIMINAR))
 
-    private fun viewModel() = ActiveTripViewModel(
+    /**
+     * El ViewModel tiene un reloj infinito (`while (isActive) delay(1_000)`) en viewModelScope.
+     * runTest, al terminar, avanza el tiempo virtual hasta que no quede nada pendiente: con el
+     * reloj vivo eso nunca pasa y la prueba se cuelga. Por eso cada ViewModel vive en un
+     * ViewModelStore que se limpia (cancela viewModelScope) antes de que runTest termine.
+     */
+    private val store = ViewModelStore()
+
+    private fun runVmTest(body: suspend TestScope.() -> Unit): TestResult = runTest {
+        try {
+            body()
+        } finally {
+            store.clear()
+        }
+    }
+
+    private fun viewModel(): ActiveTripViewModel = ViewModelProvider.create(
+        store,
+        viewModelFactory { initializer { newViewModel() } },
+    )[ActiveTripViewModel::class]
+
+    private fun newViewModel() = ActiveTripViewModel(
         observeTracking = ObserveTrackingUseCase(tracker),
         observeFuelRecords = ObserveFuelRecordsUseCase(fuel),
         permissionChecker = permissions,
@@ -49,7 +76,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     )
 
     @Test
-    fun muestraElViaje_ySoloLasRecargasDeEseViaje() = runTest {
+    fun muestraElViaje_ySoloLasRecargasDeEseViaje() = runVmTest {
         val vm = viewModel()
 
         val state = vm.state.value
@@ -60,7 +87,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun lasAccionesDeRecargasDependenDeLosPrivilegios() = runTest {
+    fun lasAccionesDeRecargasDependenDeLosPrivilegios() = runVmTest {
         val vm = viewModel()
 
         assertEquals(FuelPermissions(canAdd = true, canEdit = false, canDelete = true), vm.state.value.fuel)
@@ -70,7 +97,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun pausarYReanudar_cambianLaFaseDelViaje() = runTest {
+    fun pausarYReanudar_cambianLaFaseDelViaje() = runVmTest {
         val vm = viewModel()
 
         vm.onEvent(ActiveTripEvent.PauseClicked)
@@ -83,7 +110,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun siPausarFalla_muestraElError_ySePuedeCerrar() = runTest {
+    fun siPausarFalla_muestraElError_ySePuedeCerrar() = runVmTest {
         tracker.failure = AppError.NotFound
         val vm = viewModel()
 
@@ -95,7 +122,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun terminar_pideConfirmacion_yAlConfirmarVaARegistrarViaje() = runTest {
+    fun terminar_pideConfirmacion_yAlConfirmarVaARegistrarViaje() = runVmTest {
         val vm = viewModel()
 
         vm.onEvent(ActiveTripEvent.FinishClicked)
@@ -112,7 +139,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun siDetenerFalla_noNavega_yMuestraElError() = runTest {
+    fun siDetenerFalla_noNavega_yMuestraElError() = runVmTest {
         val vm = viewModel()
         tracker.failure = AppError.NotFound
 
@@ -123,7 +150,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun siLaAppSeCerroEnRegistrarViaje_alAbrirRegresaAhi() = runTest {
+    fun siLaAppSeCerroEnRegistrarViaje_alAbrirRegresaAhi() = runVmTest {
         tracker.state.value = TrackingSession(trip = testRecordedTrip(TripPhase.STOPPED))
 
         val vm = viewModel()
@@ -132,7 +159,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun borrarRecarga_pideConfirmacion_borra_yManda() = runTest {
+    fun borrarRecarga_pideConfirmacion_borra_yManda() = runVmTest {
         val vm = viewModel()
         val record = vm.state.value.fuelRecords.single()
 
@@ -147,7 +174,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun cancelarElBorrado_noBorraNada() = runTest {
+    fun cancelarElBorrado_noBorraNada() = runVmTest {
         val vm = viewModel()
 
         vm.onEvent(ActiveTripEvent.DeleteClicked(vm.state.value.fuelRecords.single()))
@@ -158,7 +185,7 @@ class ActiveTripViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun cambioDePermiso_avisaAlTracker() = runTest {
+    fun cambioDePermiso_avisaAlTracker() = runVmTest {
         val vm = viewModel()
 
         vm.onEvent(ActiveTripEvent.PermissionChanged)

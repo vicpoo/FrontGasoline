@@ -1,6 +1,7 @@
 package org.vicpoo.gasolineproject.domain.sync
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppScope

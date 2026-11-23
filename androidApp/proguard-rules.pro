@@ -48,5 +48,9 @@
     kotlinx.serialization.KSerializer serializer(...);
 }
 
+# SQLCipher (base local cifrada): su código nativo llama a estas clases por JNI
+-keep,includedescriptorclasses class net.zetetic.database.** { *; }
+-keep,includedescriptorclasses interface net.zetetic.database.** { *; }
+
 # WorkManager crea el worker por su nombre de clase
 -keep class org.vicpoo.gasolineproject.platform.sync.PendingSyncWorker { <init>(...); }

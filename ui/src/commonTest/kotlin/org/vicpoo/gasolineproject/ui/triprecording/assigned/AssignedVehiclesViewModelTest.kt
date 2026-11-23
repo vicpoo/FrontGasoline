@@ -131,7 +131,7 @@ class AssignedVehiclesViewModelTest : MainDispatcherTest() {
         vm.onEvent(AssignedVehiclesEvent.ReleaseNotesChanged("  Ya terminé  "))
         vm.onEvent(AssignedVehiclesEvent.ReleaseConfirmed)
 
-        assertEquals(listOf("res-1" to "Ya terminé"), vehicles.released)
+        assertEquals(listOf<Pair<String, String?>>("res-1" to "Ya terminé"), vehicles.released)
         assertEquals(versa, vm.state.value.released)
         assertNull(vm.state.value.releaseTarget)
         assertEquals(listOf(aveo), vm.state.value.vehicles)

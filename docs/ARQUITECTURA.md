@@ -50,3 +50,140 @@ Cada capa declara sus módulos en su carpeta `di/` y los expone en una lista:
    más su `navigation/` → ViewModels en `UiModule.kt`.
 4. Textos en `ui/src/commonMain/composeResources/values/strings.xml` (un solo `Res`: `org.vicpoo.gasolineproject.ui.resources`).
 5. Engancha su grafo de navegación en `shared/navigation`.
+
+## Seguridad de red
+
+### URL de la API
+
+La URL base de APIGasoline se define en un solo lugar: `buildConfigField("String", "API_BASE_URL", ...)` en
+`androidApp/build.gradle.kts` (hoy `http://13.222.72.73/api/`, igual en debug y release).
+`GasolineApplication` la pasa a `initKoin(apiBaseUrl = ...)` y `data` la recibe con el qualifier `API_BASE_URL`
+(`data/di/CoreDataModule.kt`). Para apuntar a otro servidor (emulador `10.0.2.2`, IP de la PC, producción)
+se cambia ese campo, o se define uno distinto dentro de cada `buildType`, y se agrega el host en
+`res/xml/network_security_config.xml`.
+
+### HTTP sin TLS (riesgo aceptado)
+
+La API no tiene HTTPS: no hay dominio ni certificado disponibles. Por esa conexión viajan en claro:
+credenciales del login, JWT y refresh token, fotos de licencia, recibos y odómetro, y la ruta GPS.
+Cualquiera en la misma red (Wi-Fi pública, red del operador) puede leerlos o modificarlos.
+
+Mitigaciones aplicadas:
+
+- `network_security_config.xml` permite HTTP **solo** hacia `13.222.72.73`; cualquier otro host exige HTTPS.
+  Se quitó `usesCleartextTraffic="true"`, que permitía HTTP hacia cualquier sitio.
+- Los nombres de archivo que manda la API (`Content-Disposition` de los reportes) se limpian con
+  `safeFileName` y se verifica que el archivo quede dentro de `cache/reports` (evita path traversal).
+- Las fotos siempre se recodifican antes de subirse: no viajan los metadatos EXIF (ubicación).
+
+Si en el futuro hay un dominio, Let's Encrypt da certificados gratis: al pasar la API a HTTPS basta con
+cambiar `API_BASE_URL` y quitar el `domain-config` del archivo de seguridad de red.
+
+### Firebase
+
+`androidApp/google-services.json` no se versiona (está en `.gitignore`). Se descarga de la consola de
+Firebase (proyecto `apigasoline`, app Android `org.vicpoo.gasolineproject`) y se coloca en `androidApp/`.
+La estructura esperada está en `androidApp/google-services.json.example`. La API key que quedó en el
+historial de git (commit `580514f`) debe estar restringida en Google Cloud Console al paquete y la huella
+SHA-1 de la app, y solo a las APIs de Firebase que se usan.
+
+
+## Bitácora (logging)
+
+- `AppLogger` (interfaz en `domain/common`) con niveles DEBUG, INFO, WARN y ERROR. La implementa `platform`
+  (`AndroidAppLogger` → Logcat con etiqueta `Gasoline/<tag>`; `IosAppLogger` → NSLog) y se registra en `platformModule`.
+- Nivel mínimo según el build (`AppBuildInfo`, que registra `initKoin` con `BuildConfig.DEBUG`): en debug todo;
+  en release solo WARN y ERROR.
+- Las clases creadas con Koin reciben el `AppLogger` por constructor. El código que no se crea con Koin
+  (`safeApiCall`, `AuthRepositoryImpl`, `AuthTokenManager`) usa `AppLog`, que `initKoin` instala al arrancar.
+- Ktor solo instala su plugin de Logging en debug, escribe por el `AppLogger` y nivel INFO (método, URL y código).
+- `AppScope` tiene un `CoroutineExceptionHandler`: una excepción no capturada en segundo plano queda como ERROR.
+- Si una feature no puede borrar sus datos al cerrar sesión se reintenta una vez; si sigue fallando queda como ERROR.
+- **Nunca** registrar tokens, el encabezado `Authorization`, cuerpos de login, coordenadas GPS ni fotos.
+
+## Respaldo de Android
+
+`android:allowBackup="false"` y `res/xml/data_extraction_rules.xml` (Android 12+) dejan fuera del respaldo en la nube
+y de la transferencia entre teléfonos todo lo que la app guarda (placas, rutas GPS, fotos, cola sin enviar y sesión).
+Al cambiar de teléfono el usuario vuelve a iniciar sesión.
+
+## Almacenamiento en el teléfono
+
+Todo es almacenamiento interno de la app (privado, sin permisos de almacenamiento externo).
+
+| Dato | Dónde | Se borra |
+|---|---|---|
+| DataStore, cachés JSON, `vehicles/`, `trip_recording/` (ruta GPS, recibos, odómetro) | `filesDir` | Al cerrar sesión (cada feature con su `LogoutListener`) |
+| Foto de la cámara antes de reducirla | `cacheDir/camera/` | Al leerla; al abrir la app si tiene más de 1 h; al cerrar sesión |
+| Reporte PDF / Excel compartido | `cacheDir/reports/` (FileProvider) | Al abrir la app si tiene más de 1 h; al cerrar sesión |
+| Fotos descargadas (vehículos, operadores, perfil) y teselas del mapa | `cacheDir/image_cache/` (Coil, máx. 100 MB) + memoria | Al cerrar sesión (`ImageCache`) |
+| Tokens | DataStore cifrado con Android Keystore | Al cerrar sesión |
+
+- `AndroidTemporaryFiles` (platform) limpia `camera/` y `reports/`. Al abrir la app solo borra lo de más de una
+  hora: si Android cerró la app mientras el usuario estaba en la cámara, la foto recién tomada se lee al regresar,
+  y la app con la que se compartió un reporte puede seguir leyéndolo.
+- `ImageCache` (shared) crea el `ImageLoader` de Coil con la caché de disco explícita y la limpia al cerrar sesión.
+- Si la sesión termina sola (refresh token vencido) los datos NO se borran, para que el mismo usuario recupere lo
+  pendiente; si entra otra cuenta se borran antes (ver `LocalDataOwner.kt`).
+
+### Cifrado de los datos en el teléfono (punto 4.5)
+
+**Decisión:** cifrar al migrar a SQLDelight (fase 6). Hasta entonces el riesgo se acepta de forma temporal.
+
+Estado actual: las fotos de licencia, recibos y odómetro, la ruta GPS y los JSON están en `filesDir` sin cifrar.
+Quién podría leerlos:
+
+- Otras apps: no (aislamiento de Android).
+- Respaldo de Google o transferencia a otro teléfono: no (`allowBackup="false"` + `data_extraction_rules.xml`).
+- Teléfono robado apagado o bloqueado: no (Android cifra el almacenamiento hasta el primer desbloqueo).
+- Teléfono desbloqueado con root o herramientas forenses: **sí**. Es el riesgo que se acepta temporalmente.
+
+Por qué no se cifran ya los JSON: en la fase 6 se reemplazan por SQLite y ese cifrado se tendría que rehacer
+(cifrar `JsonFileCache`, la ruta `.jsonl` línea por línea y migrar los archivos existentes).
+
+Qué se hará en la fase 6:
+
+1. La base SQLDelight se crea con **SQLCipher** (toda la base cifrada; las consultas no cambian).
+2. La contraseña de la base se genera al azar la primera vez y se guarda cifrada con el Android Keystore
+   (misma técnica que `KeystoreTokenStore`); en iOS, en el Keychain.
+3. Las fotos (licencia, recibos, odómetro, vehículos pendientes de subir) se cifran con AES-256-GCM y una llave
+   del Keystore; se descifran al subirlas y al mostrarlas.
+4. La migración lee los JSON actuales (sin cifrar), los guarda en la base cifrada y borra los archivos.
+5. Si la llave del Keystore se pierde (reseteo del sistema), la base no se puede abrir: se borra y se vuelve a
+   descargar de la API; lo que no se había enviado se pierde. Se registra como ERROR en la bitácora.
+
+## Sincronización: reintentos (punto 3.3.1)
+
+| Qué pasó | Qué se hace |
+|---|---|
+| Sin red, o el JWT venció sin red para renovarlo | Se detiene la vuelta; WorkManager reintenta con backoff exponencial cuando hay red |
+| 5xx, 408 o 429 | El registro queda pendiente; la vuelta se vuelve a programar con backoff (30 s, 1, 2, 4, 8 min) |
+| 5xx / 429 con `Retry-After` | Se programa otra vuelta después de ese tiempo (entre 30 s y 1 h) |
+| 4xx (400, 403, 404, 409, 422...) | Rechazo definitivo: se guarda el mensaje y no se reenvía solo (botón "Reintentar") |
+| Sesión terminada (refresh rechazado) | No se reintenta hasta que vuelva a entrar |
+
+- `safeApiCall` anota los errores temporales en `TemporarySyncFailures` (va en el contexto de la corrutina);
+  `RunPendingSyncUseCase` decide el resultado y `PendingSyncWorker` lo aplica. Ver `domain/sync/SyncRetry.kt`.
+- Máximo 5 intentos seguidos del Worker; después lo toma la vuelta periódica (cada 15 min).
+- **No** se repite la misma petición en el momento: casi todos los envíos son POST que crean algo. Si el servidor
+  falló después de guardarlo, repetirlo de inmediato podría duplicarlo; la siguiente vuelta llega con espera.
+- iOS: se reintenta al volver a primer plano o al reconectar (`IosSyncScheduler`).
+
+## Conflictos entre celulares (punto 3.3.2)
+
+La web no edita vehículos, pero dos celulares sí pueden editar el mismo carro (uno o los dos sin red).
+**Regla: gana el cambio más reciente**, no el último que sincroniza.
+
+- Al crear o editar, el teléfono guarda la hora del cambio (`VehicleEntity.editedAt`, hora local con zona) y la
+  manda en `fechaEdicion` (POST / PUT `/api/carros`).
+- La API guarda la hora del último cambio aplicado de cada carro. Si llega un cambio con `fechaEdicion` más vieja,
+  NO lo aplica y responde `409` con `codigo: "CAMBIO_MAS_RECIENTE"`. Sin `fechaEdicion` (versiones viejas de la
+  app) se aplica como antes.
+- La app, ante ese 409: descarta su cambio (y su foto pendiente), marca el vehículo como sincronizado con el aviso
+  "Otro celular guardó un cambio más reciente…" y la siguiente actualización trae la versión del servidor.
+- Depende de que la hora de los celulares sea correcta (la toman de la red del operador). Con horas muy
+  desfasadas podría ganar el cambio equivocado.
+- Si un celular borra el carro y otro lo edita: el PUT recibe 404 y queda como error (sin cambios de lógica).
+
+**Pendiente en la API** (APIGasoline): columna `FechaEdicion` en Carro, comparar en el PUT y responder el 409.
+Mientras no esté, la API ignora `fechaEdicion` y sigue ganando el último que sincroniza.
