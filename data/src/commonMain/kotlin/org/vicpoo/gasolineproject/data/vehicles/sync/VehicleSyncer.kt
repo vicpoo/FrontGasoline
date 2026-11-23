@@ -3,6 +3,7 @@ package org.vicpoo.gasolineproject.data.vehicles.sync
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.vicpoo.gasolineproject.domain.common.AppError
+import org.vicpoo.gasolineproject.domain.common.AppLog
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.httpCode
 import org.vicpoo.gasolineproject.domain.common.serverMessage
@@ -27,6 +28,9 @@ import org.vicpoo.gasolineproject.domain.vehicles.model.SyncState
  * - Un rechazo definitivo (4xx) ya no se reenvía solo: espera a que el usuario edite el vehículo
  *   (editar limpia el error). Los errores temporales (5xx) sí se reintentan.
  * - Sin red pide al [BackgroundSyncScheduler] que lo vuelva a intentar en cuanto haya internet.
+ * - Conflicto entre celulares: gana el cambio MÁS RECIENTE (no el último que sincroniza). Cada edición
+ *   lleva su hora (fechaEdicion); si otro celular ya guardó una más nueva, la API responde
+ *   409 CAMBIO_MAS_RECIENTE y aquí se descarta el cambio local y se conserva el del servidor.
  */
 class VehicleSyncer(
     private val local: VehicleLocalDataSource,
@@ -75,7 +79,7 @@ class VehicleSyncer(
     private suspend fun pushUpdate(entity: VehicleEntity): AppResult<Unit> {
         val serverId = entity.serverId ?: return pushCreate(entity)
         val dto = when (val updated = safeApiCall { api.update(serverId, entity.toRequest()) }) {
-            is AppResult.Failure -> return updated
+            is AppResult.Failure -> return if (updated.error.isNewerChangeOnServer()) keepServerVersion(entity) else updated
             is AppResult.Success -> updated.data
         }
         val synced = entity.applyServer(dto, keepPhotoUrl = entity.photoPendingDelete).copy(syncState = SyncState.SYNCED)
@@ -152,6 +156,30 @@ class VehicleSyncer(
         }
     }
 
+    /**
+     * Otro celular cambió este vehículo DESPUÉS que este: se descarta el cambio local (también la foto
+     * pendiente) y la siguiente actualización trae la versión del servidor. Se deja el aviso en el vehículo.
+     */
+    private suspend fun keepServerVersion(entity: VehicleEntity): AppResult<Unit> {
+        entity.localPhotoPath?.let { local.deletePhoto(it) }
+        local.upsert(
+            entity.copy(
+                syncState = SyncState.SYNCED,
+                localPhotoPath = null,
+                localPhotoMime = null,
+                photoPendingUpload = false,
+                photoPendingDelete = false,
+                lastSyncErrorCode = null,
+                lastSyncErrorMessage = NEWER_CHANGE_MESSAGE,
+            ),
+        )
+        AppLog.i("Vehiculos", "Cambio descartado: otro celular guardó uno más reciente")
+        return AppResult.Success(Unit)
+    }
+
+    private fun AppError.isNewerChangeOnServer(): Boolean =
+        this is AppError.Server && code == 409 && problemCode == NEWER_CHANGE_CODE
+
     private suspend fun markError(entity: VehicleEntity, error: AppError) {
         val current = local.get(entity.localId) ?: return
         local.upsert(current.copy(lastSyncErrorCode = error.httpCode() ?: -1, lastSyncErrorMessage = error.serverMessage()))
@@ -167,3 +195,9 @@ class VehicleSyncer(
         lastSyncErrorMessage = null,
     )
 }
+
+/** Código del ProblemDetails de la API: ya hay un cambio más reciente de ese carro (otro celular). */
+internal const val NEWER_CHANGE_CODE = "CAMBIO_MAS_RECIENTE"
+
+/** Lo que ve el usuario en el vehículo hasta la siguiente actualización. */
+internal const val NEWER_CHANGE_MESSAGE = "Otro celular guardó un cambio más reciente de este vehículo; se conservó ese."

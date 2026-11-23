@@ -14,6 +14,7 @@ import org.vicpoo.gasolineproject.data.vehicles.remote.KtorVehicleApi
 import org.vicpoo.gasolineproject.data.vehicles.sync.VehicleSyncer
 import org.vicpoo.gasolineproject.domain.vehicles.model.SyncState
 import org.vicpoo.gasolineproject.domain.vehicles.model.VehicleDraft
+import org.vicpoo.gasolineproject.testing.FakeAppClock
 import org.vicpoo.gasolineproject.testing.FakeApiServer
 import org.vicpoo.gasolineproject.testing.FakeSessionReader
 import org.vicpoo.gasolineproject.testing.RecordingSyncScheduler
@@ -193,5 +194,30 @@ class OfflineFirstVehicleRepositoryTest {
 
         assertEquals(AppResult.Failure(AppError.NoConnection), result)
         assertEquals(1, repository.observeVehicles().first().size)
+    }
+
+    @Test
+    fun crearYEditar_guardanLaHoraDelCambio() = runTest {
+        val clock = FakeAppClock()
+        val repository = OfflineFirstVehicleRepository(
+            local = local,
+            api = KtorVehicleApi(api.client),
+            syncer = syncer,
+            sessionReader = session,
+            appScope = idleAppScope,
+            clock = clock,
+        )
+
+        val created = repository.create(draft)
+        val id = when (created) {
+            is AppResult.Success -> created.data.id
+            is AppResult.Failure -> error("No debía fallar: ${created.error}")
+        }
+        assertEquals(clock.toLocalIso(0), assertNotNull(local.get(id)).editedAt)
+
+        local.upsert(assertNotNull(local.get(id)).copy(editedAt = null, syncState = SyncState.SYNCED, serverId = "srv-1"))
+        repository.update(id, draft.copy(color = "Rojo"))
+
+        assertEquals(clock.toLocalIso(0), assertNotNull(local.get(id)).editedAt)
     }
 }

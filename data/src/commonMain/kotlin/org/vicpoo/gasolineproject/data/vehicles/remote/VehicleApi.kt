@@ -50,6 +50,11 @@ data class CarroRequestDto(
     val kilometrajeActual: Double,
     /** "carro" | "moto" | "camioneta" | "camion" */
     val tipoVehiculo: String,
+    /**
+     * Cuándo se hizo el cambio en el teléfono (hora local con zona). La API solo lo aplica si es más
+     * reciente que el último cambio guardado del carro; si no, responde 409 CAMBIO_MAS_RECIENTE.
+     */
+    val fechaEdicion: String? = null,
 )
 
 /** Fuente remota de vehículos (CarrosController). */

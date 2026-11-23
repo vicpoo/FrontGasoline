@@ -3,6 +3,8 @@ package org.vicpoo.gasolineproject.data.vehicles.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.vicpoo.gasolineproject.domain.common.SystemAppClock
+import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.map
@@ -36,6 +38,8 @@ class OfflineFirstVehicleRepository(
     private val syncer: VehicleSyncer,
     private val sessionReader: SessionReader,
     private val appScope: AppScope,
+    /** Hora del cambio (fechaEdicion): gana el cambio más reciente entre celulares. */
+    private val clock: AppClock = SystemAppClock(),
 ) : VehicleRepository {
 
     override fun observeVehicles(): Flow<List<Vehicle>> = local.vehicles.map { list ->
@@ -86,6 +90,7 @@ class OfflineFirstVehicleRepository(
             localPhotoMime = photo?.mimeType,
             photoPendingUpload = photo != null,
             syncState = SyncState.PENDING_CREATE,
+            editedAt = clock.nowLocalIso(),
         )
         local.upsert(entity)
         scheduleSync()
@@ -107,6 +112,7 @@ class OfflineFirstVehicleRepository(
             syncState = if (existing.syncState == SyncState.PENDING_CREATE) SyncState.PENDING_CREATE else SyncState.PENDING_UPDATE,
             lastSyncErrorCode = null,
             lastSyncErrorMessage = null,
+            editedAt = clock.nowLocalIso(),
         )
 
         val newPhoto = draft.newPhoto

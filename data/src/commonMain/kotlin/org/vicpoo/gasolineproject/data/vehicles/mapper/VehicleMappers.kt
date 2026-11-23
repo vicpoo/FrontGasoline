@@ -57,4 +57,5 @@ fun VehicleEntity.toRequest() = CarroRequestDto(
     capacidadTanque = tankCapacityLiters,
     kilometrajeActual = mileageKm,
     tipoVehiculo = VehicleType.fromApi(type).apiValue,
+    fechaEdicion = editedAt,
 )

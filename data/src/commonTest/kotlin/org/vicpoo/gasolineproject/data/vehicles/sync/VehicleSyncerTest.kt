@@ -1,6 +1,7 @@
 package org.vicpoo.gasolineproject.data.vehicles.sync
 
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.TextContent
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
@@ -19,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Fija el comportamiento ACTUAL de VehicleSyncer antes del refactor multimódulo.
@@ -141,5 +143,59 @@ class VehicleSyncerTest {
         assertEquals(SyncState.SYNCED, saved.syncState)
         assertEquals(409, saved.lastSyncErrorCode)
         assertEquals("El carro tiene historial", saved.lastSyncErrorMessage)
+    }
+
+    // ---------------- Conflicto entre celulares: gana el cambio más reciente (3.3.2) ----------------
+
+    private val editedOffline = pending(serverId = "srv-1", state = SyncState.PENDING_UPDATE)
+        .copy(editedAt = "2026-11-23T10:00:00-06:00")
+
+    @Test
+    fun editar_mandaLaHoraDelCambio() = runTest {
+        local.upsert(editedOffline)
+        var body = ""
+        api.handler = { request ->
+            body = (request.body as TextContent).text
+            respondJson(carroCreado)
+        }
+
+        syncer.syncPending()
+
+        assertTrue(body.contains("\"fechaEdicion\":\"2026-11-23T10:00:00-06:00\""), body)
+    }
+
+    @Test
+    fun otroCelularGuardoUnCambioMasReciente_seConservaElDelServidor_yNoSeReintenta() = runTest {
+        local.upsert(editedOffline)
+        api.handler = {
+            respondJson(
+                """{"status":409,"title":"Conflict","detail":"Hay un cambio más reciente","codigo":"CAMBIO_MAS_RECIENTE"}""",
+                HttpStatusCode.Conflict,
+            )
+        }
+
+        val result = syncer.syncPending()
+
+        assertEquals(AppResult.Success(Unit), result)
+        val saved = assertNotNull(local.get("loc-1"))
+        assertEquals(SyncState.SYNCED, saved.syncState)
+        assertNull(saved.lastSyncErrorCode, "No es un error que el usuario deba corregir")
+        assertEquals(NEWER_CHANGE_MESSAGE, saved.lastSyncErrorMessage)
+        assertEquals(0, syncer.pendingCount())
+
+        syncer.syncPending()
+        assertEquals(1, api.requests.size, "Ya no se reenvía")
+    }
+
+    @Test
+    fun otro409_siguenSiendoRechazoDefinitivo() = runTest {
+        local.upsert(editedOffline)
+        api.handler = { respondProblem(HttpStatusCode.Conflict, "Las placas ya existen") }
+
+        syncer.syncPending()
+
+        val saved = assertNotNull(local.get("loc-1"))
+        assertEquals(SyncState.PENDING_UPDATE, saved.syncState)
+        assertEquals(409, saved.lastSyncErrorCode)
     }
 }
