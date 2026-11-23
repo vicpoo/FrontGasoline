@@ -8,6 +8,7 @@ import org.vicpoo.gasolineproject.data.di.dataModules
 import org.vicpoo.gasolineproject.domain.common.AppBuildInfo
 import org.vicpoo.gasolineproject.domain.common.AppLog
 import org.vicpoo.gasolineproject.domain.common.AppLogger
+import org.vicpoo.gasolineproject.image.imageModule
 import org.vicpoo.gasolineproject.domain.di.domainModules
 import org.vicpoo.gasolineproject.navigation.di.navigationModule
 import org.vicpoo.gasolineproject.platform.di.platformModule
@@ -18,7 +19,7 @@ import org.vicpoo.gasolineproject.ui.di.uiModules
  * Cada capa expone sus módulos de Koin (DSL); al agregar una feature, se agrega su módulo
  * en la lista de su capa (domainModules, dataModules, uiModules), no aquí.
  */
-val appModules = listOf(platformModule) + domainModules + dataModules + uiModules + navigationModule
+val appModules = listOf(platformModule) + domainModules + dataModules + uiModules + navigationModule + imageModule
 
 /**
  * Se llama una vez al iniciar la app (Application en Android, MainViewController en iOS).

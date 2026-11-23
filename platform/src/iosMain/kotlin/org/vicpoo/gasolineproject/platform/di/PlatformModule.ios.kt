@@ -21,15 +21,18 @@ import org.vicpoo.gasolineproject.platform.location.IosTrackingServiceController
 import org.vicpoo.gasolineproject.platform.log.IosAppLogger
 import org.vicpoo.gasolineproject.platform.push.IosPushTokenProvider
 import org.vicpoo.gasolineproject.platform.sync.IosSyncScheduler
+import platform.Foundation.NSCachesDirectory
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
+import platform.Foundation.NSSearchPathDirectory
 import platform.Foundation.NSUserDomainMask
 
 actual val platformModule: Module = module {
     // Bitácora (NSLog): en release solo avisos y errores. AppBuildInfo lo registra initKoin.
     single<AppLogger> { IosAppLogger(minLogLevel(get<AppBuildInfo>().isDebug)) }
 
-    single { AppDirectories(filesDir = iosDocumentsPath()) }
+    // TODO(iOS, punto 4.9): filesDir debería ir en Application Support y excluirse del respaldo de iCloud
+    single { AppDirectories(filesDir = iosDirectoryPath(NSDocumentDirectory), cacheDir = iosDirectoryPath(NSCachesDirectory)) }
     single<ConnectivityMonitor> { IosConnectivityMonitor() }
 
     single<LocationProvider> { IosLocationProvider() }
@@ -42,9 +45,9 @@ actual val platformModule: Module = module {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun iosDocumentsPath(): String {
+private fun iosDirectoryPath(directory: NSSearchPathDirectory): String {
     val documentDirectory = NSFileManager.defaultManager.URLForDirectory(
-        directory = NSDocumentDirectory,
+        directory = directory,
         inDomain = NSUserDomainMask,
         appropriateForURL = null,
         create = false,

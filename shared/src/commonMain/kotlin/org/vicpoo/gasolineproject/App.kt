@@ -8,11 +8,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
-import coil3.network.ktor3.KtorNetworkFetcherFactory
-import coil3.request.crossfade
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import org.vicpoo.gasolineproject.image.ImageCache
 import org.vicpoo.gasolineproject.ui.common.adaptive.ProvideWindowWidth
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -36,13 +35,10 @@ private const val SPLASH_MIN_MILLIS = 800L
  */
 @Composable
 fun App(phoneInDarkTheme: Boolean? = null) {
-    // Cargador de imágenes (fotos de vehículos desde MinIO o desde el teléfono)
-    setSingletonImageLoaderFactory { context ->
-        ImageLoader.Builder(context)
-            .components { add(KtorNetworkFetcherFactory()) }
-            .crossfade(true)
-            .build()
-    }
+    // Cargador de imágenes (fotos de vehículos desde MinIO o desde el teléfono): caché en
+    // cacheDir/image_cache con tamaño máximo, y se borra al cerrar sesión (ver ImageCache)
+    val imageCache = koinInject<ImageCache>()
+    setSingletonImageLoaderFactory { context -> imageCache.newImageLoader(context) }
 
     // Apariencia: igual que el teléfono hasta que el usuario elige otra en Perfil (se guarda en el teléfono)
     val themeViewModel = koinViewModel<ThemeViewModel>()

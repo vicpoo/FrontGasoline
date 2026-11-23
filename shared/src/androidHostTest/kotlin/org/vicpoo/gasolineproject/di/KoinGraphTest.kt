@@ -154,8 +154,9 @@ class KoinGraphTest {
             // vehicles, triprecording, push y la cola de solicitudes de reservas.
             // Si cambia el número, revisa que no se haya perdido un `bind`.
             assertEquals(4, app.koin.getAll<PendingSyncTask>().size)
-            // lastRefresh, push, reports, reservations, tripRecording, trips y vehicles.
-            assertEquals(7, app.koin.getAll<LogoutListener>().size)
+            // lastRefresh, push, reports, reservations, tripRecording, trips, vehicles e imageCache.
+            // (temporaryFiles es de platformModule, que esta prueba reemplaza)
+            assertEquals(8, app.koin.getAll<LogoutListener>().size)
         } finally {
             app.close()
         }
