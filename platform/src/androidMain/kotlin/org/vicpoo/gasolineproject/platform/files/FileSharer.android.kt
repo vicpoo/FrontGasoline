@@ -15,6 +15,7 @@ import java.io.File
  *
  * El nombre viene de la API (Content-Disposition): se limpia con [safeFileName] y además se verifica
  * que el archivo quede dentro de cache/reports, para que nunca se escriba en otra carpeta de la app.
+ * El archivo no se borra aquí (el chooser no avisa cuándo terminó): lo limpia AndroidTemporaryFiles.
  */
 @Composable
 actual fun rememberFileSharer(): FileSharer {
@@ -23,7 +24,7 @@ actual fun rememberFileSharer(): FileSharer {
 }
 
 private fun share(context: Context, file: SharedFile) {
-    val folder = File(context.cacheDir, "reports").apply { mkdirs() }
+    val folder = File(context.cacheDir, AndroidTemporaryFiles.REPORTS_DIR).apply { mkdirs() }
     val target = File(folder, safeFileName(file.name))
     // Segunda barrera: aunque un nombre raro pasara la limpieza, nunca se escribe fuera de cache/reports
     if (!target.isInside(folder)) return

@@ -62,7 +62,7 @@ actual fun rememberCameraCapture(onResult: (PickedFile?) -> Unit): CameraLaunche
 }
 
 private fun createTempPhoto(context: Context): File {
-    val dir = File(context.cacheDir, "camera").apply { mkdirs() }
+    val dir = File(context.cacheDir, AndroidTemporaryFiles.CAMERA_DIR).apply { mkdirs() }
     return File.createTempFile("foto_", ".jpg", dir)
 }
 
