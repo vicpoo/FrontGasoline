@@ -1,30 +1,13 @@
 /*
  * :data — capa de datos: implementa las interfaces de :domain.
  * Red (Ktor + safeApiCall + renovación de la sesión), sesión y tokens (DataStore, Keystore / Keychain),
- * base local SQLDelight (AppDatabase, fase 6), cachés JSON en archivos (okio, se van pasando a la base),
+ * base local (LocalDatabase; el esquema SQLDelight vive en :database), cachés JSON en archivos (okio, se van pasando a la base),
  * colas offline-first y sincronizadores de cada feature.
  * Paquetes: org.vicpoo.gasolineproject.data.<feature> + local, network, session, push, di.
  */
 plugins {
     id("gasoline.kmp.library")
     alias(libs.plugins.kotlinSerialization)
-    alias(libs.plugins.sqldelight)
-}
-
-/*
- * Base local. Esquema actual en src/commonMain/sqldelight/.../*.sq; cada cambio de esquema es un
- * archivo N.sqm (de la versión N a la N+1). Después de cambiar el esquema:
- *     ./gradlew :data:generateCommonMainAppDatabaseSchema   (genera databases/<versión>.db, se sube a git)
- *     ./gradlew :data:verifyCommonMainAppDatabaseMigration  (comprueba que las migraciones llegan al esquema actual)
- */
-sqldelight {
-    databases {
-        create("AppDatabase") {
-            packageName.set("org.vicpoo.gasolineproject.data.database")
-            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
-            verifyMigrations.set(true)
-        }
-    }
 }
 
 kotlin {
@@ -43,7 +26,7 @@ kotlin {
             api(libs.ktor.client.core)
             api(libs.datastore.preferences.core)
             api(libs.okio)
-            api(libs.sqldelight.runtime)
+            api(project(":database"))
             implementation(libs.sqldelight.coroutines)
 
             implementation(libs.ktor.client.contentNegotiation)

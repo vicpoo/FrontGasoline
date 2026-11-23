@@ -36,7 +36,9 @@ androidx-work = "2.10.2"
 google-services = "4.4.2"
 firebase-bom = "33.7.0"
 # Base de datos local (fase 6). SQLCipher cifra el archivo en Android (16 KB de página desde la 4.6.1).
-sqldelight = "2.1.0"
+# El plugin de SQLDelight no funciona con com.android.kotlin.multiplatform.library: por eso el esquema
+# vive en :database, un módulo KMP con target jvm() sin plugin de Android (ver database/build.gradle.kts).
+sqldelight = "2.4.0"
 sqlcipher-android = "4.9.0"
 androidx-sqlite = "2.4.0"
 

@@ -3,8 +3,8 @@ package org.vicpoo.gasolineproject.testing
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
-import org.vicpoo.gasolineproject.data.database.AppDatabase
 import org.vicpoo.gasolineproject.data.database.LocalDatabase
+import org.vicpoo.gasolineproject.database.AppDatabase
 import org.vicpoo.gasolineproject.domain.database.SqlDriverFactory
 
 /** Base SQLite en memoria con [schema] ya creado (JDBC en la JVM, driver nativo en iOS). */

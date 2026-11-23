@@ -35,6 +35,7 @@ include(":shared")
 // Etapa 2: un módulo por capa; cada capa tiene una carpeta por feature
 include(":domain")
 include(":data")
+include(":database")
 include(":platform")
 include(":ui")
 include(":testing")

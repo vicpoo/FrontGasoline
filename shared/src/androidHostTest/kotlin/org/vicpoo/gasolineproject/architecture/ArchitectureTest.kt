@@ -8,6 +8,7 @@ import kotlin.test.fail
 /**
  * Reglas de la arquitectura por capas (docs/ARQUITECTURA.md). Lee el código fuente, sin librerías extra:
  * - domain no conoce a nadie; data y platform solo conocen domain; ui conoce domain y platform (nunca data).
+ * - El esquema de la base (:database, solo código generado por SQLDelight) lo usa únicamente data.
  * - domain es Kotlin puro: sin Ktor, DataStore, okio, Android ni Compose.
  * - En ui, cada UiState / Event / Effect vive en su propio archivo (XUiState.kt, XEvent.kt, XEffect.kt).
  */
@@ -18,7 +19,7 @@ class ArchitectureTest {
 
     private val allowed = mapOf(
         "domain" to setOf("domain"),
-        "data" to setOf("domain", "data"),
+        "data" to setOf("domain", "data", "database"),
         "platform" to setOf("domain", "platform"),
         "ui" to setOf("domain", "platform", "ui"),
     )
