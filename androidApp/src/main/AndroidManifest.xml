@@ -17,8 +17,8 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!--
-        usesCleartextTraffic="true" permite HTTP sin TLS para probar contra la API local
-        (http://10.0.2.2). Quitarlo cuando la API esté en HTTPS.
+        networkSecurityConfig: HTTP sin TLS solo hacia el servidor de APIGasoline; todo lo demás va por
+        HTTPS (res/xml/network_security_config.xml).
     -->
     <application
         android:name=".GasolineApplication"
@@ -27,7 +27,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.Gasoline">
         <activity
             android:exported="true"

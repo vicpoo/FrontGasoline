@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tráfico de red permitido (debug y release).
+
+    APIGasoline no tiene HTTPS (no hay dominio ni certificado disponibles), así que se permite HTTP
+    SOLO hacia su servidor. Cualquier otro host debe usar HTTPS: si una librería o una URL intenta
+    salir por HTTP a otro lado, Android la bloquea (CLEARTEXT communication not permitted).
+
+    Riesgo aceptado: ver docs/ARQUITECTURA.md, sección "Seguridad de red".
+    Si cambia el host de la API (BuildConfig.API_BASE_URL en androidApp/build.gradle.kts), cámbialo aquí también.
+    Las fotos de MinIO (URL prefirmadas) deben venir del mismo host; si vienen de otro, agrégalo abajo.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">13.222.72.73</domain>
+    </domain-config>
+</network-security-config>
