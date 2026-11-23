@@ -143,7 +143,10 @@ class FinishTripUseCase(
             is FinishTripValidation.Valid -> validation.finalMileage
         }
 
-        return when (val result = tracker.finish(mileage, photo!!)) {
+        // El validador ya exige la foto; si aun así faltara, se marca el campo en lugar de fallar
+        val validPhoto = photo
+            ?: return FinishTripResult.Invalid(mapOf(FinishTripField.ODOMETER_PHOTO to ValidationReason.REQUIRED))
+        return when (val result = tracker.finish(mileage, validPhoto)) {
             is AppResult.Success -> FinishTripResult.Saved(result.data)
             is AppResult.Failure -> FinishTripResult.Failed(result.error)
         }

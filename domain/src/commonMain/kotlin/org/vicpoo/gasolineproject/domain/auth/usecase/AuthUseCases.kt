@@ -51,11 +51,12 @@ class LoginUseCase(
         discardOtherAccountData: Boolean = false,
     ): LoginResult {
         val normalizedEmail = email.trim().lowercase()
-        val owner = ownerStore.current()
-        val otherAccount = owner != null && !owner.isSameAccount(normalizedEmail)
-        if (otherAccount && !discardOtherAccountData) {
+        // Dueño de los datos del teléfono, solo si es OTRA cuenta
+        val otherOwner = ownerStore.current()?.takeIf { !it.isSameAccount(normalizedEmail) }
+        val otherAccount = otherOwner != null
+        if (otherOwner != null && !discardOtherAccountData) {
             val pending = countPending()
-            if (pending > 0) return LoginResult.OtherAccountPendingData(owner!!.email, pending)
+            if (pending > 0) return LoginResult.OtherAccountPendingData(otherOwner.email, pending)
         }
         return when (val result = repository.login(normalizedEmail, password, clearLocalData = otherAccount)) {
             is AppResult.Failure -> LoginResult.Failure(result.error)
