@@ -41,6 +41,19 @@ import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
  * Más un módulo por feature (AuthDataModule.kt, VehiclesDataModule.kt, ...).
  */
 
+/**
+ * URL base de APIGasoline (termina en "/"). La registra la app al iniciar Koin con [apiConfigModule];
+ * así cada build (debug / release) o plataforma puede apuntar a su servidor sin tocar data.
+ */
+val API_BASE_URL = named("apiBaseUrl")
+
+/** Módulo con la URL base de la API. Lo agrega initKoin (shared). */
+fun apiConfigModule(baseUrl: String): Module {
+    require(baseUrl.startsWith("http://") || baseUrl.startsWith("https://")) { "La URL de la API debe empezar con http:// o https://" }
+    require(baseUrl.endsWith("/")) { "La URL de la API debe terminar en \"/\": $baseUrl" }
+    return module { single(API_BASE_URL) { baseUrl } }
+}
+
 /** Archivos, DataStore y tokens cifrados: cambian entre Android e iOS. */
 expect val dataPlatformModule: Module
 
@@ -79,7 +92,7 @@ val coreDataModule = module {
 
 val networkDataModule = module {
     // Renovar / cerrar sesión con el refresh token: cliente propio, sin AuthPlugin
-    single<SessionApi> { KtorSessionApi(createSessionHttpClient(engine = httpEngine(), json = get())) }
+    single<SessionApi> { KtorSessionApi(createSessionHttpClient(engine = httpEngine(), baseUrl = get(API_BASE_URL), json = get())) }
 
     // Dueño de los tokens (TokenStore cifrado): da el JWT, lo renueva y cierra la sesión si la API lo rechaza
     single {
@@ -95,6 +108,7 @@ val networkDataModule = module {
         val tokens = get<AuthTokenManager>()
         createHttpClient(
             engine = httpEngine(),
+            baseUrl = get(API_BASE_URL),
             tokenProvider = tokens,
             tokenRefresher = tokens,
             json = get(),

@@ -95,6 +95,7 @@ private fun HttpRequestBuilder.bearerToken(): String? =
 
 fun createHttpClient(
     engine: HttpClientEngine,
+    baseUrl: String,
     tokenProvider: TokenProvider,
     tokenRefresher: TokenRefresher,
     json: Json,
@@ -114,7 +115,7 @@ fun createHttpClient(
         this.tokenRefresher = tokenRefresher
     }
     defaultRequest {
-        url(ApiConfig.BASE_URL)
+        url(baseUrl)
         // La API guarda el origen en la auditoría (movil | web)
         headers.append(ApiConfig.ORIGIN_HEADER, ApiConfig.ORIGIN_MOBILE)
     }
@@ -124,7 +125,7 @@ fun createHttpClient(
  * Cliente para renovar / cerrar la sesión (SessionApi): mismo JSON, tiempos y origen, pero SIN
  * AuthPlugin (no lleva el JWT y un 401 aquí significa "la sesión terminó", no "renueva").
  */
-fun createSessionHttpClient(engine: HttpClientEngine, json: Json): HttpClient = HttpClient(engine) {
+fun createSessionHttpClient(engine: HttpClientEngine, baseUrl: String, json: Json): HttpClient = HttpClient(engine) {
     expectSuccess = true
     install(ContentNegotiation) { json(json) }
     install(HttpTimeout) {
@@ -132,7 +133,7 @@ fun createSessionHttpClient(engine: HttpClientEngine, json: Json): HttpClient = 
         connectTimeoutMillis = ApiConfig.CONNECT_TIMEOUT_MS
     }
     defaultRequest {
-        url(ApiConfig.BASE_URL)
+        url(baseUrl)
         headers.append(ApiConfig.ORIGIN_HEADER, ApiConfig.ORIGIN_MOBILE)
     }
 }

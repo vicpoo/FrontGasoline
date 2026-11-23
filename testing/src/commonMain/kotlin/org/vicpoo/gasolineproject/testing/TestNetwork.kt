@@ -19,6 +19,9 @@ import org.vicpoo.gasolineproject.data.network.createHttpClient
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 
+/** URL base de la API falsa (las rutas se registran sin el prefijo "/api/"). */
+const val TEST_API_BASE_URL = "http://localhost/api/"
+
 /** Mismo Json que coreModule. */
 val testJson = Json {
     ignoreUnknownKeys = true
@@ -48,6 +51,7 @@ class FakeApiServer(
             requests += "${request.method.value} ${request.url.encodedPath.removePrefix("/api/")}"
             handler(request)
         },
+        baseUrl = TEST_API_BASE_URL,
         tokenProvider = tokenProvider,
         tokenRefresher = tokenRefresher,
         json = testJson,

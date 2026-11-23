@@ -15,6 +15,7 @@ import org.vicpoo.gasolineproject.data.auth.remote.KtorAuthApi
 import org.vicpoo.gasolineproject.data.auth.repository.AuthRepositoryImpl
 import org.vicpoo.gasolineproject.testing.FakeApiServer
 import org.vicpoo.gasolineproject.testing.FakeSessionStore
+import org.vicpoo.gasolineproject.testing.TEST_API_BASE_URL
 import org.vicpoo.gasolineproject.testing.noConnection
 import org.vicpoo.gasolineproject.testing.respondJson
 import org.vicpoo.gasolineproject.testing.respondProblem
@@ -35,12 +36,13 @@ class AuthRepositorySessionTest {
 
     private val sessionApi = KtorSessionApi(
         createSessionHttpClient(
-            MockEngine { request ->
+            engine = MockEngine { request ->
                 sessionRequests += request.url.encodedPath.removePrefix("/api/")
                 if (logoutOffline) noConnection()
                 respond("", HttpStatusCode.NoContent)
             },
-            testJson,
+            baseUrl = TEST_API_BASE_URL,
+            json = testJson,
         ),
     )
 

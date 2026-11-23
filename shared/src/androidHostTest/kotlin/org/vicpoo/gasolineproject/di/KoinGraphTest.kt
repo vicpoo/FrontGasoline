@@ -33,6 +33,7 @@ import org.vicpoo.gasolineproject.domain.session.LogoutListener
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
+import org.vicpoo.gasolineproject.data.di.apiConfigModule
 import org.vicpoo.gasolineproject.data.di.dataPlatformModule
 import org.vicpoo.gasolineproject.platform.di.platformModule
 import org.vicpoo.gasolineproject.ui.license.LicenseGateViewModel
@@ -70,6 +71,7 @@ import org.vicpoo.gasolineproject.navigation.StartViewModel
 import org.vicpoo.gasolineproject.testing.FakeApiServer
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.RecordingSyncScheduler
+import org.vicpoo.gasolineproject.testing.TEST_API_BASE_URL
 import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -109,7 +111,8 @@ class KoinGraphTest {
     }
 
     private fun testModules(): List<Module> =
-        appModules.filterNot { it === platformModule || it === dataPlatformModule } + testPlatformModule + noRealWorkModule
+        appModules.filterNot { it === platformModule || it === dataPlatformModule } +
+            testPlatformModule + noRealWorkModule + apiConfigModule(TEST_API_BASE_URL)
 
     @BeforeTest
     fun setUp() = Dispatchers.setMain(StandardTestDispatcher())

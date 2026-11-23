@@ -2,13 +2,13 @@ package org.vicpoo.gasolineproject.data.network
 
 /**
  * Configuración de APIGasoline.
- * - Emulador de Android: 10.0.2.2 = "localhost de tu PC".
- * - Celular físico: usa la IP de tu PC en la red (ej. http://192.168.1.50:5234/api/).
- * Corre la API con el perfil "http" o "emulador-android" (http://localhost:5234).
- * Debe terminar en "/".
+ *
+ * La URL base NO vive aquí: la app la pasa al iniciar Koin (androidApp la lee de
+ * BuildConfig.API_BASE_URL, definida en androidApp/build.gradle.kts) y los clientes HTTP la reciben
+ * con el qualifier API_BASE_URL (data/di/CoreDataModule.kt). Para apuntar a otro servidor solo se
+ * cambia ese buildConfigField.
  */
 object ApiConfig {
-    const val BASE_URL = "http://13.222.72.73/api/"
     const val REQUEST_TIMEOUT_MS = 30_000L
     const val CONNECT_TIMEOUT_MS = 15_000L
 
@@ -25,7 +25,7 @@ object ApiConfig {
     const val ORIGIN_MOBILE = "movil"
 }
 
-/** Rutas de APIGasoline (relativas a BASE_URL). */
+/** Rutas de APIGasoline (relativas a la URL base). */
 object ApiRoutes {
     // Autenticación (AuthController)
     const val LOGIN = "auth/login"

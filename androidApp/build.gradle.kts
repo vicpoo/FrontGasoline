@@ -37,6 +37,11 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+
+        // URL de APIGasoline (termina en "/"). La misma en debug y release; si algún día cambia por
+        // ambiente, se define dentro de cada buildType. Llega a Koin desde GasolineApplication.
+        // Si cambias el host, agrégalo también a res/xml/network_security_config.xml.
+        buildConfigField("String", "API_BASE_URL", "\"http://13.222.72.73/api/\"")
     }
     packaging {
         resources {
@@ -63,5 +68,6 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true // BuildConfig.API_BASE_URL
     }
 }

@@ -15,6 +15,7 @@ import org.vicpoo.gasolineproject.domain.session.InMemoryTokenStore
 import org.vicpoo.gasolineproject.domain.session.TokenExpiry
 import org.vicpoo.gasolineproject.testing.FakeApiServer
 import org.vicpoo.gasolineproject.testing.FakeSessionStore
+import org.vicpoo.gasolineproject.testing.TEST_API_BASE_URL
 import org.vicpoo.gasolineproject.testing.noConnection
 import org.vicpoo.gasolineproject.testing.respondJson
 import org.vicpoo.gasolineproject.testing.respondProblem
@@ -57,11 +58,12 @@ class AuthTokenManagerTest {
 
     private val sessionApi = KtorSessionApi(
         createSessionHttpClient(
-            MockEngine {
+            engine = MockEngine {
                 refreshCalls++
                 refreshResponse()
             },
-            testJson,
+            baseUrl = TEST_API_BASE_URL,
+            json = testJson,
         ),
     )
 

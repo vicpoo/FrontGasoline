@@ -2,6 +2,7 @@ package org.vicpoo.gasolineproject.di
 
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
+import org.vicpoo.gasolineproject.data.di.apiConfigModule
 import org.vicpoo.gasolineproject.data.di.dataModules
 import org.vicpoo.gasolineproject.domain.di.domainModules
 import org.vicpoo.gasolineproject.navigation.di.navigationModule
@@ -15,10 +16,13 @@ import org.vicpoo.gasolineproject.ui.di.uiModules
  */
 val appModules = listOf(platformModule) + domainModules + dataModules + uiModules + navigationModule
 
-/** Se llama una vez al iniciar la app (Application en Android, MainViewController en iOS). */
-fun initKoin(appDeclaration: KoinAppDeclaration = {}) {
+/**
+ * Se llama una vez al iniciar la app (Application en Android, MainViewController en iOS).
+ * [apiBaseUrl]: URL de APIGasoline terminada en "/" (Android la toma de BuildConfig.API_BASE_URL).
+ */
+fun initKoin(apiBaseUrl: String, appDeclaration: KoinAppDeclaration = {}) {
     startKoin {
         appDeclaration()
-        modules(appModules)
+        modules(appModules + apiConfigModule(apiBaseUrl))
     }
 }

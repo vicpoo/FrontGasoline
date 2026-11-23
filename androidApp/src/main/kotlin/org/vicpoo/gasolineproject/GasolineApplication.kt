@@ -10,7 +10,7 @@ import org.vicpoo.gasolineproject.platform.push.PushNotifications
 class GasolineApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        initKoin {
+        initKoin(apiBaseUrl = BuildConfig.API_BASE_URL) {
             // Solo errores: con el nivel por defecto Koin escribe una línea por cada definición al iniciar
             androidLogger(Level.ERROR)
             androidContext(this@GasolineApplication)
