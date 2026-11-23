@@ -14,13 +14,16 @@ import platform.Foundation.writeToFile
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
 
-/** iOS: guarda el archivo en la carpeta temporal y abre la hoja de compartir del sistema. */
+/**
+ * iOS: guarda el archivo en la carpeta temporal y abre la hoja de compartir del sistema.
+ * El nombre viene de la API: se limpia con [safeFileName] para no escribir fuera de esa carpeta.
+ */
 @Composable
 actual fun rememberFileSharer(): FileSharer = remember { FileSharer { file -> share(file) } }
 
 @OptIn(ExperimentalForeignApi::class)
 private fun share(file: SharedFile) {
-    val path = NSTemporaryDirectory() + file.name
+    val path = NSTemporaryDirectory() + safeFileName(file.name)
     file.bytes.toNSData().writeToFile(path, atomically = true)
 
     val controller = UIActivityViewController(activityItems = listOf(NSURL.fileURLWithPath(path)), applicationActivities = null)

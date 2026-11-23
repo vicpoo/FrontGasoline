@@ -12,6 +12,9 @@ import java.io.File
 /**
  * Android: guarda el archivo en cache/reports y lo comparte con el FileProvider de la app
  * (res/xml/file_paths.xml de androidApp debe tener <cache-path name="reports" path="reports/" />).
+ *
+ * El nombre viene de la API (Content-Disposition): se limpia con [safeFileName] y además se verifica
+ * que el archivo quede dentro de cache/reports, para que nunca se escriba en otra carpeta de la app.
  */
 @Composable
 actual fun rememberFileSharer(): FileSharer {
@@ -21,18 +24,24 @@ actual fun rememberFileSharer(): FileSharer {
 
 private fun share(context: Context, file: SharedFile) {
     val folder = File(context.cacheDir, "reports").apply { mkdirs() }
-    val target = File(folder, file.name)
+    val target = File(folder, safeFileName(file.name))
+    // Segunda barrera: aunque un nombre raro pasara la limpieza, nunca se escribe fuera de cache/reports
+    if (!target.isInside(folder)) return
     target.writeBytes(file.bytes)
 
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", target)
     val send = Intent(Intent.ACTION_SEND).apply {
         type = file.mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_SUBJECT, file.name)
+        putExtra(Intent.EXTRA_SUBJECT, target.name)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    val chooser = Intent.createChooser(send, file.name).apply {
+    val chooser = Intent.createChooser(send, target.name).apply {
         if (context !is Activity) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
     context.startActivity(chooser)
 }
+
+/** true si el archivo queda dentro de [folder] (comparando rutas reales, sin "..", ni enlaces). */
+private fun File.isInside(folder: File): Boolean =
+    canonicalPath.startsWith(folder.canonicalPath + File.separator)
