@@ -1,6 +1,7 @@
 package org.vicpoo.gasolineproject.data.auth.repository
 
 import org.vicpoo.gasolineproject.domain.common.AppError
+import org.vicpoo.gasolineproject.domain.common.AppLog
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.map
 import org.vicpoo.gasolineproject.domain.common.onSuccess
@@ -86,18 +87,31 @@ class AuthRepositoryImpl(
         sessionWriter.clear()
     }
 
-    /** Cada feature borra sus datos del teléfono (algunas, como push, todavía llaman a la API). */
+    /**
+     * Cada feature borra sus datos del teléfono (algunas, como push, todavía llaman a la API).
+     * Si una falla (ej. un archivo ocupado) se reintenta una vez; si sigue fallando queda registrado
+     * como error en la bitácora en lugar de perderse en silencio.
+     */
     private suspend fun clearLocalData() {
-        logoutListeners.forEach { listener ->
-            try {
-                listener.onLogout()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                println("[Sesión] No se pudieron borrar unos datos del teléfono: ${e.message}")
-            }
+        val failed = logoutListeners.filterNot { runListener(it) }
+        if (failed.isEmpty()) return
+        val stillFailing = failed.filterNot { runListener(it) }
+        if (stillFailing.isNotEmpty()) {
+            AppLog.e(LOG_TAG, "${stillFailing.size} de ${logoutListeners.size} features no borraron sus datos del teléfono")
         }
     }
+
+    /** true si la feature borró sus datos. */
+    private suspend fun runListener(listener: LogoutListener): Boolean =
+        try {
+            listener.onLogout()
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppLog.w(LOG_TAG, "No se pudieron borrar unos datos del teléfono", e)
+            false
+        }
 
     private suspend fun revokeRemoteSession() {
         val refreshToken = tokenManager.currentTokens()?.refreshToken ?: return
@@ -106,11 +120,12 @@ class AuthRepositoryImpl(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            println("[API] No se pudo cerrar la sesión en la API (se cierra solo en el teléfono): ${e.message}")
+            AppLog.w(LOG_TAG, "No se pudo cerrar la sesión en la API (se cierra solo en el teléfono): ${e::class.simpleName}")
         }
     }
 
     private companion object {
+        const val LOG_TAG = "Sesion"
         const val LOGOUT_TIMEOUT_MS = 5_000L
         const val MAX_DEVICE_NAME = 100
     }

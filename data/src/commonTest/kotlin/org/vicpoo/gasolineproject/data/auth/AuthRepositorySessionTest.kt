@@ -4,6 +4,8 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
+import org.vicpoo.gasolineproject.domain.common.AppLog
+import org.vicpoo.gasolineproject.domain.common.AppLogLevel
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.data.network.AuthTokenManager
 import org.vicpoo.gasolineproject.data.network.KtorSessionApi
@@ -14,6 +16,7 @@ import org.vicpoo.gasolineproject.domain.session.LogoutListener
 import org.vicpoo.gasolineproject.data.auth.remote.KtorAuthApi
 import org.vicpoo.gasolineproject.data.auth.repository.AuthRepositoryImpl
 import org.vicpoo.gasolineproject.testing.FakeApiServer
+import org.vicpoo.gasolineproject.testing.FakeAppLogger
 import org.vicpoo.gasolineproject.testing.FakeSessionStore
 import org.vicpoo.gasolineproject.testing.TEST_API_BASE_URL
 import org.vicpoo.gasolineproject.testing.noConnection
@@ -148,5 +151,54 @@ class AuthRepositorySessionTest {
 
         assertNull(store.tokens)
         assertNull(sessions.state.value)
+    }
+
+    // ---------------- Una feature no pudo borrar sus datos (4.8) ----------------
+
+    private fun repositoryWith(listener: LogoutListener) = AuthRepositoryImpl(
+        api = KtorAuthApi(server.client),
+        sessionReader = sessions,
+        sessionWriter = sessions,
+        tokenManager = tokenManager,
+        sessionApi = sessionApi,
+        logoutListeners = listOf(listener),
+    )
+
+    @Test
+    fun logout_siUnaFeatureFallaUnaVez_seReintenta_ySinError() = runTest {
+        val logger = FakeAppLogger()
+        AppLog.install(logger)
+        try {
+            var attempts = 0
+            val repository = repositoryWith(LogoutListener { if (++attempts == 1) error("Archivo ocupado") })
+            sessions.save(testSession())
+
+            repository.logout()
+
+            assertEquals(2, attempts)
+            assertEquals(0, logger.count(AppLogLevel.ERROR))
+            assertNull(sessions.state.value)
+        } finally {
+            AppLog.reset()
+        }
+    }
+
+    @Test
+    fun logout_siUnaFeatureSigueFallando_quedaRegistradoComoError_yLaSesionSeCierraIgual() = runTest {
+        val logger = FakeAppLogger()
+        AppLog.install(logger)
+        try {
+            var attempts = 0
+            val repository = repositoryWith(LogoutListener { attempts++; error("Disco lleno") })
+            sessions.save(testSession())
+
+            repository.logout()
+
+            assertEquals(2, attempts)
+            assertEquals(1, logger.count(AppLogLevel.ERROR))
+            assertNull(sessions.state.value)
+        } finally {
+            AppLog.reset()
+        }
     }
 }

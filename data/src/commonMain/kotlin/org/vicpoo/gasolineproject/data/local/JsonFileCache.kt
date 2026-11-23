@@ -52,7 +52,11 @@ class JsonFileCache<T : Any>(
 
     suspend fun clear() {
         mutex.withLock {
-            withContext(Dispatchers.Default) { runCatching { fileSystem.delete(file) } }
+            withContext(Dispatchers.Default) {
+                runCatching { fileSystem.delete(file) }
+                // Si una escritura quedó a medias (la app se cerró), también queda el temporal con datos
+                runCatching { fileSystem.delete(temp) }
+            }
             state.value = emptyValue
         }
     }
