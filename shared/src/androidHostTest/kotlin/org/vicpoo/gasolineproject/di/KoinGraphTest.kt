@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.di
 
+import androidx.lifecycle.ViewModel
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,7 +13,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import okio.FileSystem
 import org.koin.core.Koin
+import org.koin.core.annotation.KoinInternalApi
 import org.koin.core.module.Module
+import org.koin.core.parameter.ParametersDefinition
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
@@ -73,10 +76,12 @@ import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.RecordingSyncScheduler
 import org.vicpoo.gasolineproject.testing.TEST_API_BASE_URL
 import java.nio.file.Files
+import kotlin.reflect.KClass
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Red de seguridad del refactor multimódulo: arma el grafo REAL de Koin (appModules) y pide
@@ -153,51 +158,90 @@ class KoinGraphTest {
         }
     }
 
+    /**
+     * Red de seguridad de esta misma prueba: si se registra un ViewModel en Koin y se olvida pedirlo
+     * en [resolveAllViewModels], nadie validaría que se puede crear. Aquí se comparan los registrados
+     * contra los pedidos y la prueba dice cuál falta.
+     */
+    @OptIn(KoinInternalApi::class)
+    @Test
+    fun todosLosViewModelsRegistrados_sePidenEnEstaPrueba() {
+        val app = koinApplication {
+            allowOverride(true)
+            modules(testModules())
+        }
+        try {
+            resolveAllViewModels(app.koin)
+            val registered = app.koin.instanceRegistry.instances.values
+                .map { it.beanDefinition.primaryType }
+                .filter { ViewModel::class.java.isAssignableFrom(it.java) }
+                .toSet()
+
+            val missing = (registered - resolved).mapNotNull { it.simpleName }.sorted()
+            assertTrue(
+                missing.isEmpty(),
+                "ViewModels registrados en Koin que KoinGraphTest no pide: $missing. Agrégalos a resolveAllViewModels().",
+            )
+        } finally {
+            app.close()
+        }
+    }
+
+    /** ViewModels que esta prueba ya pidió (para detectar los que se registraron y nadie pidió). */
+    private val resolved = mutableSetOf<KClass<*>>()
+
+    /** Pide [T] a Koin (con sus parámetros) y lo anota en [resolved]. */
+    private inline fun <reified T : Any> Koin.track(noinline parameters: ParametersDefinition? = null) {
+        get<T>(parameters = parameters)
+        resolved += T::class
+    }
+
+    /** Si agregas un ViewModel en UiModule.kt (o en navigationModule), pídelo aquí con sus parámetros. */
     private fun resolveAllViewModels(koin: Koin) {
         // core / navegación
-        koin.get<AccessGateViewModel> { parametersOf(AccessRule.Everyone) }
-        koin.get<StartViewModel>()
-        koin.get<ThemeViewModel>()
-        koin.get<MainViewModel>()
+        koin.track<AccessGateViewModel> { parametersOf(AccessRule.Everyone) }
+        koin.track<StartViewModel>()
+        koin.track<ThemeViewModel>()
+        koin.track<MainViewModel>()
 
         // auth
-        koin.get<LoginViewModel>()
-        koin.get<LicenseViewModel>()
-        koin.get<LicenseGateViewModel>()
+        koin.track<LoginViewModel>()
+        koin.track<LicenseViewModel>()
+        koin.track<LicenseGateViewModel>()
 
         // profile
-        koin.get<ProfileViewModel>()
-        koin.get<EditNameViewModel>()
+        koin.track<ProfileViewModel>()
+        koin.track<EditNameViewModel>()
 
         // vehicles
         VehiclesMode.entries.forEach { mode ->
-            koin.get<VehicleListViewModel> { parametersOf(VehicleListArgs(mode)) }
-            koin.get<VehicleDetailViewModel> { parametersOf(VehicleDetailArgs(vehicleId = "loc-1", mode = mode)) }
+            koin.track<VehicleListViewModel> { parametersOf(VehicleListArgs(mode)) }
+            koin.track<VehicleDetailViewModel> { parametersOf(VehicleDetailArgs(vehicleId = "loc-1", mode = mode)) }
         }
-        koin.get<VehicleFormViewModel> { parametersOf(VehicleFormArgs(vehicleId = null)) }
+        koin.track<VehicleFormViewModel> { parametersOf(VehicleFormArgs(vehicleId = null)) }
 
         // reservations
-        koin.get<MyReservationsViewModel>()
-        koin.get<ReservationsBellViewModel>()
-        koin.get<CompanyReservationsViewModel>()
-        koin.get<AssignmentsViewModel>()
-        koin.get<AssignmentDetailViewModel> { parametersOf("r:res-1") }
-        koin.get<ReservationDetailViewModel> { parametersOf("res-1") }
+        koin.track<MyReservationsViewModel>()
+        koin.track<ReservationsBellViewModel>()
+        koin.track<CompanyReservationsViewModel>()
+        koin.track<AssignmentsViewModel>()
+        koin.track<AssignmentDetailViewModel> { parametersOf("r:res-1") }
+        koin.track<ReservationDetailViewModel> { parametersOf("res-1") }
 
         // trips
-        koin.get<TripHistoryViewModel>()
-        koin.get<TripDetailViewModel> { parametersOf(TripDetailArgs(tripId = "trip-1")) }
+        koin.track<TripHistoryViewModel>()
+        koin.track<TripDetailViewModel> { parametersOf(TripDetailArgs(tripId = "trip-1")) }
 
         // triprecording
-        koin.get<AssignedVehiclesViewModel>()
-        koin.get<ActiveTripViewModel>()
-        koin.get<FinishTripViewModel>()
-        koin.get<StartTripViewModel> { parametersOf(StartTripArgs(reservationId = "res-1")) }
-        koin.get<FuelRecordFormViewModel> { parametersOf(FuelRecordFormArgs(recordId = null)) }
-        koin.get<SyncStatusViewModel>()
+        koin.track<AssignedVehiclesViewModel>()
+        koin.track<ActiveTripViewModel>()
+        koin.track<FinishTripViewModel>()
+        koin.track<StartTripViewModel> { parametersOf(StartTripArgs(reservationId = "res-1")) }
+        koin.track<FuelRecordFormViewModel> { parametersOf(FuelRecordFormArgs(recordId = null)) }
+        koin.track<SyncStatusViewModel>()
 
         // reports
-        koin.get<ReportsViewModel>()
+        koin.track<ReportsViewModel>()
     }
 
     private object NoLocationProvider : LocationProvider {
