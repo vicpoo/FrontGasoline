@@ -14,6 +14,14 @@ kotlin {
         namespace = "org.vicpoo.gasolineproject.platform"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
+
+        // commonTest en la JVM: ./gradlew :platform:testAndroidHostTest
+        withHostTestBuilder {}
+
+        // Pruebas en celular o emulador (fotos con Bitmap y EXIF reales): ./gradlew :platform:connectedAndroidDeviceTest
+        withDeviceTestBuilder { sourceSetTreeName = "test" }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
     }
 
     sourceSets {
@@ -32,6 +40,15 @@ kotlin {
 
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        getByName("androidDeviceTest").dependencies {
+            implementation(libs.kotlin.testJunit)
+            implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.androidx.testExt.junit)
+            implementation(libs.androidx.testRunner)
         }
     }
 }

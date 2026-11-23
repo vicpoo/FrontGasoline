@@ -18,8 +18,14 @@ class UploadLicenseUseCase(
 ) {
 
     suspend operator fun invoke(original: PickedFile): AppResult<Unit> {
-        // Las fotos del teléfono suelen pesar más de 5 MB: se reducen antes de validar (los PDF no se tocan)
-        val file = if (original.mimeType.startsWith("image/")) imageCompressor.compress(original) else original
+        // Las fotos se recodifican antes de validar: pesan menos de 5 MB y pierden el EXIF (ubicación).
+        // Si la foto no se puede leer se rechaza en vez de subir la original. Los PDF no se tocan.
+        val file = if (original.mimeType.startsWith("image/")) {
+            imageCompressor.compress(original)
+                ?: return AppResult.Failure(AppError.Validation(ValidationReason.INVALID_FILE_TYPE))
+        } else {
+            original
+        }
         if (file.mimeType.lowercase() !in ALLOWED_TYPES) {
             return AppResult.Failure(AppError.Validation(ValidationReason.INVALID_FILE_TYPE))
         }

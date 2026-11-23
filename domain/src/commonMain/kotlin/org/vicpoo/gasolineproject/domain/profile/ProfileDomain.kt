@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
+import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 
 /** Perfil del usuario (sale de la sesión guardada: se ve aunque no haya red). */
@@ -50,12 +51,21 @@ class UpdateNameUseCase(private val repository: ProfileRepository) {
     }
 }
 
-/** Foto de perfil: jpg, png o webp, máx. 5 MB (igual que la API). */
-class UpdateProfilePhotoUseCase(private val repository: ProfileRepository) {
-    suspend operator fun invoke(file: PickedFile): AppResult<Unit> {
-        if (file.mimeType.lowercase() !in ALLOWED_TYPES) {
+/**
+ * Foto de perfil: jpg, png o webp, máx. 5 MB (igual que la API).
+ * Se recodifica antes de validar: pesa menos y pierde el EXIF (ubicación GPS de la galería).
+ * Si no se puede leer se rechaza; nunca se sube la original.
+ */
+class UpdateProfilePhotoUseCase(
+    private val repository: ProfileRepository,
+    private val imageCompressor: ImageCompressor,
+) {
+    suspend operator fun invoke(original: PickedFile): AppResult<Unit> {
+        if (original.mimeType.lowercase() !in ALLOWED_TYPES) {
             return AppResult.Failure(AppError.Validation(ValidationReason.INVALID_FILE_TYPE))
         }
+        val file = imageCompressor.compress(original)
+            ?: return AppResult.Failure(AppError.Validation(ValidationReason.INVALID_FILE_TYPE))
         if (file.sizeBytes > MAX_BYTES) {
             return AppResult.Failure(AppError.Validation(ValidationReason.FILE_TOO_LARGE))
         }

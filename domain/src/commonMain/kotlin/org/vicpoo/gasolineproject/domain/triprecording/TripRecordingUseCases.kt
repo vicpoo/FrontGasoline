@@ -132,6 +132,12 @@ class FinishTripUseCase(
         val trip = tracker.session.value.trip ?: return FinishTripResult.Failed(AppError.NotFound)
 
         val photo = odometerPhoto?.let { imageCompressor.compress(it) }
+        if (odometerPhoto != null && photo == null) {
+            // La foto no se pudo recodificar: se rechaza (no se sube la original con su EXIF)
+            val otherErrors = (validator.validate(finalMileageText, trip.initialMileage, odometerPhoto) as? FinishTripValidation.Invalid)
+                ?.errors.orEmpty()
+            return FinishTripResult.Invalid(otherErrors + (FinishTripField.ODOMETER_PHOTO to ValidationReason.INVALID_FILE_TYPE))
+        }
         val mileage = when (val validation = validator.validate(finalMileageText, trip.initialMileage, photo)) {
             is FinishTripValidation.Invalid -> return FinishTripResult.Invalid(validation.errors)
             is FinishTripValidation.Valid -> validation.finalMileage
@@ -238,10 +244,17 @@ class SaveFuelRecordUseCase(
         val trip = tracker.session.value.trip
             ?: return SaveFuelResult.Failed(AppError.NotFound)
 
+        val centers = costCenters.observe().first()
         val receipt = draft.newReceipt?.let { imageCompressor.compress(it) }
+        if (draft.newReceipt != null && receipt == null) {
+            // El recibo no se pudo recodificar: se rechaza (no se sube la original con su EXIF)
+            val otherErrors = (validator.validate(draft, centers, trip.vehicle.tankCapacityLiters) as? FuelValidation.Invalid)
+                ?.errors.orEmpty()
+            return SaveFuelResult.Invalid(otherErrors + (FuelField.RECEIPT to ValidationReason.INVALID_FILE_TYPE))
+        }
         val prepared = draft.copy(newReceipt = receipt)
         val values = when (
-            val validation = validator.validate(prepared, costCenters.observe().first(), trip.vehicle.tankCapacityLiters)
+            val validation = validator.validate(prepared, centers, trip.vehicle.tankCapacityLiters)
         ) {
             is FuelValidation.Invalid -> return SaveFuelResult.Invalid(validation.errors)
             is FuelValidation.Valid -> validation.values

@@ -16,14 +16,17 @@ import org.vicpoo.gasolineproject.domain.files.PickedFile
 /**
  * Reduce fotos a JPEG de máximo 1600 px por lado, calidad 75: un ticket o el odómetro siguen legibles
  * y la foto pesa ~200–350 KB (antes 1920 px / 85, hasta ~1 MB), así sube aunque la señal sea débil.
+ *
+ * Siempre recodifica (Bitmap.compress no escribe EXIF): la foto que sale nunca lleva la ubicación GPS
+ * ni otros metadatos de la cámara, aunque la original pesara menos. Si no se puede leer, regresa null
+ * y el caso de uso la rechaza; nunca se regresa la original.
  */
 class AndroidImageCompressor : ImageCompressor {
 
-    override suspend fun compress(file: PickedFile): PickedFile {
+    override suspend fun compress(file: PickedFile): PickedFile? {
         if (!file.mimeType.startsWith("image/")) return file
         val bytes = withContext(Dispatchers.Default) { runCatching { compressBytes(file.bytes) }.getOrNull() }
-            ?: return file
-        if (bytes.size >= file.bytes.size && file.mimeType == "image/jpeg") return file
+            ?: return null
         val baseName = file.name.substringBeforeLast('.', file.name)
         return PickedFile(name = "$baseName.jpg", mimeType = "image/jpeg", bytes = bytes)
     }
