@@ -19,7 +19,9 @@ import org.koin.core.parameter.ParametersDefinition
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.koinApplication
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.domain.common.AppLogger
 import org.vicpoo.gasolineproject.domain.common.AppScope
+import org.vicpoo.gasolineproject.domain.common.SilentAppLogger
 import org.vicpoo.gasolineproject.domain.location.LocationFix
 import org.vicpoo.gasolineproject.domain.location.LocationProvider
 import org.vicpoo.gasolineproject.domain.location.TrackingServiceController
@@ -108,6 +110,7 @@ class KoinGraphTest {
         single<TrackingServiceController> { NoTrackingService }
         single<BackgroundSyncScheduler> { RecordingSyncScheduler() }
         single<PushTokenProvider> { NoPushTokenProvider }
+        single<AppLogger> { SilentAppLogger }
     }
 
     private val noRealWorkModule = module {

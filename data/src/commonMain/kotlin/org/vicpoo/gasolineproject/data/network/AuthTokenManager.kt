@@ -6,6 +6,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.vicpoo.gasolineproject.data.network.dto.SessionTokensDto
+import org.vicpoo.gasolineproject.domain.common.AppLog
 import org.vicpoo.gasolineproject.domain.session.AuthTokens
 import org.vicpoo.gasolineproject.domain.session.SessionWriter
 import org.vicpoo.gasolineproject.domain.session.TokenExpiry
@@ -115,7 +116,7 @@ class AuthTokenManager(
 
     /** Llamar SOLO con el candado tomado. */
     private suspend fun endSession() {
-        println("[API] La sesión terminó (refresh token rechazado o vencido): se pide iniciar sesión.")
+        AppLog.w("Sesion", "La sesión terminó (refresh token rechazado o vencido): se pide iniciar sesión.")
         store.clear()
         sessionWriter.clear() // la app regresa a la bienvenida (ObserveIsLoggedIn)
     }

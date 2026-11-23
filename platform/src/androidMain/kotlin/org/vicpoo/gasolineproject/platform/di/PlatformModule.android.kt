@@ -3,6 +3,9 @@ package org.vicpoo.gasolineproject.platform.di
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.domain.common.AppBuildInfo
+import org.vicpoo.gasolineproject.domain.common.AppLogger
+import org.vicpoo.gasolineproject.domain.common.minLogLevel
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
@@ -14,10 +17,14 @@ import org.vicpoo.gasolineproject.platform.connectivity.AndroidConnectivityMonit
 import org.vicpoo.gasolineproject.platform.files.AndroidImageCompressor
 import org.vicpoo.gasolineproject.platform.location.AndroidLocationProvider
 import org.vicpoo.gasolineproject.platform.location.AndroidTrackingServiceController
+import org.vicpoo.gasolineproject.platform.log.AndroidAppLogger
 import org.vicpoo.gasolineproject.platform.push.AndroidPushTokenProvider
 import org.vicpoo.gasolineproject.platform.sync.WorkManagerSyncScheduler
 
 actual val platformModule: Module = module {
+    // Bitácora (Logcat): en release solo avisos y errores. AppBuildInfo lo registra initKoin.
+    single<AppLogger> { AndroidAppLogger(minLogLevel(get<AppBuildInfo>().isDebug)) }
+
     single { AppDirectories(filesDir = androidContext().filesDir.absolutePath) }
     single<ConnectivityMonitor> { AndroidConnectivityMonitor(androidContext()) }
 

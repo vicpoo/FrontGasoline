@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import org.vicpoo.gasolineproject.domain.common.AppError
+import org.vicpoo.gasolineproject.domain.common.AppLog
 import org.vicpoo.gasolineproject.domain.common.AppResult
 
 /**
@@ -49,7 +50,9 @@ suspend fun <T> safeApiCall(block: suspend () -> T): AppResult<T> =
         throw e
     } catch (e: ResponseException) {
         val status = e.response.status.value
-        println("[API] HTTP $status ${e.response.call.request.method.value} ${e.response.call.request.url}")
+        // Solo método, ruta y código: sin parámetros, encabezados ni cuerpo (pueden traer datos personales)
+        val request = e.response.call.request
+        AppLog.w(LOG_TAG, "HTTP $status ${request.method.value} ${request.url.encodedPath}")
         val problem = runCatching { parseProblem(e.response.bodyAsText()) }.getOrNull()
         val serverMessage = problem?.message
         AppResult.Failure(
@@ -77,7 +80,9 @@ suspend fun <T> safeApiCall(block: suspend () -> T): AppResult<T> =
         AppResult.Failure(AppError.Unknown(e))
     }
 
-/** Deja la causa real en el Logcat (filtra por "[API]") para poder diagnosticar. */
+/** Deja la causa real en la bitácora (Logcat: filtra por "Gasoline/API") para poder diagnosticar. */
 private fun logApiError(e: Throwable) {
-    println("[API] ${e::class.simpleName}: ${e.message}")
+    AppLog.w(LOG_TAG, "${e::class.simpleName}: ${e.message}")
 }
+
+private const val LOG_TAG = "API"

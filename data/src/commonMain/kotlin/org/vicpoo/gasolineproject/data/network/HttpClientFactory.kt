@@ -12,13 +12,16 @@ import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.plugins.logging.SIMPLE
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.io.IOException
 import kotlinx.serialization.json.Json
+import org.vicpoo.gasolineproject.domain.common.AppLogLevel
+import org.vicpoo.gasolineproject.domain.common.AppLogger
+import org.vicpoo.gasolineproject.domain.common.SilentAppLogger
+import org.vicpoo.gasolineproject.domain.common.d
 
 /** Motor HTTP de cada plataforma (OkHttp en Android, Darwin en iOS). */
 expect fun httpEngine(): HttpClientEngine
@@ -81,7 +84,9 @@ val AuthPlugin = createClientPlugin("AuthPlugin", ::AuthConfig) {
                 proceed(retry)
             }
             RefreshResult.Unavailable -> throw SessionRefreshUnavailableException()
-            RefreshResult.SessionEnded -> unauthorized?.let { throw it } ?: firstCall!!
+            // Sin 401 como excepción, el 401 llegó como respuesta: se regresa tal cual
+            RefreshResult.SessionEnded -> unauthorized?.let { throw it }
+                ?: checkNotNull(firstCall) { "Sin respuesta ni excepción después de un 401" }
         }
     }
 }
@@ -93,12 +98,17 @@ private fun HttpRequestBuilder.bearerToken(): String? =
         ?.trim()
         ?.takeIf { it.isNotEmpty() }
 
+/**
+ * [appLogger]: solo en debug se registran las peticiones (método, URL y código, sin encabezados ni cuerpo).
+ * En release el nivel mínimo es WARN y el plugin de Logging ni se instala.
+ */
 fun createHttpClient(
     engine: HttpClientEngine,
     baseUrl: String,
     tokenProvider: TokenProvider,
     tokenRefresher: TokenRefresher,
     json: Json,
+    appLogger: AppLogger = SilentAppLogger,
 ): HttpClient = HttpClient(engine) {
     expectSuccess = true // 4xx/5xx lanzan excepción y safeApiCall las convierte en AppError
     install(ContentNegotiation) { json(json) }
@@ -106,9 +116,15 @@ fun createHttpClient(
         requestTimeoutMillis = ApiConfig.REQUEST_TIMEOUT_MS
         connectTimeoutMillis = ApiConfig.CONNECT_TIMEOUT_MS
     }
-    install(Logging) {
-        logger = Logger.SIMPLE
-        level = LogLevel.INFO
+    if (appLogger.isEnabled(AppLogLevel.DEBUG)) {
+        install(Logging) {
+            this.logger = object : Logger {
+                override fun log(message: String) = appLogger.d("HTTP", message)
+            }
+            // INFO = método, URL y código de respuesta; nunca encabezados (Authorization) ni cuerpos (login, fotos)
+            level = LogLevel.INFO
+            sanitizeHeader { header -> header == HttpHeaders.Authorization }
+        }
     }
     install(AuthPlugin) {
         this.tokenProvider = tokenProvider

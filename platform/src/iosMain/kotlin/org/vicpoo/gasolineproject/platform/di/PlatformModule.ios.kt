@@ -3,6 +3,9 @@ package org.vicpoo.gasolineproject.platform.di
 import kotlinx.cinterop.ExperimentalForeignApi
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.domain.common.AppBuildInfo
+import org.vicpoo.gasolineproject.domain.common.AppLogger
+import org.vicpoo.gasolineproject.domain.common.minLogLevel
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
@@ -15,6 +18,7 @@ import org.vicpoo.gasolineproject.platform.connectivity.IosConnectivityMonitor
 import org.vicpoo.gasolineproject.platform.files.IosImageCompressor
 import org.vicpoo.gasolineproject.platform.location.IosLocationProvider
 import org.vicpoo.gasolineproject.platform.location.IosTrackingServiceController
+import org.vicpoo.gasolineproject.platform.log.IosAppLogger
 import org.vicpoo.gasolineproject.platform.push.IosPushTokenProvider
 import org.vicpoo.gasolineproject.platform.sync.IosSyncScheduler
 import platform.Foundation.NSDocumentDirectory
@@ -22,6 +26,9 @@ import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
 actual val platformModule: Module = module {
+    // Bitácora (NSLog): en release solo avisos y errores. AppBuildInfo lo registra initKoin.
+    single<AppLogger> { IosAppLogger(minLogLevel(get<AppBuildInfo>().isDebug)) }
+
     single { AppDirectories(filesDir = iosDocumentsPath()) }
     single<ConnectivityMonitor> { IosConnectivityMonitor() }
 

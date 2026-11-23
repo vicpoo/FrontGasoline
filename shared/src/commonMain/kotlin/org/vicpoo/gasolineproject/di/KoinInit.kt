@@ -2,8 +2,12 @@ package org.vicpoo.gasolineproject.di
 
 import org.koin.core.context.startKoin
 import org.koin.dsl.KoinAppDeclaration
+import org.koin.dsl.module
 import org.vicpoo.gasolineproject.data.di.apiConfigModule
 import org.vicpoo.gasolineproject.data.di.dataModules
+import org.vicpoo.gasolineproject.domain.common.AppBuildInfo
+import org.vicpoo.gasolineproject.domain.common.AppLog
+import org.vicpoo.gasolineproject.domain.common.AppLogger
 import org.vicpoo.gasolineproject.domain.di.domainModules
 import org.vicpoo.gasolineproject.navigation.di.navigationModule
 import org.vicpoo.gasolineproject.platform.di.platformModule
@@ -19,10 +23,14 @@ val appModules = listOf(platformModule) + domainModules + dataModules + uiModule
 /**
  * Se llama una vez al iniciar la app (Application en Android, MainViewController en iOS).
  * [apiBaseUrl]: URL de APIGasoline terminada en "/" (Android la toma de BuildConfig.API_BASE_URL).
+ * [isDebug]: build de desarrollo (Android: BuildConfig.DEBUG). En release la bitácora solo escribe
+ * avisos y errores, y Ktor no registra las peticiones.
  */
-fun initKoin(apiBaseUrl: String, appDeclaration: KoinAppDeclaration = {}) {
-    startKoin {
+fun initKoin(apiBaseUrl: String, isDebug: Boolean, appDeclaration: KoinAppDeclaration = {}) {
+    val koin = startKoin {
         appDeclaration()
-        modules(appModules + apiConfigModule(apiBaseUrl))
-    }
+        modules(appModules + apiConfigModule(apiBaseUrl) + module { single { AppBuildInfo(isDebug) } })
+    }.koin
+    // Para el código que no se crea con Koin (safeApiCall)
+    AppLog.install(koin.get<AppLogger>())
 }

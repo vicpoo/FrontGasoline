@@ -1,11 +1,14 @@
 package org.vicpoo.gasolineproject.domain.di
 
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
+import org.vicpoo.gasolineproject.domain.common.AppLogger
+import org.vicpoo.gasolineproject.domain.common.e
 import org.vicpoo.gasolineproject.domain.auth.usecase.GetAuthStatusUseCase
 import org.vicpoo.gasolineproject.domain.auth.usecase.LoginUseCase
 import org.vicpoo.gasolineproject.domain.auth.usecase.LogoutUseCase
@@ -104,7 +107,12 @@ import org.vicpoo.gasolineproject.domain.vehicles.validation.VehicleFormValidato
 
 /** Piezas compartidas: scope de la app, reloj, privilegios, push y sincronización offline-first. */
 val commonDomainModule = module {
-    single { AppScope(CoroutineScope(SupervisorJob() + Dispatchers.Default)) }
+    // Scope de la app: una excepción no capturada en un launch ya no se pierde, queda en la bitácora
+    single {
+        val logger = get<AppLogger>()
+        val onError = CoroutineExceptionHandler { _, error -> logger.e("AppScope", "Error no capturado en segundo plano", error) }
+        AppScope(CoroutineScope(SupervisorJob() + Dispatchers.Default + onError))
+    }
     single<AppClock> { SystemAppClock() }
     single<PermissionChecker> { SessionPermissionChecker(get()) }
     single { PushEvents() }

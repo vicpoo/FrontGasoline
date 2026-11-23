@@ -112,6 +112,7 @@ val networkDataModule = module {
             tokenProvider = tokens,
             tokenRefresher = tokens,
             json = get(),
+            appLogger = get(),
         )
     }
 }
