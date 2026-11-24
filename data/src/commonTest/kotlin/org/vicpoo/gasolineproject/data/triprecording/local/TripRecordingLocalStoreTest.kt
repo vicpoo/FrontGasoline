@@ -13,7 +13,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Puntos GPS en la tabla track_point, fotos cifradas y lo que dejó la versión anterior en archivos. */
+/** Puntos GPS en la tabla TrackPointEntity, fotos cifradas y lo que dejó la versión anterior en archivos. */
 class TripRecordingLocalStoreTest {
 
     private val storage = TestStorage()

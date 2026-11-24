@@ -9,8 +9,7 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.domain.reservations.RequestOutcome
 import org.vicpoo.gasolineproject.domain.reservations.RequestedVehicle
-import org.vicpoo.gasolineproject.data.reservations.local.CompanyReservationsSnapshot
-import org.vicpoo.gasolineproject.data.reservations.local.MyReservationsSnapshot
+import org.vicpoo.gasolineproject.testing.TestReservationStorage
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutbox
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutboxSnapshot
 import org.vicpoo.gasolineproject.data.reservations.remote.KtorReservationApi
@@ -40,6 +39,7 @@ class ReservationOutboxTest {
     private fun <T : Any> cache(name: String, serializer: kotlinx.serialization.KSerializer<T>, empty: T) =
         LocalDocumentCache(storage.database, storage.fileSystem, storage.directories, name, serializer, testJson, empty)
 
+    private val reservations = TestReservationStorage(storage)
     private val outbox = ReservationOutbox(cache("outbox.json", ReservationOutboxSnapshot.serializer(), ReservationOutboxSnapshot()))
 
     private val clock = object : AppClock {
@@ -50,8 +50,9 @@ class ReservationOutboxTest {
     private val repository = ReservationRepositoryImpl(
         api = KtorReservationApi(api.client),
         sessionReader = session,
-        cache = cache("mine.json", MyReservationsSnapshot.serializer(), MyReservationsSnapshot()),
-        companyCache = cache("company.json", CompanyReservationsSnapshot.serializer(), CompanyReservationsSnapshot()),
+        mine = reservations.mine,
+        company = reservations.company,
+        updates = reservations.updates,
         outbox = outbox,
         clock = clock,
         scheduler = scheduler,

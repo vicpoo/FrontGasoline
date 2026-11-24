@@ -14,8 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.KSerializer
 import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
-import org.vicpoo.gasolineproject.data.reservations.local.CompanyReservationsSnapshot
-import org.vicpoo.gasolineproject.data.reservations.local.MyReservationsSnapshot
+import org.vicpoo.gasolineproject.testing.TestReservationStorage
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutbox
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutboxSnapshot
 import org.vicpoo.gasolineproject.data.reservations.remote.KtorReservationApi
@@ -50,15 +49,15 @@ class ReservationRepositoryImplTest {
     private fun <T : Any> cache(name: String, serializer: KSerializer<T>, empty: T) =
         LocalDocumentCache(storage.database, storage.fileSystem, storage.directories, name, serializer, testJson, empty)
 
-    private val mineCache = cache("mine.json", MyReservationsSnapshot.serializer(), MyReservationsSnapshot())
-    private val companyCache = cache("company.json", CompanyReservationsSnapshot.serializer(), CompanyReservationsSnapshot())
+    private val reservations = TestReservationStorage(storage)
     private val outbox = ReservationOutbox(cache("outbox.json", ReservationOutboxSnapshot.serializer(), ReservationOutboxSnapshot()))
 
     private val repository = ReservationRepositoryImpl(
         api = KtorReservationApi(api.client),
         sessionReader = session,
-        cache = mineCache,
-        companyCache = companyCache,
+        mine = reservations.mine,
+        company = reservations.company,
+        updates = reservations.updates,
         outbox = outbox,
         clock = FakeAppClock(),
         scheduler = RecordingSyncScheduler(),

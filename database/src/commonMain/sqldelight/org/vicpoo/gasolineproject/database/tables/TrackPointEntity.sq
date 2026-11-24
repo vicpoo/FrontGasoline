@@ -1,0 +1,13 @@
+-- Puntos GPS de los viajes. seq empieza en 0 y crece de uno en uno por viaje: "los puntos desde el N"
+-- es una consulta por llave (seq >= N), sin OFFSET, aunque el viaje tenga miles de puntos.
+CREATE TABLE TrackPointEntity (
+    trip_local_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    lat REAL NOT NULL,
+    lng REAL NOT NULL,
+    t TEXT NOT NULL,
+    acc REAL,
+    alt REAL,
+    spd REAL,
+    PRIMARY KEY (trip_local_id, seq)
+);

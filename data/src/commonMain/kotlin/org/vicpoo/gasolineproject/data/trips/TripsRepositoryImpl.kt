@@ -4,14 +4,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.AppDates
 import org.vicpoo.gasolineproject.domain.common.getOrNull
-import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
+import org.vicpoo.gasolineproject.data.local.LocalPagedList
+import org.vicpoo.gasolineproject.data.local.LocalPagedList.ListState
 import org.vicpoo.gasolineproject.data.network.LIST_PAGE_SIZE
 import org.vicpoo.gasolineproject.data.network.hasMoreAfter
 import org.vicpoo.gasolineproject.data.network.refreshSize
@@ -28,16 +28,7 @@ import org.vicpoo.gasolineproject.domain.trips.Trip
 import org.vicpoo.gasolineproject.domain.trips.TripStatus
 import org.vicpoo.gasolineproject.domain.trips.TripsRepository
 
-// ---------- Lo que se guarda en el caché offline ----------
-
-@Serializable
-data class TripsSnapshot(
-    val trips: List<TripEntity> = emptyList(),
-    /** Páginas de 10 ya pedidas a la API (al recargar se vuelven a pedir todas en una petición). */
-    val loadedPages: Int = 0,
-    /** La API tiene más viajes después de los guardados. */
-    val hasMore: Boolean = false,
-)
+// ---------- Lo que se guarda en el teléfono (una fila por viaje en ListItemEntity, lista "trips") ----------
 
 @Serializable
 data class TripEntity(
@@ -73,7 +64,8 @@ data class FuelLoadEntity(
 
 /**
  * Historial de viajes offline-first:
- * - La UI lee del caché (JSON en el teléfono).
+ * - La UI lee de la base local: un viaje por fila, más recientes primero, de 10 en 10 por llave
+ *   ([LocalPagedList] + KeySetPaginationManager; punto 1.6).
  * - refresh() descarga SOLO la lista de viajes (ya traen quién manejó): 1 petición.
  * - loadDetails() descarga cargas y ruta por bloques (los 4 que se ven, luego los siguientes).
  * - RBAC: con viaje.ver_todos se ven los viajes de toda la empresa; si no, solo los propios.
@@ -81,18 +73,17 @@ data class FuelLoadEntity(
  */
 class TripsRepositoryImpl(
     private val api: TripsApi,
-    private val cache: LocalDocumentCache<TripsSnapshot>,
+    private val trips: LocalPagedList<TripEntity>,
     private val sessionReader: SessionReader,
     private val permissionChecker: PermissionChecker,
 ) : TripsRepository {
 
-    override fun observeTrips(): Flow<List<Trip>> =
-        cache.data.map { snapshot -> snapshot.trips.map { it.toDomain() } }
+    override fun observeTrips(): Flow<List<Trip>> = trips.observe().map { list -> list.map { it.toDomain() } }
 
-    override fun observeTrip(id: String): Flow<Trip?> =
-        cache.data.map { snapshot -> snapshot.trips.firstOrNull { it.id == id }?.toDomain() }
+    override fun observeTrip(id: String): Flow<Trip?> = trips.observeById(id).map { it?.toDomain() }
 
-    override fun observeHasMore(): Flow<Boolean> = cache.data.map { it.hasMore }.distinctUntilChanged()
+    /** Hay más: guardados que aún no se ven, o más en la API. */
+    override fun observeHasMore(): Flow<Boolean> = trips.observeHasMore()
 
     /**
      * Vuelve a pedir los viajes que ya se veían (los 10 más recientes, o más si el usuario ya
@@ -100,49 +91,52 @@ class TripsRepositoryImpl(
      */
     override suspend fun refresh(): AppResult<Unit> {
         val session = sessionReader.current() ?: return AppResult.Success(Unit)
-        val previous = cache.current()
-        val size = refreshSize(previous.loadedPages)
+        val previousState = trips.state()
+        val size = refreshSize(previousState.loadedPages)
         val page = when (val result = safeApiCall { api.getTrips(session.companyId, operatorFilter(session), page = 1, pageSize = size) }) {
             is AppResult.Failure -> return result
             is AppResult.Success -> result.data
         }
-        val snapshot = TripsSnapshot(
-            trips = toEntities(page.items, session, previous.trips.associateBy { it.id }),
+        val entities = toEntities(page.items, session, trips.all().associateBy { it.id })
+        val state = ListState(
             loadedPages = size / LIST_PAGE_SIZE,
             hasMore = hasMoreAfter(size, page.items.size, size, page.total),
         )
-        cache.save(snapshot)
+        trips.replaceAll(entities, state)
         // Si en esos no hubo ningún viaje cerrado (todos en curso) se piden los siguientes
-        if (snapshot.trips.isEmpty() && snapshot.hasMore) return loadMore()
+        if (entities.isEmpty() && state.hasMore) return loadMore()
         return AppResult.Success(Unit)
     }
 
     /**
-     * El usuario llegó al final del historial: se piden los 10 viajes siguientes a la API y se agregan
-     * al final. Si en esa página no hay ningún viaje cerrado se pide la siguiente (hasta que haya uno).
+     * El usuario llegó al final del historial. Primero se muestran los 10 siguientes que ya están
+     * guardados (por llave, sin red). Si ya se ven todos, se piden los 10 siguientes a la API y se
+     * agregan; si en esa página no hay ningún viaje cerrado se pide la siguiente (hasta que haya uno).
      */
     override suspend fun loadMore(): AppResult<Unit> {
+        if (trips.showNextLocalPage()) return AppResult.Success(Unit)
         val session = sessionReader.current() ?: return AppResult.Success(Unit)
-        var snapshot = cache.current()
-        while (snapshot.hasMore) {
-            val nextPage = snapshot.loadedPages + 1
+        var state = trips.state()
+        while (state.hasMore) {
+            val nextPage = state.loadedPages + 1
             val page = when (val result = safeApiCall {
                 api.getTrips(session.companyId, operatorFilter(session), page = nextPage, pageSize = LIST_PAGE_SIZE)
             }) {
                 is AppResult.Failure -> return result
                 is AppResult.Success -> result.data
             }
-            val known = snapshot.trips.map { it.id }.toSet()
-            val added = toEntities(page.items, session, snapshot.trips.associateBy { it.id }).filter { it.id !in known }
-            // Se vuelve a leer el caché: pudo cambiar (loadDetails) mientras se descargaba
-            val current = cache.current()
-            snapshot = current.copy(
-                trips = current.trips + added.filter { a -> current.trips.none { it.id == a.id } },
+            // Se vuelve a leer lo guardado: pudo cambiar (loadDetails) mientras se descargaba
+            val stored = trips.all().associateBy { it.id }
+            val added = toEntities(page.items, session, stored).filter { it.id !in stored }
+            state = ListState(
                 loadedPages = nextPage,
                 hasMore = hasMoreAfter(nextPage * LIST_PAGE_SIZE, page.items.size, LIST_PAGE_SIZE, page.total),
             )
-            cache.save(snapshot)
-            if (added.isNotEmpty()) break
+            trips.append(added, state)
+            if (added.isNotEmpty()) {
+                trips.showNextLocalPage()
+                break
+            }
         }
         return AppResult.Success(Unit)
     }
@@ -194,8 +188,7 @@ class TripsRepositoryImpl(
      * Si una petición falla se queda lo guardado.
      */
     override suspend fun loadDetails(tripIds: List<String>): AppResult<Unit> {
-        val current = cache.current().trips
-        val pending = current.filter { it.id in tripIds && !it.detailsLoaded }
+        val pending = tripIds.distinct().mapNotNull { trips.get(it) }.filter { !it.detailsLoaded }
         if (pending.isEmpty()) return AppResult.Success(Unit)
 
         var noConnection = false
@@ -220,15 +213,14 @@ class TripsRepositoryImpl(
                     )
                 }
             }.awaitAll()
-        }.associateBy { it.id }
+        }
 
-        // Se vuelve a leer el caché: pudo cambiar mientras se descargaba
-        val latest = cache.current()
-        cache.save(latest.copy(trips = latest.trips.map { loaded[it.id] ?: it }))
+        // Solo los que siguen guardados: pudieron borrarse (cerrar sesión) mientras se descargaba
+        trips.upsert(loaded.filter { trips.get(it.id) != null })
         return if (noConnection) AppResult.Failure(AppError.NoConnection) else AppResult.Success(Unit)
     }
 
-    suspend fun clear() = cache.clear()
+    suspend fun clear() = trips.clear()
 }
 
 private fun TripEntity.toDomain() = Trip(

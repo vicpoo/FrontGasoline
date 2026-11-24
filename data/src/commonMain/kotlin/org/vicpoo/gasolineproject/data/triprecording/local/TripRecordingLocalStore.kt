@@ -12,7 +12,7 @@ import okio.Path.Companion.toPath
 import org.vicpoo.gasolineproject.data.database.LocalDatabase
 import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.local.encryptInPlace
-import org.vicpoo.gasolineproject.database.Track_point
+import org.vicpoo.gasolineproject.database.tables.TrackPointEntity as TrackPointRow
 import org.vicpoo.gasolineproject.domain.common.GeoPoint
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.FileCipher
@@ -22,7 +22,7 @@ import kotlin.uuid.Uuid
 /**
  * Almacenamiento offline del registro de viajes, todo dentro de la base local cifrada salvo las fotos:
  * - documento "trip_recording": viajes y recargas pendientes ([LocalDocumentCache]).
- * - tabla track_point: puntos GPS, uno por fila (agregar es barato aunque haya miles).
+ * - tabla TrackPointEntity: puntos GPS, uno por fila (agregar es barato aunque haya miles).
  * - receipts/: fotos de recibos y odómetro pendientes de subir, cifradas con [FileCipher].
  *
  * Fase 6F: los puntos de la versión anterior (points/<viaje>.jsonl) se pasan a la base la primera vez
@@ -201,7 +201,7 @@ class TripRecordingLocalStore(
     private fun legacyPointsFile(tripLocalId: String): Path = legacyPointsDir / "$tripLocalId.jsonl"
 }
 
-private fun TrackPointEntity.toRow(tripLocalId: String, seq: Long) = Track_point(
+private fun TrackPointEntity.toRow(tripLocalId: String, seq: Long) = TrackPointRow(
     trip_local_id = tripLocalId,
     seq = seq,
     lat = lat,
@@ -212,4 +212,4 @@ private fun TrackPointEntity.toRow(tripLocalId: String, seq: Long) = Track_point
     spd = spd,
 )
 
-private fun Track_point.toEntity() = TrackPointEntity(lat = lat, lng = lng, t = t, acc = acc, alt = alt, spd = spd)
+private fun TrackPointRow.toEntity() = TrackPointEntity(lat = lat, lng = lng, t = t, acc = acc, alt = alt, spd = spd)

@@ -58,7 +58,7 @@ interface VehicleLocalDataSource {
 }
 
 /**
- * Vehículos en la tabla vehicle de la base local cifrada; fotos pendientes en vehicles/photos,
+ * Vehículos en la tabla VehicleEntity de la base local cifrada; fotos pendientes en vehicles/photos,
  * cifradas con [FileCipher].
  *
  * Fase 6F: la primera vez que se usa, si existe vehicles/vehicles.json de la versión anterior, sus

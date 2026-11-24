@@ -1,0 +1,22 @@
+insert:
+INSERT INTO TrackPointEntity(trip_local_id, seq, lat, lng, t, acc, alt, spd)
+VALUES ?;
+
+nextSeq:
+SELECT coalesce(max(seq) + 1, 0) FROM TrackPointEntity WHERE trip_local_id = ?;
+
+countForTrip:
+SELECT count(*) FROM TrackPointEntity WHERE trip_local_id = ?;
+
+-- Lotes para la API: por llave (seq >= N), sin OFFSET
+pageForTrip:
+SELECT * FROM TrackPointEntity
+WHERE trip_local_id = ? AND seq >= ?
+ORDER BY seq
+LIMIT ?;
+
+deleteForTrip:
+DELETE FROM TrackPointEntity WHERE trip_local_id = ?;
+
+deleteAll:
+DELETE FROM TrackPointEntity;

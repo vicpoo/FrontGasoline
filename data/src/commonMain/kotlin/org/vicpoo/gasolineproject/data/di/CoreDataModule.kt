@@ -83,6 +83,8 @@ val coreDataModule = module {
             vehicles = get(),
             appScope = get(),
             logger = get(),
+            fileSystem = get(),
+            directories = get(),
         ).also { it.start() }
     }
 

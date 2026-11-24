@@ -13,6 +13,8 @@ import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
+import org.vicpoo.gasolineproject.data.local.LocalPagedList
+import org.vicpoo.gasolineproject.data.local.LocalPagedList.ListState
 import org.vicpoo.gasolineproject.data.network.LIST_PAGE_SIZE
 import org.vicpoo.gasolineproject.data.network.hasMoreAfter
 import org.vicpoo.gasolineproject.data.network.refreshSize
@@ -22,7 +24,6 @@ import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.domain.sync.SyncRejection
 import org.vicpoo.gasolineproject.domain.reservations.RequestOutcome
 import org.vicpoo.gasolineproject.domain.reservations.RequestedVehicle
-import org.vicpoo.gasolineproject.data.reservations.local.CompanyReservationsSnapshot
 import org.vicpoo.gasolineproject.data.reservations.local.MyReservationsSnapshot
 import org.vicpoo.gasolineproject.data.reservations.local.OutgoingRequestEntity
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutbox
@@ -44,15 +45,18 @@ import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
  * - Enviar una solicitud con su motivo. Sin red se guarda en [outbox] y se envía sola después
  *   (ReservationOutboxSyncer); mientras tanto aparece en "Mis solicitudes" como "Por enviar".
  * - "Mis solicitudes" (campana) y "Solicitudes de la empresa" (llave) offline-first: se guardan
- *   en el teléfono con el solicitante y el carro (la API ya los manda en cada solicitud).
+ *   en el teléfono con el solicitante y el carro (la API ya los manda en cada solicitud), una por
+ *   fila, y se recorren de 10 en 10 por llave ([LocalPagedList]; punto 1.6).
  * - Detalle, aceptar y rechazar requieren conexión; al decidir se vuelve a leer la lista porque
  *   aceptar rechaza solas las demás pendientes del mismo carro.
  */
 class ReservationRepositoryImpl(
     private val api: ReservationApi,
     private val sessionReader: SessionReader,
-    private val cache: LocalDocumentCache<MyReservationsSnapshot>,
-    private val companyCache: LocalDocumentCache<CompanyReservationsSnapshot>,
+    private val mine: LocalPagedList<ReservationRequestEntity>,
+    private val company: LocalPagedList<ReservationRequestEntity>,
+    /** Solo el número del badge de la campana. */
+    private val updates: LocalDocumentCache<MyReservationsSnapshot>,
     private val outbox: ReservationOutbox,
     private val clock: AppClock,
     private val scheduler: BackgroundSyncScheduler,
@@ -99,12 +103,10 @@ class ReservationRepositoryImpl(
     // ---------------- Mis solicitudes (campana) ----------------
 
     override fun observeMine(): Flow<List<ReservationRequest>> =
-        combine(cache.data, outbox.items) { snapshot, pending ->
-            // Las que esperan la red van primero: son las más recientes
-            pending.sortedByDescending { it.createdAt }.map { it.toDomain() } +
-                snapshot.requests
-                    .map { it.toDomain() }
-                    .sortedByDescending { it.requestedAt.orEmpty() }
+        combine(mine.observe(), outbox.items) { saved, pending ->
+            // Las que esperan la red van primero: son las más recientes. Las guardadas ya vienen
+            // ordenadas por fecha (más recientes primero) desde SQL.
+            pending.sortedByDescending { it.createdAt }.map { it.toDomain() } + saved.map { it.toDomain() }
         }
 
     /** Vuelve a pedir las que ya se veían (las 10 más recientes, o más si el usuario ya había bajado). */
@@ -112,32 +114,32 @@ class ReservationRepositoryImpl(
         val employeeId = sessionReader.current()?.employeeId
             ?: return AppResult.Failure(AppError.NoCompany)
 
-        val size = refreshSize(cache.current().loadedPages)
+        val size = refreshSize(mine.state().loadedPages)
         val page = when (val result = safeApiCall { api.getByEmployee(employeeId, page = 1, pageSize = size) }) {
             is AppResult.Failure -> return result
             is AppResult.Success -> result.data
         }
 
-        val current = cache.current()
-        val previous = current.requests.associateBy { it.id }
+        val previous = mine.all().associateBy { it.id }
         val cars = loadMissingCars(page.items)
         val entities = page.items.map { dto -> dto.toEntity(cars[dto.carroId], previous[dto.solicitudReservaId]) }
-        cache.save(
-            current.copy(
-                requests = entities,
-                loadedPages = size / LIST_PAGE_SIZE,
-                hasMore = hasMoreAfter(size, page.items.size, size, page.total),
-            ),
+        mine.replaceAll(
+            entities,
+            ListState(loadedPages = size / LIST_PAGE_SIZE, hasMore = hasMoreAfter(size, page.items.size, size, page.total)),
         )
         return AppResult.Success(Unit)
     }
 
-    override fun observeMineHasMore(): Flow<Boolean> = cache.data.map { it.hasMore }.distinctUntilChanged()
+    override fun observeMineHasMore(): Flow<Boolean> = mine.observeHasMore()
 
-    /** El usuario llegó al final: se piden las 10 siguientes y se agregan. */
+    /**
+     * El usuario llegó al final: primero se muestran las 10 siguientes ya guardadas (por llave, sin red);
+     * si ya se ven todas, se piden las 10 siguientes a la API y se agregan.
+     */
     override suspend fun loadMoreMine(): AppResult<Unit> {
+        if (mine.showNextLocalPage()) return AppResult.Success(Unit)
         val employeeId = sessionReader.current()?.employeeId ?: return AppResult.Success(Unit)
-        val before = cache.current()
+        val before = mine.state()
         if (!before.hasMore) return AppResult.Success(Unit)
         val nextPage = before.loadedPages + 1
 
@@ -146,21 +148,18 @@ class ReservationRepositoryImpl(
             is AppResult.Success -> result.data
         }
         val cars = loadMissingCars(page.items)
-        val current = cache.current()
-        val known = current.requests.map { it.id }.toSet()
+        val known = mine.all().map { it.id }.toSet()
         val added = page.items.filter { it.solicitudReservaId !in known }.map { it.toEntity(cars[it.carroId], null) }
-        cache.save(
-            current.copy(
-                requests = current.requests + added,
-                loadedPages = nextPage,
-                hasMore = hasMoreAfter(nextPage * LIST_PAGE_SIZE, page.items.size, LIST_PAGE_SIZE, page.total),
-            ),
+        mine.append(
+            added,
+            ListState(loadedPages = nextPage, hasMore = hasMoreAfter(nextPage * LIST_PAGE_SIZE, page.items.size, LIST_PAGE_SIZE, page.total)),
         )
+        mine.showNextLocalPage()
         return AppResult.Success(Unit)
     }
 
     override fun observeUnseenUpdates(): Flow<Int> =
-        cache.data.map { it.unseenUpdates }.distinctUntilChanged()
+        updates.data.map { it.unseenUpdates }.distinctUntilChanged()
 
     override suspend fun refreshUnseenUpdates(): AppResult<Unit> {
         val employeeId = sessionReader.current()?.employeeId ?: return AppResult.Success(Unit)
@@ -168,8 +167,7 @@ class ReservationRepositoryImpl(
             is AppResult.Failure -> return result
             is AppResult.Success -> result.data
         }
-        val current = cache.current()
-        cache.save(current.copy(unseenUpdates = unread.count { !it.leida }))
+        updates.save(updates.current().copy(unseenUpdates = unread.count { !it.leida }))
         return AppResult.Success(Unit)
     }
 
@@ -185,24 +183,20 @@ class ReservationRepositoryImpl(
                 .map { async { safeApiCall { api.markNotificationRead(it.notificacionId) } } }
                 .awaitAll()
         }
-        cache.save(cache.current().copy(unseenUpdates = 0))
+        updates.save(updates.current().copy(unseenUpdates = 0))
         return AppResult.Success(Unit)
     }
 
     // ---------------- Solicitudes de la empresa (pestaña llave) ----------------
 
+    /** Ya ordenadas por fecha (más recientes primero) desde SQL. */
     override fun observeCompany(): Flow<List<ReservationRequest>> =
-        companyCache.data.map { snapshot ->
-            snapshot.requests
-                .map { it.toDomain() }
-                .sortedByDescending { it.requestedAt.orEmpty() }
-        }
+        company.observe().map { list -> list.map { it.toDomain() } }
 
     /** La busca en las de la empresa y, si no está, en las propias (el detalle se abre desde ambas listas). */
     override fun observeCompanyRequest(reservationId: String): Flow<ReservationRequest?> =
-        combine(companyCache.data, cache.data) { company, mine ->
-            (company.requests.firstOrNull { it.id == reservationId } ?: mine.requests.firstOrNull { it.id == reservationId })
-                ?.toDomain()
+        combine(company.observeById(reservationId), mine.observeById(reservationId)) { fromCompany, fromMine ->
+            (fromCompany ?: fromMine)?.toDomain()
         }
 
     /**
@@ -210,7 +204,7 @@ class ReservationRepositoryImpl(
      * así ninguna solicitud por decidir se queda fuera aunque sea vieja.
      */
     override suspend fun refreshCompany(): AppResult<Unit> {
-        val size = refreshSize(companyCache.current().loadedPages)
+        val size = refreshSize(company.state().loadedPages)
         val (pageResult, pendingResult) = coroutineScope {
             val page = async { safeApiCall { api.getCompany(page = 1, pageSize = size) } }
             val pending = async { safeApiCall { api.getCompanyPending() } }
@@ -225,24 +219,22 @@ class ReservationRepositoryImpl(
             is AppResult.Success -> pendingResult.data
         }
         val requests = (page.items + pending).distinctBy { it.solicitudReservaId }
-        val previous = companyCache.current().requests.associateBy { it.id }
+        val previous = company.all().associateBy { it.id }
         val cars = loadMissingCars(requests)
         val entities = requests.map { dto -> dto.toEntity(cars[dto.carroId], previous[dto.solicitudReservaId]) }
-        companyCache.save(
-            CompanyReservationsSnapshot(
-                requests = entities,
-                loadedPages = size / LIST_PAGE_SIZE,
-                hasMore = hasMoreAfter(size, page.items.size, size, page.total),
-            ),
+        company.replaceAll(
+            entities,
+            ListState(loadedPages = size / LIST_PAGE_SIZE, hasMore = hasMoreAfter(size, page.items.size, size, page.total)),
         )
         return AppResult.Success(Unit)
     }
 
-    override fun observeCompanyHasMore(): Flow<Boolean> = companyCache.data.map { it.hasMore }.distinctUntilChanged()
+    override fun observeCompanyHasMore(): Flow<Boolean> = company.observeHasMore()
 
-    /** El usuario llegó al final: se piden las 10 siguientes de la empresa y se agregan. */
+    /** Al final: primero las 10 siguientes ya guardadas (por llave); si ya se ven todas, las 10 siguientes de la API. */
     override suspend fun loadMoreCompany(): AppResult<Unit> {
-        val before = companyCache.current()
+        if (company.showNextLocalPage()) return AppResult.Success(Unit)
+        val before = company.state()
         if (!before.hasMore) return AppResult.Success(Unit)
         val nextPage = before.loadedPages + 1
 
@@ -251,16 +243,13 @@ class ReservationRepositoryImpl(
             is AppResult.Success -> result.data
         }
         val cars = loadMissingCars(page.items)
-        val current = companyCache.current()
-        val known = current.requests.map { it.id }.toSet()
+        val known = company.all().map { it.id }.toSet()
         val added = page.items.filter { it.solicitudReservaId !in known }.map { it.toEntity(cars[it.carroId], null) }
-        companyCache.save(
-            current.copy(
-                requests = current.requests + added,
-                loadedPages = nextPage,
-                hasMore = hasMoreAfter(nextPage * LIST_PAGE_SIZE, page.items.size, LIST_PAGE_SIZE, page.total),
-            ),
+        company.append(
+            added,
+            ListState(loadedPages = nextPage, hasMore = hasMoreAfter(nextPage * LIST_PAGE_SIZE, page.items.size, LIST_PAGE_SIZE, page.total)),
         )
+        company.showNextLocalPage()
         return AppResult.Success(Unit)
     }
 
@@ -288,8 +277,9 @@ class ReservationRepositoryImpl(
     }
 
     override suspend fun clear() {
-        cache.clear()
-        companyCache.clear()
+        mine.clear()
+        company.clear()
+        updates.clear()
         outbox.clear()
     }
 

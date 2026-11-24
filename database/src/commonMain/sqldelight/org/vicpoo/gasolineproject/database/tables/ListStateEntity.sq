@@ -1,0 +1,6 @@
+-- Hasta dónde se pidió cada lista a la API: páginas de 10 ya pedidas y si la API tiene más.
+CREATE TABLE ListStateEntity (
+    list_name TEXT NOT NULL PRIMARY KEY,
+    loaded_pages INTEGER NOT NULL,
+    has_more INTEGER NOT NULL
+);

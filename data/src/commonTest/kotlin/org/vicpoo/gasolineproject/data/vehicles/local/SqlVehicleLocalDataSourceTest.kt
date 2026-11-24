@@ -15,7 +15,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
-/** Vehículos en la tabla vehicle: filtros en SQL, fotos cifradas y el archivo de la versión anterior. */
+/** Vehículos en la tabla VehicleEntity: filtros en SQL, fotos cifradas y el archivo de la versión anterior. */
 class SqlVehicleLocalDataSourceTest {
 
     private val storage = TestStorage()

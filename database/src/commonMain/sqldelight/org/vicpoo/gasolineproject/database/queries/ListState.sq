@@ -1,0 +1,8 @@
+get:
+SELECT * FROM ListStateEntity WHERE list_name = ?;
+
+put:
+INSERT OR REPLACE INTO ListStateEntity(list_name, loaded_pages, has_more) VALUES (?, ?, ?);
+
+remove:
+DELETE FROM ListStateEntity WHERE list_name = ?;

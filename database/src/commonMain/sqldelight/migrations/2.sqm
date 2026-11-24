@@ -1,0 +1,33 @@
+-- Versión 2 -> 3 (puntos 1.2 y 1.6 del code review):
+-- 1. Las tablas llevan el sufijo Entity (esquema en tables/, consultas en queries/).
+-- 2. Listas por páginas (historial de viajes y solicitudes de reserva) en su propia tabla, para
+--    recorrerlas por llave. Lo que había de esas listas en CacheDocumentEntity se borra en el código
+--    (LegacyDataMigration): es una copia de la API y se vuelve a descargar.
+
+-- app_meta se creó en la versión 1 (en el .sq, no en un .sqm). SQLDelight revisa los .sqm solo con lo
+-- que crearon los .sqm anteriores, así que sin esta línea no la conoce. En la base real ya existe: no hace nada.
+CREATE TABLE IF NOT EXISTS app_meta (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+ALTER TABLE app_meta RENAME TO AppMetaEntity;
+ALTER TABLE cache_document RENAME TO CacheDocumentEntity;
+ALTER TABLE track_point RENAME TO TrackPointEntity;
+ALTER TABLE vehicle RENAME TO VehicleEntity;
+
+CREATE TABLE ListItemEntity (
+    list_name TEXT NOT NULL,
+    item_id TEXT NOT NULL,
+    sort_key TEXT NOT NULL,
+    json TEXT NOT NULL,
+    PRIMARY KEY (list_name, item_id)
+);
+
+CREATE INDEX list_item_order ON ListItemEntity(list_name, sort_key, item_id);
+
+CREATE TABLE ListStateEntity (
+    list_name TEXT NOT NULL PRIMARY KEY,
+    loaded_pages INTEGER NOT NULL,
+    has_more INTEGER NOT NULL
+);

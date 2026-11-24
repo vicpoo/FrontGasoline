@@ -1,0 +1,7 @@
+-- Datos guardados como un documento JSON por nombre (LocalDocumentCache): viajes en curso y sin enviar,
+-- cola de solicitudes de reserva, avisos sin leer, carros asignados, centros de costo, reportes y la
+-- bitácora de envíos. Son valores que se leen y guardan completos, no listas que se recorran por páginas.
+CREATE TABLE CacheDocumentEntity (
+    name TEXT NOT NULL PRIMARY KEY,
+    json TEXT NOT NULL
+);

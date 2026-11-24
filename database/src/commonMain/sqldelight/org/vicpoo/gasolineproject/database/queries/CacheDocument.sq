@@ -1,0 +1,8 @@
+get:
+SELECT json FROM CacheDocumentEntity WHERE name = ?;
+
+put:
+INSERT OR REPLACE INTO CacheDocumentEntity(name, json) VALUES (?, ?);
+
+remove:
+DELETE FROM CacheDocumentEntity WHERE name = ?;

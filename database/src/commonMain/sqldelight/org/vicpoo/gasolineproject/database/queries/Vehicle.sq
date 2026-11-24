@@ -1,0 +1,27 @@
+selectAll:
+SELECT json FROM VehicleEntity;
+
+selectById:
+SELECT json FROM VehicleEntity WHERE local_id = ?;
+
+-- Lo que ve la UI: todo menos lo que se borró sin conexión y espera mandarse a la API
+selectVisible:
+SELECT json FROM VehicleEntity WHERE sync_state <> 'PENDING_DELETE';
+
+selectVisibleById:
+SELECT json FROM VehicleEntity WHERE local_id = ? AND sync_state <> 'PENDING_DELETE';
+
+countPending:
+SELECT count(*) FROM VehicleEntity WHERE sync_state <> 'SYNCED';
+
+countAll:
+SELECT count(*) FROM VehicleEntity;
+
+upsert:
+INSERT OR REPLACE INTO VehicleEntity(local_id, server_id, sync_state, json) VALUES (?, ?, ?, ?);
+
+remove:
+DELETE FROM VehicleEntity WHERE local_id = ?;
+
+removeAll:
+DELETE FROM VehicleEntity;

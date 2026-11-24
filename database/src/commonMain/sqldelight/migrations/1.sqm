@@ -1,5 +1,5 @@
 -- Versión 1 -> 2 (fase 6): la base pasa a guardar lo que antes estaba en archivos JSON.
--- Los datos viejos se pasan desde los archivos la primera vez que se abren (LegacyJsonImport en :data).
+-- Los datos viejos se pasan desde los archivos la primera vez que se abren (LegacyDataMigration en :data).
 -- Regla: un .sqm publicado nunca se edita; cada cambio de esquema es un archivo nuevo (2.sqm, 3.sqm...).
 
 CREATE TABLE cache_document (

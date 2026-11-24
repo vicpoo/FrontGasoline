@@ -22,23 +22,12 @@ data class ReservationRequestEntity(
     val requesterPhotoUrl: String? = null,
 )
 
-/** "Solicitudes de la empresa" (pestaña llave), guardadas para verlas sin red. */
-@Serializable
-data class CompanyReservationsSnapshot(
-    val requests: List<ReservationRequestEntity> = emptyList(),
-    /** Páginas de 10 ya pedidas a la API (al recargar se vuelven a pedir todas en una petición). */
-    val loadedPages: Int = 0,
-    /** La API tiene más solicitudes después de las guardadas. */
-    val hasMore: Boolean = false,
-)
-
-/** Mis solicitudes (campana) y el último número del badge. */
+/**
+ * Número del badge de la campana (respuestas a mis solicitudes sin leer). Las solicitudes en sí van
+ * una por fila en ListItemEntity ("my_reservations" y "company_reservations"); este documento conserva
+ * el nombre del archivo de antes, así su copia vieja se pasa y se borra sola.
+ */
 @Serializable
 data class MyReservationsSnapshot(
-    val requests: List<ReservationRequestEntity> = emptyList(),
     val unseenUpdates: Int = 0,
-    /** Páginas de 10 ya pedidas a la API (al recargar se vuelven a pedir todas en una petición). */
-    val loadedPages: Int = 0,
-    /** La API tiene más solicitudes después de las guardadas. */
-    val hasMore: Boolean = false,
 )

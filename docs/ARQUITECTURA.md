@@ -158,9 +158,14 @@ Todo es almacenamiento interno de la app (privado, sin permisos de almacenamient
 
 **Base local (`:database` + `LocalDatabase` en data + `SqlDriverFactory` en platform)**
 
-- Esquema en el módulo `:database` (`.sq` = esquema actual, `migrations/N.sqm` = de la versión N a la N+1,
-  `databases/N.db` = foto de cada versión para `verifyCommonMainAppDatabaseMigration`). Es un módulo aparte con
-  target `jvm()` porque el plugin de SQLDelight no funciona con `com.android.kotlin.multiplatform.library`.
+- Esquema en el módulo `:database` (punto 1.2): `tables/*.sq` = esquema actual (tablas con sufijo `Entity`),
+  `queries/*.sq` = consultas con nombre (generan `AppMetaQueries`, `ListItemQueries`...), `migrations/N.sqm` =
+  de la versión N a la N+1 (nunca se edita uno publicado), `databases/N.db` = foto de cada versión para
+  `verifyCommonMainAppDatabaseMigration`. Versión actual: 3. Es un módulo aparte con target `jvm()` porque el
+  plugin de SQLDelight no funciona con `com.android.kotlin.multiplatform.library` (por eso no está en `data`,
+  como pedía el 1.1).
+- Un `.sqm` solo "ve" lo que crearon los `.sqm` anteriores: si cambia una tabla creada en la versión 1 (en un
+  `.sq`), el `.sqm` empieza con `CREATE TABLE IF NOT EXISTS` de esa tabla (ver `2.sqm`).
 - Android: toda la base cifrada con **SQLCipher**. La contraseña son 32 bytes al azar, guardados cifrados con
   una llave del Android Keystore en `noBackupFilesDir/local_db.key`, y se pasa como llave cruda (`x'…'`) para
   no gastar 256 000 vueltas de PBKDF2 al abrir.
@@ -173,14 +178,24 @@ Todo es almacenamiento interno de la app (privado, sin permisos de almacenamient
 
 | Tabla | Antes | Notas |
 |---|---|---|
-| `cache_document` | `cache/<nombre>.json` (`JsonFileCache`) | Un documento JSON por caché (`LocalDocumentCache`): viajes y recargas pendientes, cola de solicitudes, reservas, historial, reportes, asignados, centros de costo, bitácora |
-| `track_point` | `trip_recording/points/<viaje>.jsonl` | Una fila por punto; los lotes para la API se piden por llave (`seq >= N`), sin OFFSET |
-| `vehicle` | `vehicles/vehicles.json` | Filtro de borrados pendientes y conteo de pendientes en SQL; el orden sigue en Kotlin (acentos) |
-| `app_meta` | — | Marcas internas (ej. migración de archivos terminada) |
+| `CacheDocumentEntity` | `cache/<nombre>.json` (`JsonFileCache`) | Un documento JSON por caché (`LocalDocumentCache`): viajes y recargas pendientes, cola de solicitudes, badge de la campana, reportes, asignados, centros de costo, bitácora. Son valores que se leen y guardan completos |
+| `TrackPointEntity` | `trip_recording/points/<viaje>.jsonl` | Una fila por punto; los lotes para la API se piden por llave (`seq >= N`), sin OFFSET |
+| `VehicleEntity` | `vehicles/vehicles.json` | Filtro de borrados pendientes y conteo de pendientes en SQL; el orden sigue en Kotlin (acentos) |
+| `ListItemEntity` + `ListStateEntity` | `trips.json`, `my_reservations.json`, `company_reservations.json` | Historial de viajes y solicitudes de reserva, una fila por elemento, paginadas por llave (abajo) |
+| `AppMetaEntity` | — | Marcas internas (ej. migración de archivos terminada) |
 
-Las listas de reservas, historial y reportes siguen siendo el documento con las páginas que ya mandó la API
-(la paginación la hace el servidor). Se guardan dentro de la base cifrada; no se hicieron tablas propias porque
-la app nunca filtra ni pagina esas listas en el teléfono.
+**Paginación por llave (punto 1.6).** Historial de viajes, mis solicitudes y las de la empresa son
+`LocalPagedList` (data) sobre `ListItemEntity`, ordenadas por `(sort_key, item_id)` de la más reciente a la más
+vieja. `KeySetPaginationManager` recuerda la llave de la última fila que se ve:
+
+- Lo que se ve = desde la más reciente hasta esa llave (`upToKey`). Al abrir, solo la primera página (10).
+- Bajar: primero la página siguiente de lo GUARDADO por llave (`pageAfter`: llave menor que la última que se
+  ve, `LIMIT 10`, sin OFFSET); solo si ya se ve todo lo guardado se pide la página siguiente a la API
+  (`ListStateEntity` guarda cuántas páginas se pidieron y si la API tiene más).
+- Recargar reemplaza las filas con lo que manda la API sin recortar lo que ya se veía.
+- `observeHasMore` = hay guardadas que aún no se ven, o la API tiene más.
+
+Reportes no es una lista que se recorra: es el último resultado completo y se queda como documento.
 
 **Fotos pendientes:** `FileCipher` (domain) → `KeystoreFileCipher` (platform): AES-256-GCM con otra llave del
 Keystore; archivo = `GPF1` + IV + datos + etiqueta. Se descifran al subirlas y al mostrarlas: la UI usa
@@ -189,11 +204,13 @@ descifrar cuenta como faltante, igual que un archivo borrado.
 
 **Migración de lo que ya estaba en los teléfonos (`LegacyDataMigration`, al abrir la app)**
 
-1. Cada caché JSON se guarda en `cache_document` y después se borra el archivo (si ya existía el documento, no se pisa).
-2. Los puntos `.jsonl` de cada viaje pasan a `track_point` solo si ese viaje aún no tiene puntos (sin duplicados).
-3. `vehicles.json` pasa a `vehicle` solo si la tabla está vacía.
+1. Cada caché JSON se guarda en `CacheDocumentEntity` y después se borra el archivo (si ya existía el documento, no se pisa).
+2. Los puntos `.jsonl` de cada viaje pasan a `TrackPointEntity` solo si ese viaje aún no tiene puntos (sin duplicados).
+3. `vehicles.json` pasa a `VehicleEntity` solo si la tabla está vacía.
+   El historial y las solicitudes de la empresa NO se pasan: sus archivos y documentos viejos se borran
+   (`OBSOLETE_DOCUMENTS`) porque son copia de la API y se vuelven a descargar al entrar.
 4. Las fotos sin cifrar se cifran en su lugar (mismo nombre, escritura atómica), así los viajes las siguen encontrando.
-5. Al terminar se anota en `app_meta`. Si algo falla se reintenta en el siguiente arranque; además cada pieza
+5. Al terminar se anota en `AppMetaEntity`. Si algo falla se reintenta en el siguiente arranque; además cada pieza
    se migra sola la primera vez que se usa. Prueba principal: `LegacyDataMigrationTest` (un chofer actualiza
    con un viaje sin enviar y no pierde viaje, recargas, ruta ni foto).
 

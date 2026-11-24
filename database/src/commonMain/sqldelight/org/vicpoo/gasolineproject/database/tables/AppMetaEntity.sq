@@ -1,0 +1,6 @@
+-- Valores sueltos de la base local que no son de ningún usuario (marcas de migración de archivos viejos).
+-- No se borra al cerrar sesión.
+CREATE TABLE AppMetaEntity (
+    key TEXT NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);

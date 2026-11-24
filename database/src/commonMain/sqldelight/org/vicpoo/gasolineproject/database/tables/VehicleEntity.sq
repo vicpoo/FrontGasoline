@@ -1,0 +1,10 @@
+-- Vehículos de la empresa guardados en el teléfono. El vehículo completo va en json (VehicleEntity de
+-- data); las columnas sueltas son las que se usan para filtrar y contar en SQL.
+CREATE TABLE VehicleEntity (
+    local_id TEXT NOT NULL PRIMARY KEY,
+    server_id TEXT,
+    sync_state TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+
+CREATE INDEX vehicle_server_id ON VehicleEntity(server_id);

@@ -1,0 +1,8 @@
+valueOf:
+SELECT value FROM AppMetaEntity WHERE key = ?;
+
+put:
+INSERT OR REPLACE INTO AppMetaEntity(key, value) VALUES (?, ?);
+
+remove:
+DELETE FROM AppMetaEntity WHERE key = ?;

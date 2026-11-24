@@ -1,0 +1,42 @@
+-- Paginación por llave (keyset): la llave es (sort_key, item_id) en orden descendente.
+
+firstPage:
+SELECT * FROM ListItemEntity
+WHERE list_name = :listName
+ORDER BY sort_key DESC, item_id DESC
+LIMIT :pageSize;
+
+-- La página que sigue a la llave (:sortKey, :itemId): las filas con llave menor
+pageAfter:
+SELECT * FROM ListItemEntity
+WHERE list_name = :listName
+  AND (sort_key < :sortKey OR (sort_key = :sortKey AND item_id < :itemId))
+ORDER BY sort_key DESC, item_id DESC
+LIMIT :pageSize;
+
+-- Lo que se ve: desde la más reciente hasta la llave de la última fila mostrada (incluida)
+upToKey:
+SELECT * FROM ListItemEntity
+WHERE list_name = :listName
+  AND (sort_key > :sortKey OR (sort_key = :sortKey AND item_id >= :itemId))
+ORDER BY sort_key DESC, item_id DESC;
+
+countAfter:
+SELECT count(*) FROM ListItemEntity
+WHERE list_name = :listName
+  AND (sort_key < :sortKey OR (sort_key = :sortKey AND item_id < :itemId));
+
+countAll:
+SELECT count(*) FROM ListItemEntity WHERE list_name = ?;
+
+byId:
+SELECT json FROM ListItemEntity WHERE list_name = ? AND item_id = ?;
+
+allForList:
+SELECT json FROM ListItemEntity WHERE list_name = ? ORDER BY sort_key DESC, item_id DESC;
+
+upsert:
+INSERT OR REPLACE INTO ListItemEntity(list_name, item_id, sort_key, json) VALUES (?, ?, ?, ?);
+
+clearList:
+DELETE FROM ListItemEntity WHERE list_name = ?;

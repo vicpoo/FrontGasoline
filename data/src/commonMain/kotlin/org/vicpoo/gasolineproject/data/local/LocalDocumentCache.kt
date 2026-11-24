@@ -18,7 +18,7 @@ import org.vicpoo.gasolineproject.domain.files.AppDirectories
 
 /**
  * Caché offline genérica: guarda un valor serializable como un documento JSON dentro de la base local
- * cifrada (tabla cache_document) y lo expone como Flow. La usan el registro de viajes, la cola de
+ * cifrada (tabla CacheDocumentEntity) y lo expone como Flow. La usan el registro de viajes, la cola de
  * solicitudes, las reservas, el historial, los reportes, los carros asignados, los centros de costo y
  * la bitácora de envíos.
  *

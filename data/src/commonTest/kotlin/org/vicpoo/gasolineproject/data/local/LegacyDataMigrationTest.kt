@@ -78,6 +78,8 @@ class LegacyDataMigrationTest {
             vehicles = SqlVehicleLocalDataSource(storage.database, storage.fileSystem, storage.directories, testJson, storage.fileCipher),
             appScope = AppScope(CoroutineScope(StandardTestDispatcher())),
             logger = logger,
+            fileSystem = storage.fileSystem,
+            directories = storage.directories,
         )
 
     /** Lo que la versión anterior dejó en el teléfono. */

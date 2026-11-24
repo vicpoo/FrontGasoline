@@ -6,9 +6,11 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
+import org.vicpoo.gasolineproject.data.local.LocalPagedList
+import org.vicpoo.gasolineproject.data.reservations.local.ReservationRequestEntity
+import org.koin.core.scope.Scope
 import org.vicpoo.gasolineproject.data.reservations.AssignmentsRepositoryImpl
 import org.vicpoo.gasolineproject.data.reservations.ReservationRepositoryImpl
-import org.vicpoo.gasolineproject.data.reservations.local.CompanyReservationsSnapshot
 import org.vicpoo.gasolineproject.data.reservations.local.MyReservationsSnapshot
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutbox
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutboxSnapshot
@@ -22,17 +24,19 @@ import org.vicpoo.gasolineproject.domain.reservations.ReservationRepository
 import org.vicpoo.gasolineproject.domain.session.LogoutListener
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
 
-private val MY_RESERVATIONS_CACHE = named("myReservationsCache")
-private val COMPANY_RESERVATIONS_CACHE = named("companyReservationsCache")
+private val MY_RESERVATIONS_LIST = named("myReservationsList")
+private val COMPANY_RESERVATIONS_LIST = named("companyReservationsList")
+private val UPDATES_CACHE = named("reservationUpdatesCache")
 private val OUTBOX_CACHE = named("reservationOutboxCache")
 
 val reservationsDataModule = module {
     singleOf(::KtorReservationApi) { bind<ReservationApi>() }
-    single(MY_RESERVATIONS_CACHE) {
+    // Mis solicitudes y las de la empresa: una por fila, recorridas por llave (punto 1.6)
+    single(MY_RESERVATIONS_LIST) { reservationList(name = "my_reservations") }
+    single(COMPANY_RESERVATIONS_LIST) { reservationList(name = "company_reservations") }
+    // Solo el badge de la campana
+    single(UPDATES_CACHE) {
         LocalDocumentCache(get(), get(), get(), "my_reservations.json", MyReservationsSnapshot.serializer(), get(), MyReservationsSnapshot())
-    }
-    single(COMPANY_RESERVATIONS_CACHE) {
-        LocalDocumentCache(get(), get(), get(), "company_reservations.json", CompanyReservationsSnapshot.serializer(), get(), CompanyReservationsSnapshot())
     }
     // Solicitudes hechas sin red, en su propio archivo
     single(OUTBOX_CACHE) {
@@ -43,8 +47,9 @@ val reservationsDataModule = module {
         ReservationRepositoryImpl(
             api = get(),
             sessionReader = get(),
-            cache = get(MY_RESERVATIONS_CACHE),
-            companyCache = get(COMPANY_RESERVATIONS_CACHE),
+            mine = get(MY_RESERVATIONS_LIST),
+            company = get(COMPANY_RESERVATIONS_LIST),
+            updates = get(UPDATES_CACHE),
             outbox = get(),
             clock = get(),
             scheduler = get(),
@@ -72,3 +77,13 @@ val reservationsDataModule = module {
     singleOf(::KtorAssignmentsApi) { bind<AssignmentsApi>() }
     single<AssignmentsRepository> { AssignmentsRepositoryImpl(api = get(), reservations = get()) }
 }
+
+/** Solicitudes de reserva guardadas una por fila, de la más reciente a la más vieja. */
+private fun Scope.reservationList(name: String) = LocalPagedList(
+    database = get(),
+    name = name,
+    serializer = ReservationRequestEntity.serializer(),
+    json = get(),
+    idOf = { it.id },
+    sortKeyOf = { it.requestedAt.orEmpty() },
+)
