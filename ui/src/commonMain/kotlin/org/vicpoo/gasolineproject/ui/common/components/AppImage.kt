@@ -24,7 +24,7 @@ import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
 
 /**
  * Imagen remota/local con placeholder.
- * model puede ser una URL (http...), una ruta "file://..." o un ByteArray.
+ * model puede ser una URL (http...), una foto local LocalImage (se descifra al mostrarla) o un ByteArray.
  * Si es null o falla, muestra el ícono de respaldo sobre fondo gris.
  *
  * Las fotos de MinIO llegan como URL prefirmada (con ?X-Amz-...): la firma cambia en cada

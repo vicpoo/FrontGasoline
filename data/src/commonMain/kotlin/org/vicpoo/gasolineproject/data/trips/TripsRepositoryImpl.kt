@@ -11,7 +11,7 @@ import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.AppDates
 import org.vicpoo.gasolineproject.domain.common.getOrNull
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.network.LIST_PAGE_SIZE
 import org.vicpoo.gasolineproject.data.network.hasMoreAfter
 import org.vicpoo.gasolineproject.data.network.refreshSize
@@ -81,7 +81,7 @@ data class FuelLoadEntity(
  */
 class TripsRepositoryImpl(
     private val api: TripsApi,
-    private val cache: JsonFileCache<TripsSnapshot>,
+    private val cache: LocalDocumentCache<TripsSnapshot>,
     private val sessionReader: SessionReader,
     private val permissionChecker: PermissionChecker,
 ) : TripsRepository {

@@ -10,7 +10,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.trips.remote.KtorTripsApi
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
@@ -40,7 +40,7 @@ class TripsRepositoryImplTest {
 
     private val repository = TripsRepositoryImpl(
         api = KtorTripsApi(api.client),
-        cache = JsonFileCache(storage.fileSystem, storage.directories, "trips.json", TripsSnapshot.serializer(), testJson, TripsSnapshot()),
+        cache = LocalDocumentCache(storage.database, storage.fileSystem, storage.directories, "trips.json", TripsSnapshot.serializer(), testJson, TripsSnapshot()),
         sessionReader = session,
         permissionChecker = permissions,
     )

@@ -5,7 +5,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.reservations.AssignmentsRepositoryImpl
 import org.vicpoo.gasolineproject.data.reservations.ReservationRepositoryImpl
 import org.vicpoo.gasolineproject.data.reservations.local.CompanyReservationsSnapshot
@@ -29,14 +29,14 @@ private val OUTBOX_CACHE = named("reservationOutboxCache")
 val reservationsDataModule = module {
     singleOf(::KtorReservationApi) { bind<ReservationApi>() }
     single(MY_RESERVATIONS_CACHE) {
-        JsonFileCache(get(), get(), "my_reservations.json", MyReservationsSnapshot.serializer(), get(), MyReservationsSnapshot())
+        LocalDocumentCache(get(), get(), get(), "my_reservations.json", MyReservationsSnapshot.serializer(), get(), MyReservationsSnapshot())
     }
     single(COMPANY_RESERVATIONS_CACHE) {
-        JsonFileCache(get(), get(), "company_reservations.json", CompanyReservationsSnapshot.serializer(), get(), CompanyReservationsSnapshot())
+        LocalDocumentCache(get(), get(), get(), "company_reservations.json", CompanyReservationsSnapshot.serializer(), get(), CompanyReservationsSnapshot())
     }
     // Solicitudes hechas sin red, en su propio archivo
     single(OUTBOX_CACHE) {
-        JsonFileCache(get(), get(), "reservation_outbox.json", ReservationOutboxSnapshot.serializer(), get(), ReservationOutboxSnapshot())
+        LocalDocumentCache(get(), get(), get(), "reservation_outbox.json", ReservationOutboxSnapshot.serializer(), get(), ReservationOutboxSnapshot())
     }
     single { ReservationOutbox(get(OUTBOX_CACHE)) }
     single<ReservationRepository> {

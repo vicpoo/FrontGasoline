@@ -6,7 +6,7 @@ import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.domain.reservations.RequestOutcome
 import org.vicpoo.gasolineproject.domain.reservations.RequestedVehicle
 import org.vicpoo.gasolineproject.data.reservations.local.CompanyReservationsSnapshot
@@ -38,7 +38,7 @@ class ReservationOutboxTest {
     private val session = FakeSessionReader(testSession())
 
     private fun <T : Any> cache(name: String, serializer: kotlinx.serialization.KSerializer<T>, empty: T) =
-        JsonFileCache(storage.fileSystem, storage.directories, name, serializer, testJson, empty)
+        LocalDocumentCache(storage.database, storage.fileSystem, storage.directories, name, serializer, testJson, empty)
 
     private val outbox = ReservationOutbox(cache("outbox.json", ReservationOutboxSnapshot.serializer(), ReservationOutboxSnapshot()))
 

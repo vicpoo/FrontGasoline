@@ -4,7 +4,7 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import org.vicpoo.gasolineproject.data.vehicles.local.JsonFileVehicleLocalDataSource
+import org.vicpoo.gasolineproject.data.vehicles.local.SqlVehicleLocalDataSource
 import org.vicpoo.gasolineproject.data.vehicles.local.VehicleLocalDataSource
 import org.vicpoo.gasolineproject.data.vehicles.remote.KtorVehicleApi
 import org.vicpoo.gasolineproject.data.vehicles.remote.VehicleApi
@@ -19,7 +19,8 @@ import org.vicpoo.gasolineproject.domain.vehicles.repository.VehicleWriter
 val vehiclesDataModule = module {
     // Autowire: Koin pasa cada parámetro del constructor por su tipo
     singleOf(::KtorVehicleApi) { bind<VehicleApi>() }
-    singleOf(::JsonFileVehicleLocalDataSource) { bind<VehicleLocalDataSource>() }
+    // Tabla vehicle de la base local cifrada; fotos pendientes cifradas
+    singleOf(::SqlVehicleLocalDataSource) { bind<VehicleLocalDataSource>() }
     // También se registra como PendingSyncTask para la sincronización en segundo plano
     singleOf(::VehicleSyncer) { bind<PendingSyncTask>() }
     // Una sola instancia expuesta por sus tres interfaces (ISP: hay quien solo lee o solo escribe)

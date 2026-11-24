@@ -9,28 +9,36 @@ import kotlinx.serialization.json.Json
 import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
-import okio.buffer
-import okio.use
+import org.vicpoo.gasolineproject.data.database.LocalDatabase
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
+import org.vicpoo.gasolineproject.data.local.encryptInPlace
+import org.vicpoo.gasolineproject.database.Track_point
 import org.vicpoo.gasolineproject.domain.common.GeoPoint
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
+import org.vicpoo.gasolineproject.domain.files.FileCipher
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 /**
- * Almacenamiento offline del registro de viajes:
- * - recording.json: viajes y recargas pendientes (con escritura atómica de JsonFileCache).
- * - points/<viaje>.jsonl: puntos GPS, una línea por punto (agregar es barato aunque haya miles).
- * - receipts/: fotos de los recibos pendientes de subir.
+ * Almacenamiento offline del registro de viajes, todo dentro de la base local cifrada salvo las fotos:
+ * - documento "trip_recording": viajes y recargas pendientes ([LocalDocumentCache]).
+ * - tabla track_point: puntos GPS, uno por fila (agregar es barato aunque haya miles).
+ * - receipts/: fotos de recibos y odómetro pendientes de subir, cifradas con [FileCipher].
+ *
+ * Fase 6F: los puntos de la versión anterior (points/<viaje>.jsonl) se pasan a la base la primera vez
+ * que se usa ese viaje ([importLegacyPoints]); las fotos viejas sin cifrar se siguen leyendo y
+ * [encryptLegacyReceipts] las cifra.
  */
 class TripRecordingLocalStore(
     private val fileSystem: FileSystem,
     directories: AppDirectories,
     private val json: Json,
-    private val snapshotCache: JsonFileCache<RecordingSnapshot>,
+    private val snapshotCache: LocalDocumentCache<RecordingSnapshot>,
+    private val database: LocalDatabase,
+    private val fileCipher: FileCipher,
 ) {
     private val baseDir: Path = directories.filesDir.toPath() / "trip_recording"
-    private val pointsDir: Path = baseDir / "points"
+    private val legacyPointsDir: Path = baseDir / "points"
     private val receiptsDir: Path = baseDir / "receipts"
 
     /** Protege el leer-modificar-guardar del snapshot (GPS, formulario y sincronización a la vez). */
@@ -76,51 +84,89 @@ class TripRecordingLocalStore(
     // ---------------- Puntos GPS ----------------
 
     suspend fun appendPoint(tripLocalId: String, point: TrackPointEntity) = pointsMutex.withLock {
-        withContext(Dispatchers.Default) {
-            fileSystem.createDirectories(pointsDir)
-            val line = json.encodeToString(TrackPointEntity.serializer(), point) + "\n"
-            fileSystem.appendingSink(pointsFile(tripLocalId)).buffer().use { it.writeUtf8(line) }
+        importLegacyPoints(tripLocalId)
+        database.use {
+            trackPointQueries.transaction {
+                val seq = trackPointQueries.nextSeq(tripLocalId).executeAsOneOrNull() ?: 0L
+                trackPointQueries.insert(point.toRow(tripLocalId, seq))
+            }
         }
     }
 
-    /** Puntos a partir de [from] (para mandarlos en lotes). */
+    /** Puntos a partir del número [from] (para mandarlos en lotes): consulta por llave, sin OFFSET. */
     suspend fun readPoints(tripLocalId: String, from: Int = 0, limit: Int = Int.MAX_VALUE): List<TrackPointEntity> =
         pointsMutex.withLock {
-            withContext(Dispatchers.Default) {
-                val file = pointsFile(tripLocalId)
-                if (!fileSystem.exists(file)) return@withContext emptyList()
-                fileSystem.read(file) { readUtf8() }
-                    .lineSequence()
-                    .filter { it.isNotBlank() }
-                    .drop(from)
-                    .take(limit)
-                    .mapNotNull { runCatching { json.decodeFromString(TrackPointEntity.serializer(), it) }.getOrNull() }
-                    .toList()
+            importLegacyPoints(tripLocalId)
+            database.use {
+                trackPointQueries.pageForTrip(tripLocalId, from.toLong(), limit.toLong())
+                    .executeAsList()
+                    .map { it.toEntity() }
             }
         }
 
     suspend fun countPoints(tripLocalId: String): Int = pointsMutex.withLock {
-        withContext(Dispatchers.Default) {
-            val file = pointsFile(tripLocalId)
-            if (!fileSystem.exists(file)) 0 else fileSystem.read(file) { readUtf8() }.lineSequence().count { it.isNotBlank() }
-        }
+        importLegacyPoints(tripLocalId)
+        database.use { trackPointQueries.countForTrip(tripLocalId).executeAsOne().toInt() }
     }
 
     suspend fun readRoute(tripLocalId: String): List<GeoPoint> =
         readPoints(tripLocalId).map { GeoPoint(it.lat, it.lng) }
 
-    // ---------------- Recibos ----------------
+    /**
+     * Pasa a la base los puntos que la versión anterior guardó en points/<viaje>.jsonl y borra el archivo.
+     * Solo inserta si la base todavía no tiene puntos de ese viaje: si la app se cerró entre insertar y
+     * borrar, la siguiente vez no se duplican. Debe llamarse con [pointsMutex] tomado.
+     */
+    private suspend fun importLegacyPoints(tripLocalId: String) {
+        val file = legacyPointsFile(tripLocalId)
+        val points = withContext(Dispatchers.Default) {
+            if (!fileSystem.exists(file)) return@withContext null
+            runCatching { fileSystem.read(file) { readUtf8() } }.getOrDefault("")
+                .lineSequence()
+                .filter { it.isNotBlank() }
+                .mapNotNull { runCatching { json.decodeFromString(TrackPointEntity.serializer(), it) }.getOrNull() }
+                .toList()
+        } ?: return
+        database.use {
+            trackPointQueries.transaction {
+                if (trackPointQueries.countForTrip(tripLocalId).executeAsOne() == 0L) {
+                    points.forEachIndexed { index, point -> trackPointQueries.insert(point.toRow(tripLocalId, index.toLong())) }
+                }
+            }
+        }
+        withContext(Dispatchers.Default) { runCatching { fileSystem.delete(file) } }
+    }
+
+    /** Fase 6F: pasa a la base los puntos de todos los viajes de la versión anterior (al abrir la app). */
+    suspend fun importAllLegacyPoints() {
+        val tripIds = withContext(Dispatchers.Default) {
+            if (!fileSystem.exists(legacyPointsDir)) return@withContext emptyList()
+            fileSystem.list(legacyPointsDir).filter { it.name.endsWith(".jsonl") }.map { it.name.removeSuffix(".jsonl") }
+        }
+        tripIds.forEach { tripLocalId -> pointsMutex.withLock { importLegacyPoints(tripLocalId) } }
+    }
+
+    // ---------------- Recibos y fotos del odómetro (cifrados) ----------------
 
     @OptIn(ExperimentalUuidApi::class)
     suspend fun saveReceipt(bytes: ByteArray, extension: String): String = withContext(Dispatchers.Default) {
         fileSystem.createDirectories(receiptsDir)
         val path = receiptsDir / "recibo-${Uuid.random()}.$extension"
-        fileSystem.write(path) { write(bytes) }
+        fileSystem.write(path) { write(fileCipher.encrypt(bytes)) }
         path.toString()
     }
 
+    /** La foto ya descifrada; null si no existe o no se puede descifrar (se perdió la llave). */
     suspend fun readReceipt(path: String): ByteArray? = withContext(Dispatchers.Default) {
-        runCatching { fileSystem.read(path.toPath()) { readByteArray() } }.getOrNull()
+        runCatching { fileCipher.decrypt(fileSystem.read(path.toPath()) { readByteArray() }) }.getOrNull()
+    }
+
+    /** Fase 6F: cifra las fotos que la versión anterior dejó sin cifrar (mismo nombre: los viajes las siguen encontrando). */
+    suspend fun encryptLegacyReceipts() = withContext(Dispatchers.Default) {
+        if (!fileSystem.exists(receiptsDir)) return@withContext
+        fileSystem.list(receiptsDir)
+            .filterNot { it.name.endsWith(".tmp") }
+            .forEach { path -> encryptInPlace(fileSystem, fileCipher, path) }
     }
 
     suspend fun deleteFile(path: String?) {
@@ -140,15 +186,30 @@ class TripRecordingLocalStore(
         }
         receipts.forEach { deleteFile(it) }
         pointsMutex.withLock {
-            withContext(Dispatchers.Default) { runCatching { fileSystem.delete(pointsFile(tripLocalId)) } }
+            database.use { trackPointQueries.deleteForTrip(tripLocalId) }
+            withContext(Dispatchers.Default) { runCatching { fileSystem.delete(legacyPointsFile(tripLocalId)) } }
         }
     }
 
     /** Al cerrar sesión. */
     suspend fun clearAll() {
         mutex.withLock { snapshotCache.clear() }
+        pointsMutex.withLock { database.use { trackPointQueries.deleteAll() } }
         withContext(Dispatchers.Default) { runCatching { fileSystem.deleteRecursively(baseDir) } }
     }
 
-    private fun pointsFile(tripLocalId: String): Path = pointsDir / "$tripLocalId.jsonl"
+    private fun legacyPointsFile(tripLocalId: String): Path = legacyPointsDir / "$tripLocalId.jsonl"
 }
+
+private fun TrackPointEntity.toRow(tripLocalId: String, seq: Long) = Track_point(
+    trip_local_id = tripLocalId,
+    seq = seq,
+    lat = lat,
+    lng = lng,
+    t = t,
+    acc = acc,
+    alt = alt,
+    spd = spd,
+)
+
+private fun Track_point.toEntity() = TrackPointEntity(lat = lat, lng = lng, t = t, acc = acc, alt = alt, spd = spd)

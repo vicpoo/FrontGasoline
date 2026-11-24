@@ -4,7 +4,7 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.trips.TripsRepositoryImpl
 import org.vicpoo.gasolineproject.data.trips.TripsSnapshot
 import org.vicpoo.gasolineproject.data.trips.remote.KtorTripsApi
@@ -17,7 +17,8 @@ private val TRIPS_CACHE = named("tripsCache")
 val tripsDataModule = module {
     singleOf(::KtorTripsApi) { bind<TripsApi>() }
     single(TRIPS_CACHE) {
-        JsonFileCache(
+        LocalDocumentCache(
+            database = get(),
             fileSystem = get(),
             directories = get(),
             fileName = "trips.json",

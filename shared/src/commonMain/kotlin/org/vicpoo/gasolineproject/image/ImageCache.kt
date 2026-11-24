@@ -7,11 +7,13 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okio.FileSystem
 import okio.Path
 import okio.Path.Companion.toPath
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
+import org.vicpoo.gasolineproject.domain.files.FileCipher
 import org.vicpoo.gasolineproject.domain.session.LogoutListener
 
 /**
@@ -22,8 +24,14 @@ import org.vicpoo.gasolineproject.domain.session.LogoutListener
  *
  * Ahí quedan las fotos de vehículos, operadores y perfil descargadas del servidor: al cerrar sesión
  * se borran las dos cachés ([clear], registrado como LogoutListener en [imageModule]).
+ *
+ * Las fotos guardadas en el teléfono (LocalImage, cifradas) las lee [LocalImageFetcher].
  */
-class ImageCache(directories: AppDirectories) {
+class ImageCache(
+    directories: AppDirectories,
+    private val fileSystem: FileSystem,
+    private val fileCipher: FileCipher,
+) {
 
     val directory: Path = directories.cacheDir.toPath() / DIRECTORY_NAME
 
@@ -32,7 +40,10 @@ class ImageCache(directories: AppDirectories) {
 
     fun newImageLoader(context: PlatformContext): ImageLoader =
         ImageLoader.Builder(context)
-            .components { add(KtorNetworkFetcherFactory()) }
+            .components {
+                add(KtorNetworkFetcherFactory())
+                add(LocalImageFetcher.Factory(fileSystem, fileCipher))
+            }
             .diskCache { newDiskCache() }
             .crossfade(true)
             .build()
@@ -66,7 +77,7 @@ class ImageCache(directories: AppDirectories) {
 
 /** Caché de imágenes y su limpieza al cerrar sesión. */
 val imageModule = module {
-    single { ImageCache(get()) }
+    single { ImageCache(directories = get(), fileSystem = get(), fileCipher = get()) }
     single<LogoutListener>(named("imageCache")) {
         val cache = get<ImageCache>()
         LogoutListener { withContext(Dispatchers.Default) { cache.clear() } }

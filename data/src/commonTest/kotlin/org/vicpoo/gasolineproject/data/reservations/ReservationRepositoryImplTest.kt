@@ -13,7 +13,7 @@ import io.ktor.http.headersOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.KSerializer
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.reservations.local.CompanyReservationsSnapshot
 import org.vicpoo.gasolineproject.data.reservations.local.MyReservationsSnapshot
 import org.vicpoo.gasolineproject.data.reservations.local.ReservationOutbox
@@ -48,7 +48,7 @@ class ReservationRepositoryImplTest {
     private val session = FakeSessionReader(testSession())
 
     private fun <T : Any> cache(name: String, serializer: KSerializer<T>, empty: T) =
-        JsonFileCache(storage.fileSystem, storage.directories, name, serializer, testJson, empty)
+        LocalDocumentCache(storage.database, storage.fileSystem, storage.directories, name, serializer, testJson, empty)
 
     private val mineCache = cache("mine.json", MyReservationsSnapshot.serializer(), MyReservationsSnapshot())
     private val companyCache = cache("company.json", CompanyReservationsSnapshot.serializer(), CompanyReservationsSnapshot())

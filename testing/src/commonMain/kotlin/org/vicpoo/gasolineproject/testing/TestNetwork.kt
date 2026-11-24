@@ -73,6 +73,12 @@ fun noConnection(): Nothing = throw IOException("Sin red (prueba)")
 class TestStorage {
     val fileSystem = FakeFileSystem()
     val directories = AppDirectories(filesDir = (fileSystem.workingDirectory / "app").toString())
+
+    /** Base local en memoria (lo que en la app es la base cifrada con SQLCipher). */
+    val database = testLocalDatabase()
+
+    /** Cifrado falso pero reconocible: permite revisar que las fotos no quedan en claro. */
+    val fileCipher = TestFileCipher()
 }
 
 /** Planificador que solo cuenta las llamadas. */

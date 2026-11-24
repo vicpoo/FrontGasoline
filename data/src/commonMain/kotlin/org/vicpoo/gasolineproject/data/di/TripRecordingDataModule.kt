@@ -6,7 +6,7 @@ import org.koin.core.module.dsl.singleOf
 import org.koin.core.qualifier.named
 import org.koin.dsl.binds
 import org.koin.dsl.module
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.triprecording.AssignedVehicleRepositoryImpl
 import org.vicpoo.gasolineproject.data.triprecording.CostCenterRepositoryImpl
 import org.vicpoo.gasolineproject.data.triprecording.FuelRecordRepositoryImpl
@@ -42,13 +42,13 @@ val tripRecordingDataModule = module {
     singleOf(::KtorTripRecordingApi) { bind<TripRecordingApi>() }
 
     single(ASSIGNED_CACHE) {
-        JsonFileCache(get(), get(), "assigned_vehicles.json", AssignedVehiclesSnapshot.serializer(), get(), AssignedVehiclesSnapshot())
+        LocalDocumentCache(get(), get(), get(), "assigned_vehicles.json", AssignedVehiclesSnapshot.serializer(), get(), AssignedVehiclesSnapshot())
     }
     single(COST_CENTERS_CACHE) {
-        JsonFileCache(get(), get(), "cost_centers.json", CostCentersSnapshot.serializer(), get(), CostCentersSnapshot())
+        LocalDocumentCache(get(), get(), get(), "cost_centers.json", CostCentersSnapshot.serializer(), get(), CostCentersSnapshot())
     }
     single(RECORDING_CACHE) {
-        JsonFileCache(get(), get(), "trip_recording.json", RecordingSnapshot.serializer(), get(), RecordingSnapshot())
+        LocalDocumentCache(get(), get(), get(), "trip_recording.json", RecordingSnapshot.serializer(), get(), RecordingSnapshot())
     }
     single {
         TripRecordingLocalStore(
@@ -56,6 +56,8 @@ val tripRecordingDataModule = module {
             directories = get(),
             json = get(),
             snapshotCache = get(RECORDING_CACHE),
+            database = get(),
+            fileCipher = get(),
         )
     }
 
@@ -72,7 +74,7 @@ val tripRecordingDataModule = module {
 
     // Bitácora de los intentos de envío (pantalla "Envíos pendientes")
     single(SYNC_LOG_CACHE) {
-        JsonFileCache(get(), get(), "trip_sync_log.json", SyncLogSnapshot.serializer(), get(), SyncLogSnapshot())
+        LocalDocumentCache(get(), get(), get(), "trip_sync_log.json", SyncLogSnapshot.serializer(), get(), SyncLogSnapshot())
     }
     single { TripSyncLog(cache = get(SYNC_LOG_CACHE), clock = get()) }
 

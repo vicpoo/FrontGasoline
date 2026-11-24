@@ -113,7 +113,10 @@ Todo es almacenamiento interno de la app (privado, sin permisos de almacenamient
 
 | Dato | Dónde | Se borra |
 |---|---|---|
-| DataStore, cachés JSON, `vehicles/`, `trip_recording/` (ruta GPS, recibos, odómetro) | `filesDir` | Al cerrar sesión (cada feature con su `LogoutListener`) |
+| Base local `gasoline.db` (SQLCipher): viajes en curso y sin enviar, ruta GPS, cola de solicitudes, vehículos, reservas, historial, reportes, carros asignados, centros de costo, bitácora de envíos | `databases/` | Al cerrar sesión (cada feature con su `LogoutListener`); los viajes sin enviar se quedan para su dueño |
+| Fotos pendientes de subir (recibos, odómetro, vehículos), cifradas AES-256-GCM | `filesDir/trip_recording/receipts/`, `filesDir/vehicles/photos/` | Al enviarse; al cerrar sesión |
+| Llave de la base (cifrada con el Keystore) | `noBackupFilesDir/local_db.key` | Nunca (si se pierde, la base se recrea) |
+| DataStore (sesión, preferencias) | `filesDir` | Al cerrar sesión |
 | Foto de la cámara antes de reducirla | `cacheDir/camera/` | Al leerla; al abrir la app si tiene más de 1 h; al cerrar sesión |
 | Reporte PDF / Excel compartido | `cacheDir/reports/` (FileProvider) | Al abrir la app si tiene más de 1 h; al cerrar sesión |
 | Fotos descargadas (vehículos, operadores, perfil) y teselas del mapa | `cacheDir/image_cache/` (Coil, máx. 100 MB) + memoria | Al cerrar sesión (`ImageCache`) |
@@ -126,31 +129,50 @@ Todo es almacenamiento interno de la app (privado, sin permisos de almacenamient
 - Si la sesión termina sola (refresh token vencido) los datos NO se borran, para que el mismo usuario recupere lo
   pendiente; si entra otra cuenta se borran antes (ver `LocalDataOwner.kt`).
 
-### Cifrado de los datos en el teléfono (punto 4.5)
+### Cifrado de los datos en el teléfono (punto 4.5) — hecho en la fase 6
 
-**Decisión:** cifrar al migrar a SQLDelight (fase 6). Hasta entonces el riesgo se acepta de forma temporal.
+**Decisión:** cifrar al migrar a SQLDelight (fase 6). Ya está hecho en Android; iOS queda como TODO.
 
-Estado actual: las fotos de licencia, recibos y odómetro, la ruta GPS y los JSON están en `filesDir` sin cifrar.
-Quién podría leerlos:
+**Base local (`:database` + `LocalDatabase` en data + `SqlDriverFactory` en platform)**
 
-- Otras apps: no (aislamiento de Android).
-- Respaldo de Google o transferencia a otro teléfono: no (`allowBackup="false"` + `data_extraction_rules.xml`).
-- Teléfono robado apagado o bloqueado: no (Android cifra el almacenamiento hasta el primer desbloqueo).
-- Teléfono desbloqueado con root o herramientas forenses: **sí**. Es el riesgo que se acepta temporalmente.
+- Esquema en el módulo `:database` (`.sq` = esquema actual, `migrations/N.sqm` = de la versión N a la N+1,
+  `databases/N.db` = foto de cada versión para `verifyCommonMainAppDatabaseMigration`). Es un módulo aparte con
+  target `jvm()` porque el plugin de SQLDelight no funciona con `com.android.kotlin.multiplatform.library`.
+- Android: toda la base cifrada con **SQLCipher**. La contraseña son 32 bytes al azar, guardados cifrados con
+  una llave del Android Keystore en `noBackupFilesDir/local_db.key`, y se pasa como llave cruda (`x'…'`) para
+  no gastar 256 000 vueltas de PBKDF2 al abrir.
+- Si la llave del Keystore se pierde o la base no abre con ella: la base se borra, se crea vacía y queda un
+  ERROR en la bitácora. Lo descargable vuelve de la API; lo que no se había enviado se pierde (caso muy raro:
+  ni el Keystore ni la base se respaldan).
+- iOS: SQLite sin cifrar (TODO: SQLCipher + Keychain).
 
-Por qué no se cifran ya los JSON: en la fase 6 se reemplazan por SQLite y ese cifrado se tendría que rehacer
-(cifrar `JsonFileCache`, la ruta `.jsonl` línea por línea y migrar los archivos existentes).
+**Qué guarda**
 
-Qué se hará en la fase 6:
+| Tabla | Antes | Notas |
+|---|---|---|
+| `cache_document` | `cache/<nombre>.json` (`JsonFileCache`) | Un documento JSON por caché (`LocalDocumentCache`): viajes y recargas pendientes, cola de solicitudes, reservas, historial, reportes, asignados, centros de costo, bitácora |
+| `track_point` | `trip_recording/points/<viaje>.jsonl` | Una fila por punto; los lotes para la API se piden por llave (`seq >= N`), sin OFFSET |
+| `vehicle` | `vehicles/vehicles.json` | Filtro de borrados pendientes y conteo de pendientes en SQL; el orden sigue en Kotlin (acentos) |
+| `app_meta` | — | Marcas internas (ej. migración de archivos terminada) |
 
-1. La base SQLDelight se crea con **SQLCipher** (toda la base cifrada; las consultas no cambian).
-2. La contraseña de la base se genera al azar la primera vez y se guarda cifrada con el Android Keystore
-   (misma técnica que `KeystoreTokenStore`); en iOS, en el Keychain.
-3. Las fotos (licencia, recibos, odómetro, vehículos pendientes de subir) se cifran con AES-256-GCM y una llave
-   del Keystore; se descifran al subirlas y al mostrarlas.
-4. La migración lee los JSON actuales (sin cifrar), los guarda en la base cifrada y borra los archivos.
-5. Si la llave del Keystore se pierde (reseteo del sistema), la base no se puede abrir: se borra y se vuelve a
-   descargar de la API; lo que no se había enviado se pierde. Se registra como ERROR en la bitácora.
+Las listas de reservas, historial y reportes siguen siendo el documento con las páginas que ya mandó la API
+(la paginación la hace el servidor). Se guardan dentro de la base cifrada; no se hicieron tablas propias porque
+la app nunca filtra ni pagina esas listas en el teléfono.
+
+**Fotos pendientes:** `FileCipher` (domain) → `KeystoreFileCipher` (platform): AES-256-GCM con otra llave del
+Keystore; archivo = `GPF1` + IV + datos + etiqueta. Se descifran al subirlas y al mostrarlas: la UI usa
+`LocalImage(ruta)` y `LocalImageFetcher` (shared) las descifra en memoria para Coil. Una foto que ya no se puede
+descifrar cuenta como faltante, igual que un archivo borrado.
+
+**Migración de lo que ya estaba en los teléfonos (`LegacyDataMigration`, al abrir la app)**
+
+1. Cada caché JSON se guarda en `cache_document` y después se borra el archivo (si ya existía el documento, no se pisa).
+2. Los puntos `.jsonl` de cada viaje pasan a `track_point` solo si ese viaje aún no tiene puntos (sin duplicados).
+3. `vehicles.json` pasa a `vehicle` solo si la tabla está vacía.
+4. Las fotos sin cifrar se cifran en su lugar (mismo nombre, escritura atómica), así los viajes las siguen encontrando.
+5. Al terminar se anota en `app_meta`. Si algo falla se reintenta en el siguiente arranque; además cada pieza
+   se migra sola la primera vez que se usa. Prueba principal: `LegacyDataMigrationTest` (un chofer actualiza
+   con un viaje sin enviar y no pierde viaje, recargas, ruta ni foto).
 
 ## Sincronización: reintentos (punto 3.3.1)
 

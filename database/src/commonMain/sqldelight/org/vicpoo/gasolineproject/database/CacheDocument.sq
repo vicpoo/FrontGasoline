@@ -1,0 +1,16 @@
+-- Datos guardados como un documento JSON por nombre (antes: un archivo cache/<nombre>.json por caché):
+-- viajes en curso y pendientes, cola de solicitudes de reserva, reservas, historial, reportes,
+-- carros asignados, centros de costo y la bitácora de envíos. Vive dentro de la base cifrada.
+CREATE TABLE cache_document (
+    name TEXT NOT NULL PRIMARY KEY,
+    json TEXT NOT NULL
+);
+
+get:
+SELECT json FROM cache_document WHERE name = ?;
+
+put:
+INSERT OR REPLACE INTO cache_document(name, json) VALUES (?, ?);
+
+remove:
+DELETE FROM cache_document WHERE name = ?;

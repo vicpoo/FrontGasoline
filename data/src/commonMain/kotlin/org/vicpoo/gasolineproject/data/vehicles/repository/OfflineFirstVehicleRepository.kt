@@ -42,18 +42,15 @@ class OfflineFirstVehicleRepository(
     private val clock: AppClock = SystemAppClock(),
 ) : VehicleRepository {
 
-    override fun observeVehicles(): Flow<List<Vehicle>> = local.vehicles.map { list ->
-        list.filter { it.syncState != SyncState.PENDING_DELETE }
-            .map { it.toDomain() }
-            .sortedBy { it.cardTitle.lowercase() }
+    // El filtro (sin los borrados pendientes) y el conteo los hace SQL. El orden se queda en Kotlin:
+    // lowercase() de Kotlin entiende acentos y lower() de SQLite no.
+    override fun observeVehicles(): Flow<List<Vehicle>> = local.observeVisible().map { list ->
+        list.map { it.toDomain() }.sortedBy { it.cardTitle.lowercase() }
     }
 
-    override fun observeVehicle(id: String): Flow<Vehicle?> = local.vehicles.map { list ->
-        list.firstOrNull { it.localId == id && it.syncState != SyncState.PENDING_DELETE }?.toDomain()
-    }
+    override fun observeVehicle(id: String): Flow<Vehicle?> = local.observeVisible(id).map { it?.toDomain() }
 
-    override fun observePendingSyncCount(): Flow<Int> =
-        local.vehicles.map { list -> list.count { it.syncState != SyncState.SYNCED } }
+    override fun observePendingSyncCount(): Flow<Int> = local.observePendingCount()
 
     override suspend fun refresh(): AppResult<Unit> {
         val pushed = syncer.syncPending()

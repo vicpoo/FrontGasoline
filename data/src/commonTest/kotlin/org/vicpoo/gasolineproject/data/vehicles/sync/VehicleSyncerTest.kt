@@ -5,7 +5,7 @@ import io.ktor.http.content.TextContent
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.data.vehicles.local.JsonFileVehicleLocalDataSource
+import org.vicpoo.gasolineproject.data.vehicles.local.SqlVehicleLocalDataSource
 import org.vicpoo.gasolineproject.data.vehicles.local.VehicleEntity
 import org.vicpoo.gasolineproject.data.vehicles.remote.KtorVehicleApi
 import org.vicpoo.gasolineproject.domain.vehicles.model.SyncState
@@ -31,7 +31,7 @@ class VehicleSyncerTest {
     private val api = FakeApiServer()
     private val scheduler = RecordingSyncScheduler()
     private val storage = TestStorage()
-    private val local = JsonFileVehicleLocalDataSource(storage.fileSystem, storage.directories, testJson)
+    private val local = SqlVehicleLocalDataSource(storage.database, storage.fileSystem, storage.directories, testJson, storage.fileCipher)
     private val syncer = VehicleSyncer(local, KtorVehicleApi(api.client), scheduler)
 
     private fun pending(

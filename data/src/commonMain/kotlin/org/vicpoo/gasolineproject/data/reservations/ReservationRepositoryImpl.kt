@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.map
 import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.network.LIST_PAGE_SIZE
 import org.vicpoo.gasolineproject.data.network.hasMoreAfter
 import org.vicpoo.gasolineproject.data.network.refreshSize
@@ -51,8 +51,8 @@ import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
 class ReservationRepositoryImpl(
     private val api: ReservationApi,
     private val sessionReader: SessionReader,
-    private val cache: JsonFileCache<MyReservationsSnapshot>,
-    private val companyCache: JsonFileCache<CompanyReservationsSnapshot>,
+    private val cache: LocalDocumentCache<MyReservationsSnapshot>,
+    private val companyCache: LocalDocumentCache<CompanyReservationsSnapshot>,
     private val outbox: ReservationOutbox,
     private val clock: AppClock,
     private val scheduler: BackgroundSyncScheduler,

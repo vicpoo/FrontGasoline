@@ -10,7 +10,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.triprecording.local.RecordingSnapshot
 import org.vicpoo.gasolineproject.data.triprecording.local.TripEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.TripRecordingLocalStore
@@ -53,7 +53,10 @@ class GpsTripTrackerTest {
         fileSystem = storage.fileSystem,
         directories = storage.directories,
         json = testJson,
-        snapshotCache = JsonFileCache(
+        database = storage.database,
+        fileCipher = storage.fileCipher,
+        snapshotCache = LocalDocumentCache(
+            storage.database,
             storage.fileSystem,
             storage.directories,
             "trip_recording.json",

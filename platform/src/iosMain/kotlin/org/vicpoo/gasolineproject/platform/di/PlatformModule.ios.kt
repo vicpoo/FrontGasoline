@@ -9,6 +9,8 @@ import org.vicpoo.gasolineproject.domain.common.minLogLevel
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.database.SqlDriverFactory
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
+import org.vicpoo.gasolineproject.domain.files.FileCipher
+import org.vicpoo.gasolineproject.domain.files.PlainFileCipher
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.location.LocationProvider
 import org.vicpoo.gasolineproject.domain.location.TrackingServiceController
@@ -39,6 +41,7 @@ actual val platformModule: Module = module {
 
     // Base local (TODO iOS: sin cifrar por ahora)
     single<SqlDriverFactory> { IosSqlDriverFactory() }
+    single<FileCipher> { PlainFileCipher } // TODO(iOS): cifrar con una llave del Keychain
 
     single<LocationProvider> { IosLocationProvider() }
     single<ImageCompressor> { IosImageCompressor() }

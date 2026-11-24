@@ -1,0 +1,29 @@
+-- Versión 1 -> 2 (fase 6): la base pasa a guardar lo que antes estaba en archivos JSON.
+-- Los datos viejos se pasan desde los archivos la primera vez que se abren (LegacyJsonImport en :data).
+-- Regla: un .sqm publicado nunca se edita; cada cambio de esquema es un archivo nuevo (2.sqm, 3.sqm...).
+
+CREATE TABLE cache_document (
+    name TEXT NOT NULL PRIMARY KEY,
+    json TEXT NOT NULL
+);
+
+CREATE TABLE track_point (
+    trip_local_id TEXT NOT NULL,
+    seq INTEGER NOT NULL,
+    lat REAL NOT NULL,
+    lng REAL NOT NULL,
+    t TEXT NOT NULL,
+    acc REAL,
+    alt REAL,
+    spd REAL,
+    PRIMARY KEY (trip_local_id, seq)
+);
+
+CREATE TABLE vehicle (
+    local_id TEXT NOT NULL PRIMARY KEY,
+    server_id TEXT,
+    sync_state TEXT NOT NULL,
+    json TEXT NOT NULL
+);
+
+CREATE INDEX vehicle_server_id ON vehicle(server_id);

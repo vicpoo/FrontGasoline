@@ -27,15 +27,16 @@ import org.vicpoo.gasolineproject.ui.common.components.AppCard
 import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
 import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
 import org.vicpoo.gasolineproject.domain.triprecording.AssignedVehicle
+import org.vicpoo.gasolineproject.domain.files.LocalImage
 import org.vicpoo.gasolineproject.domain.triprecording.CostCenter
 import org.vicpoo.gasolineproject.domain.triprecording.ReceiptPhoto
 import org.vicpoo.gasolineproject.ui.resources.Res
 import org.vicpoo.gasolineproject.ui.resources.cost_center_value
 
-/** Para mostrar la foto del recibo con Coil (URL o archivo local). */
+/** Para mostrar la foto del recibo con Coil (URL, o archivo local cifrado que descifra el ImageLoader de la app). */
 fun ReceiptPhoto.toImageModel(): Any = when (this) {
     is ReceiptPhoto.Remote -> url
-    is ReceiptPhoto.Local -> "file://$path"
+    is ReceiptPhoto.Local -> LocalImage(path)
 }
 
 /** "Operaciones central • CC-104" */

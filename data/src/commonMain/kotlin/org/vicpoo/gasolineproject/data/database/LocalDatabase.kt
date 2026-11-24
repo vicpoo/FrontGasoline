@@ -29,6 +29,12 @@ class LocalDatabase(
         }.also { database = it }
     }
 
+    /** Corre [block] con la base abierta, fuera del hilo principal (las consultas de SQLDelight bloquean). */
+    suspend fun <T> use(block: AppDatabase.() -> T): T {
+        val database = get()
+        return withContext(dispatcher) { database.block() }
+    }
+
     companion object {
         const val FILE_NAME = "gasoline.db"
     }

@@ -10,7 +10,7 @@ import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.domain.common.AppScope
 import org.vicpoo.gasolineproject.data.triprecording.local.AssignedVehicleEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.FuelEntity
@@ -50,7 +50,10 @@ class TripRecordingSyncerTest {
         fileSystem = storage.fileSystem,
         directories = storage.directories,
         json = testJson,
-        snapshotCache = JsonFileCache(
+        database = storage.database,
+        fileCipher = storage.fileCipher,
+        snapshotCache = LocalDocumentCache(
+            storage.database,
             storage.fileSystem,
             storage.directories,
             "trip_recording.json",
@@ -462,8 +465,8 @@ class TripRecordingSyncerTest {
 
     @Test
     fun bitacora_registraCadaPasoConSuResultado() = runTest {
-        val logCache = JsonFileCache(
-            storage.fileSystem, storage.directories, "trip_sync_log.json", SyncLogSnapshot.serializer(), testJson, SyncLogSnapshot(),
+        val logCache = LocalDocumentCache(
+            storage.database, storage.fileSystem, storage.directories, "trip_sync_log.json", SyncLogSnapshot.serializer(), testJson, SyncLogSnapshot(),
         )
         val log = TripSyncLog(logCache, FixedClock)
         val loggedSyncer = TripRecordingSyncer(

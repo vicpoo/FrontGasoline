@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.network.safeApiCall
 import org.vicpoo.gasolineproject.data.reports.remote.CarroReporteDto
 import org.vicpoo.gasolineproject.data.reports.remote.DownloadedFile
@@ -47,7 +47,7 @@ data class VehicleOptionEntity(val id: String, val label: String)
 
 class ReportsRepositoryImpl(
     private val api: ReportsApi,
-    private val cache: JsonFileCache<ReportsSnapshot>,
+    private val cache: LocalDocumentCache<ReportsSnapshot>,
     private val clock: AppClock,
 ) : ReportsRepository {
 

@@ -8,7 +8,7 @@ import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.AppScope
-import org.vicpoo.gasolineproject.data.vehicles.local.JsonFileVehicleLocalDataSource
+import org.vicpoo.gasolineproject.data.vehicles.local.SqlVehicleLocalDataSource
 import org.vicpoo.gasolineproject.data.vehicles.local.VehicleEntity
 import org.vicpoo.gasolineproject.data.vehicles.remote.KtorVehicleApi
 import org.vicpoo.gasolineproject.data.vehicles.sync.VehicleSyncer
@@ -43,7 +43,7 @@ class OfflineFirstVehicleRepositoryTest {
     private val api = FakeApiServer()
     private val storage = TestStorage()
     private val session = FakeSessionReader(testSession())
-    private val local = JsonFileVehicleLocalDataSource(storage.fileSystem, storage.directories, testJson)
+    private val local = SqlVehicleLocalDataSource(storage.database, storage.fileSystem, storage.directories, testJson, storage.fileCipher)
     private val syncer = VehicleSyncer(local, KtorVehicleApi(api.client), RecordingSyncScheduler())
 
     /** Scope que nunca avanza: lo que se lance en segundo plano no corre. */

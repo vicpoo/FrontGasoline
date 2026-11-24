@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 
 /** Solicitud de carro hecha sin conexión, esperando a enviarse. */
 @Serializable
@@ -32,7 +32,7 @@ data class ReservationOutboxSnapshot(
  * Cola de solicitudes por enviar. Vive en su propio archivo (no en el de "Mis solicitudes")
  * para que refrescar la lista nunca pise una solicitud recién guardada.
  */
-class ReservationOutbox(private val cache: JsonFileCache<ReservationOutboxSnapshot>) {
+class ReservationOutbox(private val cache: LocalDocumentCache<ReservationOutboxSnapshot>) {
 
     private val mutex = Mutex()
 

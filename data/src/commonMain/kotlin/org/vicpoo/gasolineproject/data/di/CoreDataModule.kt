@@ -8,6 +8,8 @@ import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.data.database.LocalDatabase
 import org.vicpoo.gasolineproject.data.local.DataStoreLastRefreshStore
+import org.vicpoo.gasolineproject.data.local.LegacyDataMigration
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.network.AuthTokenManager
 import org.vicpoo.gasolineproject.data.network.KtorSessionApi
 import org.vicpoo.gasolineproject.data.network.SessionApi
@@ -34,7 +36,7 @@ import org.vicpoo.gasolineproject.domain.settings.ThemePreferenceStore
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
 
 /*
- * Capa data: implementa las interfaces de domain con red (Ktor), DataStore, la base local (SQLDelight) y archivos JSON.
+ * Capa data: implementa las interfaces de domain con red (Ktor), DataStore y la base local cifrada (SQLDelight).
  * - coreDataModule:    JSON, base local, sesión guardada, "Actualizado hace X".
  * - networkDataModule: cliente Ktor con token y renovación automática de la sesión (refresh token).
  * - pushDataModule:    registro del celular en la API para recibir push.
@@ -72,6 +74,18 @@ val coreDataModule = module {
 
     // Base local (SQLDelight). La conexión (SQLCipher en Android) la pone platform con SqlDriverFactory.
     single { LocalDatabase(driverFactory = get()) }
+
+    // Fase 6F: al abrir la app pasa a la base cifrada lo que la versión anterior dejó en archivos
+    single(createdAtStart = true) {
+        LegacyDataMigration(
+            database = get(),
+            caches = getAll<LocalDocumentCache<*>>(),
+            tripStore = get(),
+            vehicles = get(),
+            appScope = get(),
+            logger = get(),
+        ).also { it.start() }
+    }
 
     // Una sola instancia expuesta por sus interfaces
     single { DataStoreSessionStore(dataStore = get(), json = get()) } binds arrayOf(

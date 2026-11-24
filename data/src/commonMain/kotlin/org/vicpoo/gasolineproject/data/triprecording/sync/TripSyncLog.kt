@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.vicpoo.gasolineproject.domain.common.AppClock
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.triprecording.local.SyncLogEntryEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.SyncLogSnapshot
 import org.vicpoo.gasolineproject.domain.triprecording.SyncLogEntry
@@ -16,7 +16,7 @@ import org.vicpoo.gasolineproject.domain.triprecording.SyncLogResult
  * Permite ver después qué falló, cuándo y cuánto tardó (por ejemplo, "la foto tardó 30 s y se cortó").
  */
 class TripSyncLog(
-    private val cache: JsonFileCache<SyncLogSnapshot>,
+    private val cache: LocalDocumentCache<SyncLogSnapshot>,
     private val clock: AppClock,
 ) {
     private val mutex = Mutex()

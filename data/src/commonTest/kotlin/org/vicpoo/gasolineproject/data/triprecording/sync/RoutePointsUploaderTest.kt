@@ -2,7 +2,7 @@ package org.vicpoo.gasolineproject.data.triprecording.sync
 
 import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.triprecording.local.AssignedVehicleEntity
 import org.vicpoo.gasolineproject.data.triprecording.local.RecordingSnapshot
 import org.vicpoo.gasolineproject.data.triprecording.local.TrackPointEntity
@@ -34,7 +34,10 @@ class RoutePointsUploaderTest {
         fileSystem = storage.fileSystem,
         directories = storage.directories,
         json = testJson,
-        snapshotCache = JsonFileCache(
+        database = storage.database,
+        fileCipher = storage.fileCipher,
+        snapshotCache = LocalDocumentCache(
+            storage.database,
             storage.fileSystem,
             storage.directories,
             "trip_recording.json",

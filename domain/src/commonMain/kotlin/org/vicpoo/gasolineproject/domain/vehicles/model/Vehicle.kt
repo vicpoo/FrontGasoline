@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.domain.vehicles.model
 
+import org.vicpoo.gasolineproject.domain.files.LocalImage
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 
 /** Vehículo tal como lo usa la app (independiente de la API y del almacenamiento local). */
@@ -83,7 +84,7 @@ sealed interface VehiclePhoto {
 /** Modelo que entiende Coil para mostrar la foto. */
 fun VehiclePhoto.toImageModel(): Any = when (this) {
     is VehiclePhoto.Remote -> url
-    is VehiclePhoto.Local -> "file://$path"
+    is VehiclePhoto.Local -> LocalImage(path) // cifrada: la descifra el ImageLoader de la app
 }
 
 /** Datos ya validados para crear o editar un vehículo. */

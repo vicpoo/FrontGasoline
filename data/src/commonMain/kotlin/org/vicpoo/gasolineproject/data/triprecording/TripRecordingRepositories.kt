@@ -11,7 +11,7 @@ import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.GeoPoint
-import org.vicpoo.gasolineproject.data.local.JsonFileCache
+import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
 import org.vicpoo.gasolineproject.data.network.safeApiCall
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.session.SessionReader
@@ -40,7 +40,7 @@ import kotlin.uuid.Uuid
  */
 class AssignedVehicleRepositoryImpl(
     private val api: TripRecordingApi,
-    private val cache: JsonFileCache<AssignedVehiclesSnapshot>,
+    private val cache: LocalDocumentCache<AssignedVehiclesSnapshot>,
     private val sessionReader: SessionReader,
     /** Viajes del teléfono: deciden si un carro se puede dejar. */
     private val store: TripRecordingLocalStore,
@@ -109,7 +109,7 @@ class AssignedVehicleRepositoryImpl(
 /** Centros de costo activos de la empresa del usuario (offline). */
 class CostCenterRepositoryImpl(
     private val api: TripRecordingApi,
-    private val cache: JsonFileCache<CostCentersSnapshot>,
+    private val cache: LocalDocumentCache<CostCentersSnapshot>,
     private val sessionReader: SessionReader,
 ) : CostCenterRepository {
 
