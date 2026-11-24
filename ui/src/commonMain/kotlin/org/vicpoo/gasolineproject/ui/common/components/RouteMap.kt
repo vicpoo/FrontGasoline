@@ -1,5 +1,7 @@
 package org.vicpoo.gasolineproject.ui.common.components
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -16,11 +18,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,28 +36,15 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.network.NetworkHeaders
-import coil3.network.httpHeaders
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import org.vicpoo.gasolineproject.domain.common.GeoPoint
 import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
 import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
-import kotlin.math.PI
-import kotlin.math.abs
-import kotlin.math.floor
-import kotlin.math.ln
 import kotlin.math.roundToInt
-import kotlin.math.sqrt
-import kotlin.math.tan
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.graphics.TransformOrigin
@@ -77,16 +64,8 @@ data class MapMarker(
 /** Tamaño del círculo de cada marcador. */
 private val MARKER_SIZE = 26.dp
 
-private const val TILE_SIZE = 256.0
-private const val MAX_ZOOM = 17
-
 /** Zoom al centrar el mapa en un marcador (calles visibles alrededor de la gasolinera). */
 private const val FOCUS_ZOOM = 16
-
-/** Puntos que estén a menos de esto (px) de la línea se quitan: a simple vista la ruta es igual. */
-private const val SIMPLIFY_TOLERANCE_PX = 1.5f
-
-private val OsmHeaders = NetworkHeaders.Builder().set("User-Agent", "GasolineProject/1.0").build()
 
 /**
  * Mapa de la ruta (estilo Strava) sin API key:
@@ -365,162 +344,4 @@ fun RouteMap(
                 .padding(horizontal = 4.dp, vertical = 1.dp),
         )
     }
-}
-
-/**
- * Acercamiento en curso: un punto p (en pixeles de la vista completa) se dibuja en
- * (p - focus) * scale + center. [translation] es lo mismo expresado como p * scale + translation.
- */
-private class ZoomTransform(val scale: Float, val focus: Offset, val center: Offset) {
-    val translation: Offset get() = center - focus * scale
-
-    fun apply(p: Offset): Offset = (p - focus) * scale + center
-}
-
-/** Teselas de OSM que cubren el área (las peticiones se recuerdan; Coil las guarda en caché). */
-@Composable
-private fun MapTiles(viewport: Viewport, widthPx: Double, heightPx: Double, extraPx: Double) {
-    val context = LocalPlatformContext.current
-    val density = LocalDensity.current
-    val tileDp = with(density) { TILE_SIZE.toFloat().toDp() }
-    val tiles = remember(viewport, widthPx, heightPx, extraPx) { viewport.visibleTiles(widthPx, heightPx, extraPx) }
-    tiles.forEach { tile ->
-        val request = remember(tile.url) {
-            ImageRequest.Builder(context)
-                .data(tile.url)
-                // Política de OpenStreetMap: identificar la app
-                .httpHeaders(OsmHeaders)
-                .crossfade(true)
-                .build()
-        }
-        AsyncImage(
-            model = request,
-            contentDescription = null,
-            contentScale = ContentScale.FillBounds,
-            modifier = Modifier
-                .size(tileDp)
-                .offset { IntOffset(tile.offsetX, tile.offsetY) },
-        )
-    }
-}
-
-private class Tile(val url: String, val offsetX: Int, val offsetY: Int)
-
-/** Proyección Web Mercator (la de OpenStreetMap/Google). */
-private class Viewport(val zoom: Int, val left: Double, val top: Double) {
-
-    fun toScreen(p: GeoPoint): Offset {
-        val (x, y) = project(p, zoom)
-        return Offset((x - left).toFloat(), (y - top).toFloat())
-    }
-
-    fun visibleTiles(width: Double, height: Double, extra: Double = 0.0): List<Tile> {
-        val tileCount = 1 shl zoom
-        val firstX = floor(left / TILE_SIZE).toInt()
-        val lastX = floor((left + width) / TILE_SIZE).toInt()
-        // Con [extra] > 0 se cargan teselas de más arriba y abajo: si el mapa se desplaza
-        // (hoja de detalles) no queda hueco gris
-        val firstY = floor((top - extra) / TILE_SIZE).toInt()
-        val lastY = floor((top + height + extra) / TILE_SIZE).toInt()
-        val tiles = ArrayList<Tile>()
-        for (tx in firstX..lastX) {
-            for (ty in firstY..lastY) {
-                if (ty < 0 || ty >= tileCount) continue
-                val wrappedX = ((tx % tileCount) + tileCount) % tileCount
-                tiles += Tile(
-                    url = "https://tile.openstreetmap.org/$zoom/$wrappedX/$ty.png",
-                    offsetX = (tx * TILE_SIZE - left).roundToInt(),
-                    offsetY = (ty * TILE_SIZE - top).roundToInt(),
-                )
-            }
-        }
-        return tiles
-    }
-
-    companion object {
-        /**
-         * Zoom más grande que deja ver toda la ruta con margen dentro de [width] x [fitHeight];
-         * la ruta queda centrada en ese alto (la parte de arriba del mapa).
-         */
-        fun fit(points: List<GeoPoint>, width: Double, height: Double, fitHeight: Double = height): Viewport {
-            val minLat = points.minOf { it.lat }
-            val maxLat = points.maxOf { it.lat }
-            val minLng = points.minOf { it.lng }
-            val maxLng = points.maxOf { it.lng }
-
-            val padding = 0.75
-            var zoom = MAX_ZOOM
-            while (zoom > 2) {
-                val (x1, y1) = project(GeoPoint(maxLat, minLng), zoom)
-                val (x2, y2) = project(GeoPoint(minLat, maxLng), zoom)
-                if ((x2 - x1) <= width * padding && (y2 - y1) <= fitHeight * padding) break
-                zoom--
-            }
-            val (cx, cy) = project(GeoPoint((minLat + maxLat) / 2, (minLng + maxLng) / 2), zoom)
-            return Viewport(zoom, cx - width / 2, cy - fitHeight / 2)
-        }
-
-        /** [point] en el centro del área de [width] x [fitHeight] (la parte de arriba del mapa). */
-        fun centeredOn(point: GeoPoint, zoom: Int, width: Double, fitHeight: Double): Viewport {
-            val (cx, cy) = project(point, zoom)
-            return Viewport(zoom, cx - width / 2, cy - fitHeight / 2)
-        }
-
-        fun project(p: GeoPoint, zoom: Int): Pair<Double, Double> {
-            val scale = TILE_SIZE * (1 shl zoom)
-            val x = (p.lng + 180.0) / 360.0 * scale
-            val latRad = p.lat * PI / 180.0
-            val y = (1.0 - ln(tan(latRad) + 1.0 / kotlin.math.cos(latRad)) / PI) / 2.0 * scale
-            return x to y
-        }
-    }
-}
-
-/**
- * Douglas-Peucker (iterativo, sin recursión para rutas largas): deja solo los puntos que cambian
- * la forma de la línea en más de [tolerance] px. Una ruta de miles de puntos queda en decenas.
- */
-internal fun simplify(points: List<Offset>, tolerance: Float): List<Offset> {
-    if (points.size < 3) return points
-    val keep = BooleanArray(points.size)
-    keep[0] = true
-    keep[points.lastIndex] = true
-    val stack = ArrayDeque<Pair<Int, Int>>()
-    stack.addLast(0 to points.lastIndex)
-    while (stack.isNotEmpty()) {
-        val (start, end) = stack.removeLast()
-        var maxDistance = 0f
-        var index = -1
-        for (i in start + 1 until end) {
-            val d = distanceToSegment(points[i], points[start], points[end])
-            if (d > maxDistance) {
-                maxDistance = d
-                index = i
-            }
-        }
-        if (index != -1 && maxDistance > tolerance) {
-            keep[index] = true
-            stack.addLast(start to index)
-            stack.addLast(index to end)
-        }
-    }
-    return points.filterIndexed { i, _ -> keep[i] }
-}
-
-/** Largo acumulado de la línea hasta cada punto (px). */
-private fun cumulativeLengths(points: List<Offset>): FloatArray {
-    val result = FloatArray(points.size)
-    for (i in 1 until points.size) result[i] = result[i - 1] + (points[i] - points[i - 1]).getDistance()
-    return result
-}
-
-private fun distanceToSegment(p: Offset, a: Offset, b: Offset): Float {
-    val dx = b.x - a.x
-    val dy = b.y - a.y
-    val lengthSq = dx * dx + dy * dy
-    if (lengthSq == 0f) return sqrt((p.x - a.x) * (p.x - a.x) + (p.y - a.y) * (p.y - a.y))
-    val t = (((p.x - a.x) * dx + (p.y - a.y) * dy) / lengthSq).coerceIn(0f, 1f)
-    val projX = a.x + t * dx
-    val projY = a.y + t * dy
-    return abs(sqrt((p.x - projX) * (p.x - projX) + (p.y - projY) * (p.y - projY)))
 }

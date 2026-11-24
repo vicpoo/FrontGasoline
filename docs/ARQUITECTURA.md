@@ -1,4 +1,4 @@
-# Arquitectura de la app (Etapa 2)
+# Arquitectura de la app
 
 Un módulo de Gradle por capa y, dentro de cada capa, una carpeta (paquete) por feature.
 
@@ -35,6 +35,16 @@ ui ──► domain ◄── data
 - Dependencias entre módulos con `implementation` salvo lo que de verdad es parte de la API pública: `data`
   no expone Ktor, DataStore ni okio y `ui` no expone `platform` (3.5.1, 3.5.2).
 - `shared` junta todo. `ArchitectureTest` (shared, androidHostTest) revisa estas reglas en cada corrida de pruebas.
+
+### Interfaces nativas en domain
+
+Todo lo que depende del sistema (GPS, cámara, push, conectividad, Keystore, SQLCipher, motor HTTP...) es una
+interfaz de `domain` implementada en `platform` y registrada en `platformModule`. Así:
+
+- `domain` y `data` se prueban en la JVM con fakes, sin Android.
+- `platform` no conoce `data`: si necesita algo de data (ej. guardar los tokens ya cifrados) lo pide por una
+  interfaz de `domain` (`KeyValueStore`), y si data necesita algo nativo lo recibe igual (`SqlDriverFactory`,
+  `FileCipher`, `ClientDeviceInfo`). Ninguna de las dos capas depende de la otra.
 
 ## Inyección de dependencias (Koin DSL por capa)
 
@@ -78,6 +88,63 @@ Los demás modelos de domain no se serializan: lo guardado en el teléfono usa `
    más su `navigation/` → ViewModels en `UiModule.kt`.
 4. Textos en `ui/src/commonMain/composeResources/values/strings.xml` (un solo `Res`: `org.vicpoo.gasolineproject.ui.resources`).
 5. Engancha su grafo de navegación en `shared/navigation`.
+
+## Convenciones
+
+- **Idioma.** Código (clases, funciones, variables) en inglés; comentarios, textos de la UI, mensajes de la
+  bitácora y nombres de pruebas en español. Los campos de los DTO llevan el nombre exacto de la API (español).
+- **Pantallas.** Por pantalla: `XRoute` (composable con estado: pide el ViewModel a Koin, junta los efectos y
+  la navegación) y `XScreen` (sin estado: recibe `XUiState` y manda `XEvent`, se puede previsualizar),
+  `XViewModel`, `XUiState`, `XEvent` y `XEffect` cada uno en su archivo (lo revisa `ArchitectureTest`).
+  Las secciones grandes de una pantalla van en archivos aparte del mismo paquete (`XCards.kt`, `XSheet.kt`...).
+- **Sistema de diseño.** Componentes propios en `ui/common/components` con prefijo `App` (`AppButton`,
+  `AppTextField`, `AppCard`, `AppScreen`...); colores, tipografía y medidas en `AppTheme`; íconos en `AppIcons`.
+  Las pantallas no usan Material3 directo cuando ya existe el componente `App*`.
+- **Casos de uso.** Uno por archivo en `domain/<feature>/usecase/`, con `operator fun invoke`.
+- **Navegación.** Rutas tipadas (`@Serializable`) por feature en `ui/<feature>/navigation`; `shared` las engancha.
+
+## Manejo de errores (`AppResult` / `AppError`)
+
+- Toda operación de datos regresa `AppResult<T>`: `Success(data)` o `Failure(AppError)`. Ninguna excepción
+  llega a la UI.
+- `safeApiCall` (data) traduce: sin red / timeout → `NoConnection`; 401 → `Unauthorized`; 403 → `Forbidden`
+  (con el `detail` de la API); 404 → `NotFound`; otro HTTP → `Server(code, message, problemCode, problemData)`,
+  donde `problemCode` es la extensión `codigo` del ProblemDetails (ej. `CAMBIO_MAS_RECIENTE`) para decidir sin
+  depender del texto. Cualquier otra cosa → `Unknown`.
+- Los validadores regresan `ValidationReason` por campo; la UI los traduce con `asText()`.
+- La UI convierte `AppError` en texto con `AppError.asText()` (`ui/common/components/AppErrorText.kt`).
+- Para sincronizar, `SyncRejection` decide si un error es definitivo (4xx salvo 408/429: no se reenvía solo)
+  o temporal (se reintenta con espera, ver "Sincronización: reintentos").
+
+## Sesión y tokens
+
+- Login: la API regresa JWT (corto) + refresh token (rotativo). `Session` (quién es, empresa, privilegios) va
+  en DataStore; los tokens en `TokenStore` (cifrados con el Keystore en Android, Keychain en iOS), con una copia
+  en memoria (`CachedTokenStore`) para no descifrar en cada petición.
+- `AuthTokenManager` (data) da el JWT a cada petición y lo renueva **antes** de que venza (menos de 1 min).
+  Si una petición responde 401, el plugin de Ktor renueva y la reintenta **una vez**.
+- Una sola renovación a la vez (`Mutex`): si varias peticiones reciben 401 juntas, solo la primera llama a la
+  API. Es obligatorio con refresh token rotativo (dos renovaciones con el mismo token = robo para la API).
+- Si la API rechaza el refresh token, se cierra la sesión local y la app vuelve al login. **Sin red no se
+  cierra**: la app sigue offline y renueva al volver la conexión.
+- Cerrar sesión: avisa a la API, corre todos los `LogoutListener` (ver abajo) y borra tokens y sesión.
+
+## Offline-first
+
+- **La UI siempre lee lo local** (base cifrada) y las pantallas funcionan sin red; "Actualizar" pide a la API
+  y reemplaza lo guardado.
+- **Escribir sin red.** Crear / editar se guarda al instante con estado `PENDING_CREATE`, `PENDING_UPDATE` o
+  `PENDING_DELETE` (vehículos, viajes, recargas) o en una cola (`ReservationOutbox`, solicitudes de vehículo) y
+  se envía solo. Cada feature que guarda pendientes es un `PendingSyncTask`; `SyncAllPendingUseCase` las corre
+  todas: al volver la red, al abrir la app, cada 15 min (WorkManager) y con reintentos con espera si el servidor
+  falla. "Envíos pendientes" muestra el estado de cada uno.
+- **De quién son los datos** (`LocalDataOwnerStore`): si la sesión vence sola, lo guardado se queda para que el
+  mismo usuario lo envíe al volver; si entra **otra** cuenta, se borra antes (avisando si había algo sin enviar).
+- **Cerrar sesión** (`LogoutListener`): cada feature registra el suyo y borra lo de esa cuenta (listas, cola,
+  vehículos, reportes, temporales de cámara y reportes, caché de imágenes, registro para push). Si uno falla se
+  reintenta y queda ERROR en la bitácora. Los viajes en curso o sin enviar NO se borran: quedan en pausa y su
+  dueño los retoma.
+- Antes de cerrar sesión la app avisa si hay algo sin enviar (`PendingBeforeLogoutUseCase`).
 
 ## Seguridad de red
 
@@ -134,6 +201,25 @@ SHA-1 de la app, y solo a las APIs de Firebase que se usan.
 `android:allowBackup="false"` y `res/xml/data_extraction_rules.xml` (Android 12+) dejan fuera del respaldo en la nube
 y de la transferencia entre teléfonos todo lo que la app guarda (placas, rutas GPS, fotos, cola sin enviar y sesión).
 Al cambiar de teléfono el usuario vuelve a iniciar sesión.
+
+## Permisos de Android
+
+| Permiso | Para qué | Cuándo se pide |
+|---|---|---|
+| `INTERNET`, `ACCESS_NETWORK_STATE` | Hablar con la API y saber si hay red (sincronizar al volver) | No se pide (normal) |
+| `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION` | Ruta GPS del viaje y ubicación de cada recarga | Al iniciar el primer viaje |
+| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_LOCATION` | `TripTrackingService`: sigue registrando el viaje con la pantalla apagada, con una notificación visible | No se pide (normal) |
+| `POST_NOTIFICATIONS` | Notificación del viaje en curso y push de solicitudes (Android 13+) | Al abrir la app (Android 13+) |
+| `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` | Pedir que el sistema no frene el GPS por "optimización de batería" (muy agresiva en Xiaomi, Realme, Oppo...) | Al iniciar un viaje, solo si la app no está exenta; el usuario puede negarse |
+
+No se usa ubicación en segundo plano (`ACCESS_BACKGROUND_LOCATION`): con el servicio en primer plano no hace
+falta. Tampoco `CAMERA` ni almacenamiento externo: la cámara es la app del sistema y todo se guarda en el
+almacenamiento interno de la app.
+
+**Google Play y `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`.** Play solo lo permite si la función principal de la
+app se rompe con la optimización activa y lo revisa al publicar. Aquí aplica (registro GPS continuo de viajes
+de trabajo), pero hay que justificarlo en la declaración de la consola. Si Play lo rechaza, se quita el permiso y
+se manda al usuario a Ajustes → Batería con `ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS` (no necesita permiso).
 
 ## Almacenamiento en el teléfono
 
@@ -201,6 +287,20 @@ vieja. `KeySetPaginationManager` recuerda la llave de la última fila que se ve:
 - `observeHasMore` = hay guardadas que aún no se ven, o la API tiene más.
 
 Reportes no es una lista que se recorra: es el último resultado completo y se queda como documento.
+
+**Lo que sigue como documento JSON (punto 1.10)** — dentro de la base cifrada, en `CacheDocumentEntity`:
+
+| Documento | Volumen esperado | Límite | Cuándo pasarlo a tabla |
+|---|---|---|---|
+| `trip_recording` (viajes y recargas sin enviar) | 1 viaje en curso + los que esperan red (normalmente 0–3) | Se borra cada viaje al enviarse | Si un chofer llega a acumular decenas de viajes sin enviar |
+| `reservation_outbox` | Solicitudes hechas sin red (0–5) | Se vacía al enviarse | Igual que arriba |
+| `assigned_vehicles`, `cost_centers` | Decenas | Lo que mande la API | Si pasan de unos cientos |
+| `trip_sync_log` | Bitácora de envíos | 150 entradas (`TripSyncLog.MAX_ENTRIES`) | No hace falta: tiene tope |
+| `reports` | Un reporte (el último) | 1 | No hace falta |
+| `my_reservations` | Solo el número del badge | 1 | No hace falta |
+
+Se leen y guardan completos, nunca se filtran ni paginan en el teléfono; la ruta GPS (lo único que crece por
+miles) ya va por fila en `TrackPointEntity`.
 
 **Fotos pendientes:** `FileCipher` (domain) → `KeystoreFileCipher` (platform): AES-256-GCM con otra llave del
 Keystore; archivo = `GPF1` + IV + datos + etiqueta. Se descifran al subirlas y al mostrarlas: la UI usa

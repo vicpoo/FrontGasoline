@@ -1,3 +1,4 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -12,6 +13,16 @@ kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_11
     }
+}
+
+/*
+ * Firma del APK / AAB de release (punto 3.1.6). Los datos salen de keystore.properties en la raíz del
+ * proyecto (NO se versiona; ver keystore.properties.example). El keystore (.jks) vive fuera del repo.
+ * Sin ese archivo el release se arma sin firmar (sirve para revisar R8, no para instalar ni publicar).
+ */
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
 }
 dependencies {
     implementation(project(":shared"))
@@ -43,6 +54,16 @@ android {
         // Si cambias el host, agrégalo también a res/xml/network_security_config.xml.
         buildConfigField("String", "API_BASE_URL", "\"http://13.222.72.73/api/\"")
     }
+    signingConfigs {
+        if (!keystoreProperties.isEmpty) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -56,6 +77,7 @@ android {
             // Si algo falla SOLO en release, revisa logcat y agrega la regla en proguard-rules.pro.
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

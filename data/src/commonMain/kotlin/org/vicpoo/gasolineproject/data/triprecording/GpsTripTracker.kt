@@ -1,14 +1,12 @@
 package org.vicpoo.gasolineproject.data.triprecording
 
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -65,8 +63,9 @@ class GpsTripTracker(
 
     private val mutex = Mutex()
     private var gpsJob: Job? = null
-    private var heartbeatJob: Job? = null
-    private var lastFixMillis: Long = 0L
+
+    /** Latido: señal del GPS, permisos y sincronizar cada minuto (ver GpsSignalWatchdog). */
+    private val watchdog = GpsSignalWatchdog(clock, locationProvider, trackingService, sync, appScope)
 
     /** Decide qué lecturas cuentan para la ruta y cuánta distancia suman. */
     private val routeFilter = RouteFilter()
@@ -339,43 +338,28 @@ class GpsTripTracker(
         gpsJob = appScope.scope.launch {
             locationProvider.updates(GPS_INTERVAL_MS, MIN_DISTANCE_M).collect { fix -> onFix(fix) }
         }
-        heartbeatJob?.cancel()
-        heartbeatJob = appScope.scope.launch {
-            var ticks = 0
-            var signalLost = false
-            while (isActive) {
-                delay(HEARTBEAT_MS)
-                val active = clock.nowMillis() - lastFixMillis < GPS_TIMEOUT_MS
-                state.update {
-                    it.copy(
-                        gpsActive = active,
-                        hasLocationPermission = locationProvider.hasPermission(),
-                        hasPreciseLocation = locationProvider.hasPreciseLocation(),
-                    )
-                }
-                // Más de GPS_TIMEOUT_MS sin lecturas: se avisa en la notificación (y se quita al volver)
-                if (signalLost == active) {
-                    signalLost = !active
-                    trackingService.setGpsSignalLost(signalLost)
-                }
-                ticks++
-                if (ticks % SYNC_EVERY_TICKS == 0) sync.requestSync()
+        watchdog.start { status ->
+            state.update {
+                it.copy(
+                    gpsActive = status.gpsActive,
+                    hasLocationPermission = status.hasLocationPermission,
+                    hasPreciseLocation = status.hasPreciseLocation,
+                )
             }
         }
     }
 
     private fun stopTracking() {
         gpsJob?.cancel()
-        heartbeatJob?.cancel()
         gpsJob = null
-        heartbeatJob = null
+        watchdog.stop()
         trackingService.stop()
     }
 
     private suspend fun onFix(fix: LocationFix) = mutex.withLock {
         val trip = state.value.trip ?: return@withLock
         if (trip.phase != TripPhase.RUNNING) return@withLock // en pausa o detenido no se registra
-        lastFixMillis = clock.nowMillis()
+        watchdog.fixReceived()
         state.update { it.copy(current = fix.point, gpsActive = true) }
 
         // Lecturas imprecisas, ruido estando detenido o saltos imposibles no cuentan (ver RouteFilter)
@@ -426,9 +410,6 @@ class GpsTripTracker(
          */
         const val GPS_INTERVAL_MS = 1_000L
         const val MIN_DISTANCE_M = 0f
-        const val HEARTBEAT_MS = 5_000L
-        const val GPS_TIMEOUT_MS = 30_000L
-        const val SYNC_EVERY_TICKS = 12 // 12 x 5 s = cada minuto
         const val STALE_FIX_MS = 2 * 60_000L
 
         /** Motivo de la pausa automática (la API lo guarda con la pausa). */

@@ -16,7 +16,8 @@ internal fun encryptInPlace(fileSystem: FileSystem, cipher: FileCipher, path: Pa
         if (cipher.isEncrypted(bytes)) return
         val encrypted = cipher.encrypt(bytes)
         if (!cipher.isEncrypted(encrypted)) return // plataforma sin cifrado (iOS por ahora)
-        val temp = path.parent!! / "${path.name}.tmp"
+        val folder = checkNotNull(path.parent) { "La foto debe estar dentro de una carpeta" }
+        val temp = folder / "${path.name}.tmp"
         fileSystem.write(temp) { write(encrypted) }
         fileSystem.atomicMove(temp, path)
     }.onFailure { AppLog.w("BaseLocal", "No se pudo cifrar una foto guardada", it) }

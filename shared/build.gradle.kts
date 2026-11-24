@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -30,12 +31,6 @@ kotlin {
 
         // Pruebas unitarias en la JVM: corren commonTest con ./gradlew :shared:testAndroidHostTest
         withHostTestBuilder {}
-
-        compilations.configureEach {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_11)
-            }
-        }
     }
 
     sourceSets {
@@ -77,4 +72,10 @@ kotlin {
             implementation(project(":testing")) // fakes, API falsa y archivos en memoria
         }
     }
+}
+
+// Kotlin para JVM 11 en Android (igual que gasoline.kmp.library). Antes era compilations.compilerOptions,
+// que está deprecado: ahora se configura en las tareas de compilación.
+tasks.withType<KotlinJvmCompile>().configureEach {
+    compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
 }
