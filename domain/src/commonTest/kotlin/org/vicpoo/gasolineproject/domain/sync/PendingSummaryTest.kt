@@ -1,10 +1,13 @@
 package org.vicpoo.gasolineproject.domain.sync
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.vicpoo.gasolineproject.domain.sync.usecase.CountPendingUseCase
+import org.vicpoo.gasolineproject.domain.sync.usecase.ObservePendingSummaryUseCase
+import org.vicpoo.gasolineproject.domain.sync.usecase.SyncAllPendingUseCase
 
 /** Pendientes de toda la app: orden de envío y resumen para "Envíos pendientes". */
 class PendingSummaryTest {

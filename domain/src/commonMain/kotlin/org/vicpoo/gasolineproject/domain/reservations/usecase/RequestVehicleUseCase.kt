@@ -1,10 +1,11 @@
-package org.vicpoo.gasolineproject.domain.reservations
+package org.vicpoo.gasolineproject.domain.reservations.usecase
 
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.reservations.RequestOutcome
 import org.vicpoo.gasolineproject.domain.reservations.RequestedVehicle
+import org.vicpoo.gasolineproject.domain.reservations.ReservationRepository
 import org.vicpoo.gasolineproject.domain.reservations.VehicleRequester
 
 /** Valida el motivo y envía la solicitud (o la deja en cola sin red). Otras features lo usan como [VehicleRequester]. */

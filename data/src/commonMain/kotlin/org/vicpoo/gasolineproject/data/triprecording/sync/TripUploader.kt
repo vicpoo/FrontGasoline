@@ -149,7 +149,7 @@ internal class TripUploader(
             }
             is AppResult.Failure -> {
                 // 409 "solo se puede finalizar un viaje en curso": ya estaba cerrado en la API
-                // AppError vive en :core:common: no se puede hacer smart cast de result.error desde otro módulo
+                // AppError vive en :domain (otro módulo): no se puede hacer smart cast de result.error
                 if ((result.error as? AppError.Server)?.code == 409) {
                     store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null, syncErrorCode = null) }
                     Step.Done

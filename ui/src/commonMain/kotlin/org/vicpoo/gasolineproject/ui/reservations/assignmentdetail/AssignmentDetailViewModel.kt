@@ -15,9 +15,9 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.reservations.AssignmentDetail
 import org.vicpoo.gasolineproject.domain.reservations.AssignmentKey
-import org.vicpoo.gasolineproject.domain.reservations.GetAssignmentsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveAssignmentDetailUseCase
-import org.vicpoo.gasolineproject.domain.reservations.UnlinkAssignmentUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.GetAssignmentsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveAssignmentDetailUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.UnlinkAssignmentUseCase
 
 /**
  * Detalle de Asignaciones (como el de Solicitudes con Aceptar / Rechazar):

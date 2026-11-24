@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.data.triprecording
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -46,6 +47,7 @@ import kotlin.test.assertTrue
  *
  * El tracker guarda en archivos con Dispatchers.Default, así que se espera con [eventually].
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class GpsTripTrackerTest {
 
     private val storage = TestStorage()

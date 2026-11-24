@@ -19,8 +19,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import org.vicpoo.gasolineproject.domain.push.PushEvents
-import org.vicpoo.gasolineproject.domain.settings.ObserveThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.settings.ThemeMode
+import org.vicpoo.gasolineproject.domain.settings.usecase.ObserveThemeModeUseCase
 import org.vicpoo.gasolineproject.platform.push.PushNotifications
 import org.vicpoo.gasolineproject.startup.AppStartup
 

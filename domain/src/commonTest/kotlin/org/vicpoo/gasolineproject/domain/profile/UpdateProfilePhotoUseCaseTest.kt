@@ -1,5 +1,9 @@
 package org.vicpoo.gasolineproject.domain.profile
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -8,10 +12,7 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
+import org.vicpoo.gasolineproject.domain.profile.usecase.UpdateProfilePhotoUseCase
 
 /** Foto de perfil: nunca se sube la original de la galería (EXIF con ubicación), solo la recodificada. */
 class UpdateProfilePhotoUseCaseTest {

@@ -29,6 +29,11 @@ ui ──► domain ◄── data
 - `domain` no conoce a nadie (sin Ktor, DataStore, okio, Android ni Compose).
 - `data` y `platform` solo conocen `domain` (`data` además usa `database`, el esquema generado).
 - `ui` usa casos de uso de `domain` y los lanzadores de Compose de `platform` (cámara, permisos...). Nunca `data`.
+  Los ViewModels también pueden leer cuatro interfaces informativas de `domain` sin reglas de negocio
+  (`ConnectivityMonitor`, `LastRefreshStore`, `PermissionChecker`, `AppClock`); envolverlas en casos de uso
+  sería código sin lógica (punto 3.2.6).
+- Dependencias entre módulos con `implementation` salvo lo que de verdad es parte de la API pública: `data`
+  no expone Ktor, DataStore ni okio y `ui` no expone `platform` (3.5.1, 3.5.2).
 - `shared` junta todo. `ArchitectureTest` (shared, androidHostTest) revisa estas reglas en cada corrida de pruebas.
 
 ## Inyección de dependencias (Koin DSL por capa)
@@ -37,7 +42,7 @@ Cada capa declara sus módulos en su carpeta `di/` y los expone en una lista:
 
 | Capa | Archivo | Lista |
 |---|---|---|
-| domain | `domain/di/DomainModule.kt` | `domainModules` (casos de uso, un módulo por feature) |
+| domain | `domain/di/<Feature>DomainModule.kt` | `domainModules` en `DomainModule.kt` (casos de uso, un archivo por feature) |
 | data | `data/di/*DataModule.kt` | `dataModules` (repositorios, APIs, cachés, sincronizadores) |
 | platform | `platform/di/PlatformModule*.kt` | `platformModule` (el único `expect val Module` del proyecto) |
 | ui | `ui/di/UiModule.kt` | `uiModules` (ViewModels) |
@@ -67,7 +72,7 @@ Los demás modelos de domain no se serializan: lo guardado en el teléfono usa `
 
 ## Agregar una feature nueva
 
-1. `domain/<feature>/`: modelos, interfaz del repositorio y casos de uso → regístralos en `DomainModule.kt`.
+1. `domain/<feature>/`: modelos, interfaz del repositorio y casos de uso → nuevo `domain/di/<Feature>DomainModule.kt` y agrégalo a `domainModules`.
 2. `data/<feature>/`: API, caché y `RepositoryImpl` → nuevo `data/di/<Feature>DataModule.kt` y agrégalo a `dataModules`.
 3. `ui/<feature>/`: por pantalla `XScreen.kt`, `XViewModel.kt`, `XUiState.kt`, `XEvent.kt` y `XEffect.kt` (si tiene efectos),
    más su `navigation/` → ViewModels en `UiModule.kt`.

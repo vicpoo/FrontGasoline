@@ -1,5 +1,11 @@
 package org.vicpoo.gasolineproject.ui.reports
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,11 +15,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.reports.DownloadReportUseCase
 import org.vicpoo.gasolineproject.domain.reports.FleetReport
-import org.vicpoo.gasolineproject.domain.reports.ObserveReportUseCase
-import org.vicpoo.gasolineproject.domain.reports.ObserveReportVehiclesUseCase
-import org.vicpoo.gasolineproject.domain.reports.RefreshReportUseCase
 import org.vicpoo.gasolineproject.domain.reports.ReportFile
 import org.vicpoo.gasolineproject.domain.reports.ReportFilters
 import org.vicpoo.gasolineproject.domain.reports.ReportFormat
@@ -22,15 +24,13 @@ import org.vicpoo.gasolineproject.domain.reports.ReportSummary
 import org.vicpoo.gasolineproject.domain.reports.ReportVehicleOption
 import org.vicpoo.gasolineproject.domain.reports.ReportsRepository
 import org.vicpoo.gasolineproject.domain.reports.SavedReport
+import org.vicpoo.gasolineproject.domain.reports.usecase.DownloadReportUseCase
+import org.vicpoo.gasolineproject.domain.reports.usecase.ObserveReportUseCase
+import org.vicpoo.gasolineproject.domain.reports.usecase.ObserveReportVehiclesUseCase
+import org.vicpoo.gasolineproject.domain.reports.usecase.RefreshReportUseCase
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.FakeLastRefreshStore
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertIs
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Reportes: filtros, modo sin conexión y descarga de archivos. */
 @OptIn(ExperimentalCoroutinesApi::class)

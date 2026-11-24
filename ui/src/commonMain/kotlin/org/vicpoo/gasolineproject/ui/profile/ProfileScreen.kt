@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.vicpoo.gasolineproject.domain.profile.usecase.UpdateProfilePhotoUseCase
 import org.vicpoo.gasolineproject.platform.files.rememberCameraCapture
 import org.vicpoo.gasolineproject.platform.files.rememberDocumentPicker
 import org.vicpoo.gasolineproject.ui.common.components.AppCard
@@ -49,7 +50,6 @@ import org.vicpoo.gasolineproject.ui.common.components.asText
 import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
 import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
 import org.vicpoo.gasolineproject.ui.common.theme.isPhoneInDarkTheme
-import org.vicpoo.gasolineproject.domain.profile.UpdateProfilePhotoUseCase
 import org.vicpoo.gasolineproject.ui.resources.Res
 import org.vicpoo.gasolineproject.ui.resources.action_logout
 import org.vicpoo.gasolineproject.ui.resources.action_retry
@@ -58,13 +58,13 @@ import org.vicpoo.gasolineproject.ui.resources.cd_close
 import org.vicpoo.gasolineproject.ui.resources.cd_edit_name
 import org.vicpoo.gasolineproject.ui.resources.cd_theme_to_dark
 import org.vicpoo.gasolineproject.ui.resources.cd_theme_to_light
-import org.vicpoo.gasolineproject.ui.resources.logout_pending_cancel
-import org.vicpoo.gasolineproject.ui.resources.logout_pending_confirm
-import org.vicpoo.gasolineproject.ui.resources.logout_pending_message
 import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_cancel
 import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_confirm
 import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_finish_message
 import org.vicpoo.gasolineproject.ui.resources.logout_open_trip_message
+import org.vicpoo.gasolineproject.ui.resources.logout_pending_cancel
+import org.vicpoo.gasolineproject.ui.resources.logout_pending_confirm
+import org.vicpoo.gasolineproject.ui.resources.logout_pending_message
 import org.vicpoo.gasolineproject.ui.resources.profile_license_ok
 import org.vicpoo.gasolineproject.ui.resources.profile_license_pending
 import org.vicpoo.gasolineproject.ui.resources.profile_license_title
@@ -188,7 +188,7 @@ fun ProfileScreen(
         }
 
         // Licencia: solo para quien maneja (viaje.registrar)
-        if (canEdit && profile?.drives == true) {
+        if (canEdit && profile.drives) {
             Spacer(Modifier.height(dimens.spaceXl))
             AppCard(modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth()) {

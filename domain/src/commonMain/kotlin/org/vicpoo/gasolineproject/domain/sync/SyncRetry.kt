@@ -1,13 +1,11 @@
 package org.vicpoo.gasolineproject.domain.sync
 
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
-import org.vicpoo.gasolineproject.domain.common.AppError
-import org.vicpoo.gasolineproject.domain.common.AppResult
-import kotlin.coroutines.AbstractCoroutineContextElement
-import kotlin.coroutines.CoroutineContext
+import org.vicpoo.gasolineproject.domain.sync.usecase.RunPendingSyncUseCase
 
 /*
  * Política de reintentos de la sincronización en segundo plano (punto 3.3.1).
@@ -64,18 +62,3 @@ sealed interface SyncRunOutcome {
     data class RetryAfter(val delayMillis: Long) : SyncRunOutcome
 }
 
-/** Una vuelta de sincronización en segundo plano y la decisión de reintento (la usa el Worker). */
-class RunPendingSyncUseCase(private val syncAll: SyncAllPendingUseCase) {
-    suspend operator fun invoke(): SyncRunOutcome {
-        val failures = TemporarySyncFailures()
-        val result = withContext(failures) { syncAll() }
-        return when {
-            result is AppResult.Failure && result.error == AppError.NoConnection -> SyncRunOutcome.RetryWithBackoff
-            // La sesión terminó: no tiene caso reintentar hasta que vuelva a entrar
-            result is AppResult.Failure && result.error == AppError.Unauthorized -> SyncRunOutcome.Done
-            failures.count > 0 -> failures.maxRetryAfterMillis?.let { SyncRunOutcome.RetryAfter(it) }
-                ?: SyncRunOutcome.RetryWithBackoff
-            else -> SyncRunOutcome.Done
-        }
-    }
-}

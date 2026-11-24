@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.files.PickedFile
-import org.vicpoo.gasolineproject.domain.license.UploadLicenseUseCase
+import org.vicpoo.gasolineproject.domain.license.usecase.UploadLicenseUseCase
 
 class LicenseViewModel(
     private val uploadLicense: UploadLicenseUseCase,

@@ -4,11 +4,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import org.vicpoo.gasolineproject.domain.common.AppScope
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
+import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
+import org.vicpoo.gasolineproject.domain.sync.usecase.SyncAllPendingUseCase
 import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
-import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
-import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
 
 /**
  * iOS no garantiza ejecutar trabajo periódico en segundo plano (BGTaskScheduler decide cuándo).

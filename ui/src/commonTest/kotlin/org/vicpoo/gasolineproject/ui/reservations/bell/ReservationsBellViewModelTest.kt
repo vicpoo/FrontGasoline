@@ -1,5 +1,7 @@
 package org.vicpoo.gasolineproject.ui.reservations.bell
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -7,12 +9,10 @@ import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushTarget
 import org.vicpoo.gasolineproject.domain.push.PushType
-import org.vicpoo.gasolineproject.domain.reservations.ObserveUnseenReservationUpdatesUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RefreshUnseenReservationUpdatesUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveUnseenReservationUpdatesUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RefreshUnseenReservationUpdatesUseCase
 import org.vicpoo.gasolineproject.testing.FakeReservationRepository
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 /** Badge de la campana: respuestas sin ver, se actualiza al abrir y con el push de respuesta. */
 @OptIn(ExperimentalCoroutinesApi::class)

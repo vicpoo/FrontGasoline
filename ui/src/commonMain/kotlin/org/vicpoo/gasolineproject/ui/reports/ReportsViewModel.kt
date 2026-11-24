@@ -18,13 +18,13 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.LastRefreshStore
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
-import org.vicpoo.gasolineproject.domain.reports.DownloadReportUseCase
-import org.vicpoo.gasolineproject.domain.reports.ObserveReportUseCase
-import org.vicpoo.gasolineproject.domain.reports.ObserveReportVehiclesUseCase
-import org.vicpoo.gasolineproject.domain.reports.RefreshReportUseCase
 import org.vicpoo.gasolineproject.domain.reports.ReportFilters
 import org.vicpoo.gasolineproject.domain.reports.ReportFormat
 import org.vicpoo.gasolineproject.domain.reports.ReportPeriod
+import org.vicpoo.gasolineproject.domain.reports.usecase.DownloadReportUseCase
+import org.vicpoo.gasolineproject.domain.reports.usecase.ObserveReportUseCase
+import org.vicpoo.gasolineproject.domain.reports.usecase.ObserveReportVehiclesUseCase
+import org.vicpoo.gasolineproject.domain.reports.usecase.RefreshReportUseCase
 
 class ReportsViewModel(
     observeReport: ObserveReportUseCase,

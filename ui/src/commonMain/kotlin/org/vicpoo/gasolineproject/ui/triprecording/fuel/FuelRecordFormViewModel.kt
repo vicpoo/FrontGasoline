@@ -9,15 +9,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.GeoPoint
-import org.vicpoo.gasolineproject.domain.triprecording.CaptureFuelLocationUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.FuelField
 import org.vicpoo.gasolineproject.domain.triprecording.FuelRecordDraft
-import org.vicpoo.gasolineproject.domain.triprecording.GetFuelRecordUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveCostCentersUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RetryFuelRecordUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.SaveFuelRecordUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.SaveFuelResult
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.CaptureFuelLocationUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.GetFuelRecordUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RetryFuelRecordUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.SaveFuelRecordUseCase
 import org.vicpoo.gasolineproject.ui.triprecording.common.TripFormat
 import org.vicpoo.gasolineproject.ui.triprecording.common.toImageModel
 

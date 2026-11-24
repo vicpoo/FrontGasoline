@@ -187,8 +187,8 @@ object AppIcons {
                 for (i in 0..points * 2) {
                     val angle = (i * kotlin.math.PI / points).toFloat()
                     val r = if (i % 2 == 0) outer else inner
-                    val x = 12f + r * kotlin.math.cos(angle).toFloat()
-                    val y = 12f + r * kotlin.math.sin(angle).toFloat()
+                    val x = 12f + r * kotlin.math.cos(angle)
+                    val y = 12f + r * kotlin.math.sin(angle)
                     if (i == 0) moveTo(x, y) else lineTo(x, y)
                 }
                 close()

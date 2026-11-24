@@ -1,17 +1,17 @@
 package org.vicpoo.gasolineproject.ui.license
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import org.vicpoo.gasolineproject.domain.license.usecase.ObserveMustUploadLicenseUseCase
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
-import org.vicpoo.gasolineproject.domain.license.ObserveMustUploadLicenseUseCase
-import org.vicpoo.gasolineproject.ui.license.LicenseGateViewModel
 import org.vicpoo.gasolineproject.testing.FakeSessionReader
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testSession
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.vicpoo.gasolineproject.ui.license.LicenseGateViewModel
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class LicenseGateViewModelTest : MainDispatcherTest() {

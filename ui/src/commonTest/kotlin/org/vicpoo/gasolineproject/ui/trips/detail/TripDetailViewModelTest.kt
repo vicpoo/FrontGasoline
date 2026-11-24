@@ -1,19 +1,19 @@
 package org.vicpoo.gasolineproject.ui.trips.detail
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.domain.trips.LoadTripDetailsUseCase
-import org.vicpoo.gasolineproject.domain.trips.ObserveTripUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.LoadTripDetailsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.ObserveTripUseCase
 import org.vicpoo.gasolineproject.testing.FakeTripsRepository
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testTrip
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
 
 /** Detalle de un viaje: lo guardado al instante, pide sus cargas y ruta, y el visor del recibo. */
 @OptIn(ExperimentalCoroutinesApi::class)

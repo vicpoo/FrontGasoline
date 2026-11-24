@@ -37,6 +37,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.vicpoo.gasolineproject.domain.reservations.ReservationRequest
+import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RejectReservationUseCase
 import org.vicpoo.gasolineproject.ui.common.components.AppBackButton
 import org.vicpoo.gasolineproject.ui.common.components.AppButton
 import org.vicpoo.gasolineproject.ui.common.components.AppButtonVariant
@@ -46,6 +49,7 @@ import org.vicpoo.gasolineproject.ui.common.components.AppScreen
 import org.vicpoo.gasolineproject.ui.common.components.AppTextButton
 import org.vicpoo.gasolineproject.ui.common.components.AppTextField
 import org.vicpoo.gasolineproject.ui.common.components.ConfirmDialog
+import org.vicpoo.gasolineproject.ui.common.components.EditSheet
 import org.vicpoo.gasolineproject.ui.common.components.ErrorView
 import org.vicpoo.gasolineproject.ui.common.components.ImageViewerDialog
 import org.vicpoo.gasolineproject.ui.common.components.InfoRow
@@ -55,19 +59,12 @@ import org.vicpoo.gasolineproject.ui.common.components.PrimaryButton
 import org.vicpoo.gasolineproject.ui.common.components.ResultDialog
 import org.vicpoo.gasolineproject.ui.common.components.ResultType
 import org.vicpoo.gasolineproject.ui.common.components.SecondaryText
+import org.vicpoo.gasolineproject.ui.common.components.SheetCharCounter
+import org.vicpoo.gasolineproject.ui.common.components.SheetSubjectCard
 import org.vicpoo.gasolineproject.ui.common.components.UserAvatar
 import org.vicpoo.gasolineproject.ui.common.components.asText
 import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
 import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
-import org.vicpoo.gasolineproject.ui.common.components.EditSheet
-import org.vicpoo.gasolineproject.ui.common.components.SheetCharCounter
-import org.vicpoo.gasolineproject.ui.common.components.SheetSubjectCard
-import org.vicpoo.gasolineproject.domain.reservations.RejectReservationUseCase
-import org.vicpoo.gasolineproject.ui.resources.company_requests_reject_sheet_title
-import org.vicpoo.gasolineproject.ui.resources.company_requests_reject_sheet_subtitle
-import org.vicpoo.gasolineproject.ui.resources.company_requests_requested_by
-import org.vicpoo.gasolineproject.domain.reservations.ReservationRequest
-import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
 import org.vicpoo.gasolineproject.ui.reservations.common.Overline
 import org.vicpoo.gasolineproject.ui.reservations.common.ResolutionBox
 import org.vicpoo.gasolineproject.ui.reservations.common.StatusDotBadge
@@ -88,8 +85,11 @@ import org.vicpoo.gasolineproject.ui.resources.company_requests_error_title
 import org.vicpoo.gasolineproject.ui.resources.company_requests_reject
 import org.vicpoo.gasolineproject.ui.resources.company_requests_reject_reason
 import org.vicpoo.gasolineproject.ui.resources.company_requests_reject_reason_hint
+import org.vicpoo.gasolineproject.ui.resources.company_requests_reject_sheet_subtitle
+import org.vicpoo.gasolineproject.ui.resources.company_requests_reject_sheet_title
 import org.vicpoo.gasolineproject.ui.resources.company_requests_rejected_message
 import org.vicpoo.gasolineproject.ui.resources.company_requests_rejected_title
+import org.vicpoo.gasolineproject.ui.resources.company_requests_requested_by
 import org.vicpoo.gasolineproject.ui.resources.request_detail_color
 import org.vicpoo.gasolineproject.ui.resources.request_detail_license
 import org.vicpoo.gasolineproject.ui.resources.request_detail_license_missing
@@ -415,7 +415,7 @@ private fun ResolverCard(state: ReservationDetailUiState) {
         Column(Modifier.fillMaxWidth().padding(AppTheme.dimens.spaceS)) {
             if (name != null) {
                 PersonRow(
-                    photoUrl = detail?.confirmerPhotoUrl,
+                    photoUrl = detail.confirmerPhotoUrl,
                     label = stringResource(Res.string.request_detail_resolved_by),
                     name = name,
                 )

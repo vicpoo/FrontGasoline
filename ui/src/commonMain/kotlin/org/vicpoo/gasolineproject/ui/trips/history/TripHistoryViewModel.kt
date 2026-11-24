@@ -15,10 +15,10 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.LastRefreshStore
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
-import org.vicpoo.gasolineproject.domain.trips.LoadMoreTripsUseCase
-import org.vicpoo.gasolineproject.domain.trips.LoadTripDetailsUseCase
-import org.vicpoo.gasolineproject.domain.trips.ObserveTripsUseCase
-import org.vicpoo.gasolineproject.domain.trips.RefreshTripsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.LoadMoreTripsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.LoadTripDetailsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.ObserveTripsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.RefreshTripsUseCase
 
 class TripHistoryViewModel(
     private val observeTrips: ObserveTripsUseCase,

@@ -1,19 +1,24 @@
 package org.vicpoo.gasolineproject.ui.triprecording.assigned
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveAssignedVehiclesUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveReleaseBlocksUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RefreshAssignedVehiclesUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RefreshCostCentersUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.ReleaseBlock
-import org.vicpoo.gasolineproject.domain.triprecording.ReleaseVehicleUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.SyncPendingTripsUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.TrackingSession
 import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveAssignedVehiclesUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveReleaseBlocksUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RefreshAssignedVehiclesUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RefreshCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ReleaseVehicleUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.SyncPendingTripsUseCase
 import org.vicpoo.gasolineproject.testing.FakeAssignedVehicleRepository
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.FakeCostCenterRepository
@@ -23,11 +28,6 @@ import org.vicpoo.gasolineproject.testing.FakeTripTracker
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testAssignedVehicle
 import org.vicpoo.gasolineproject.testing.testRecordedTrip
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Pestaña "Registrar": carros asignados, modo sin conexión, viaje en curso y "Dejar carro". */
 class AssignedVehiclesViewModelTest : MainDispatcherTest() {

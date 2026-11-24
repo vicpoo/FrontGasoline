@@ -99,19 +99,3 @@ interface ReportsRepository {
     suspend fun download(filters: ReportFilters, format: ReportFormat): AppResult<ReportFile>
 }
 
-class ObserveReportUseCase(private val repository: ReportsRepository) {
-    operator fun invoke(): Flow<SavedReport?> = repository.observeReport()
-}
-
-class ObserveReportVehiclesUseCase(private val repository: ReportsRepository) {
-    operator fun invoke(): Flow<List<ReportVehicleOption>> = repository.observeVehicles()
-}
-
-class RefreshReportUseCase(private val repository: ReportsRepository) {
-    suspend operator fun invoke(filters: ReportFilters): AppResult<Unit> = repository.refresh(filters)
-}
-
-class DownloadReportUseCase(private val repository: ReportsRepository) {
-    suspend operator fun invoke(filters: ReportFilters, format: ReportFormat): AppResult<ReportFile> =
-        repository.download(filters, format)
-}

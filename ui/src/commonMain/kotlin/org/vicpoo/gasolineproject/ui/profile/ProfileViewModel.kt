@@ -14,14 +14,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.files.PickedFile
+import org.vicpoo.gasolineproject.domain.profile.usecase.ObserveProfileUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.RefreshProfileUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.UpdateProfilePhotoUseCase
 import org.vicpoo.gasolineproject.domain.session.LogoutAction
 import org.vicpoo.gasolineproject.domain.session.OpenTripCheck
-import org.vicpoo.gasolineproject.domain.sync.PendingBeforeLogoutUseCase
-import org.vicpoo.gasolineproject.domain.profile.ObserveProfileUseCase
-import org.vicpoo.gasolineproject.domain.profile.RefreshProfileUseCase
-import org.vicpoo.gasolineproject.domain.profile.UpdateProfilePhotoUseCase
-import org.vicpoo.gasolineproject.domain.settings.SetThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.settings.ThemeMode
+import org.vicpoo.gasolineproject.domain.settings.usecase.SetThemeModeUseCase
+import org.vicpoo.gasolineproject.domain.sync.usecase.PendingBeforeLogoutUseCase
 
 class ProfileViewModel(
     observeProfile: ObserveProfileUseCase,

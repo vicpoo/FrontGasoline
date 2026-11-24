@@ -6,8 +6,8 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import org.vicpoo.gasolineproject.domain.settings.ObserveThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.settings.ThemeMode
+import org.vicpoo.gasolineproject.domain.settings.usecase.ObserveThemeModeUseCase
 
 /**
  * Apariencia de toda la app. La usa App() para armar AppTheme.

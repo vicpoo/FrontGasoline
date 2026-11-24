@@ -1,5 +1,8 @@
 package org.vicpoo.gasolineproject.domain.triprecording
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -7,9 +10,7 @@ import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.GeoPoint
 import org.vicpoo.gasolineproject.domain.files.PickedFile
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RetryFuelRecordUseCase
 
 class RetryFuelRecordUseCaseTest {
 

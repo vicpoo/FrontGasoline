@@ -1,7 +1,8 @@
 /*
  * :ui — capa de presentación: pantallas de Compose, ViewModels, estados / eventos / efectos y navegación
  * de cada feature, más el sistema de diseño (ui.common: tema, componentes, íconos, mapa, RBAC en la UI).
- * Usa casos de uso de :domain y los lanzadores de :platform (cámara, permisos...). Nunca usa :data.
+ * Usa casos de uso de :domain (y sus interfaces informativas: red, "actualizado hace", privilegios, reloj)
+ * y los lanzadores de :platform (cámara, permisos...). Nunca usa :data.
  * Todos los textos, fuentes e imágenes viven aquí (un solo Res: org.vicpoo.gasolineproject.ui.resources).
  * Paquetes: org.vicpoo.gasolineproject.ui.<welcome|auth|license|profile|vehicles|reservations|trips|triprecording|reports|common|di>.
  */
@@ -24,7 +25,8 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":domain"))
-            api(project(":platform"))
+            // implementation: quien usa ui (shared, androidApp) ya declara :platform por su cuenta (3.5.2)
+            implementation(project(":platform"))
             api(libs.compose.runtime)
             api(libs.compose.foundation)
             api(libs.compose.material3)

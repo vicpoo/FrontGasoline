@@ -15,10 +15,10 @@ import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushType
-import org.vicpoo.gasolineproject.domain.reservations.LoadMoreMyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.MarkReservationUpdatesSeenUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveMyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RefreshMyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.LoadMoreMyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.MarkReservationUpdatesSeenUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveMyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RefreshMyReservationsUseCase
 
 /** Campana de Inicio: las solicitudes que envió el usuario y su estado (solo para ver cómo van). */
 class MyReservationsViewModel(

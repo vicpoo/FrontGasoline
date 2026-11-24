@@ -19,14 +19,14 @@ import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
-import org.vicpoo.gasolineproject.domain.triprecording.DeleteFuelRecordUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.LocationPermissionChangedUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveFuelRecordsUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.PauseTripUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ResumeTripUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.StopTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.DeleteFuelRecordUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.LocationPermissionChangedUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveFuelRecordsUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.PauseTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ResumeTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.StopTripUseCase
 
 /** Figma "viaje en curso": mapa, duración / distancia / fecha, pausa, terminar y recargas. */
 @OptIn(ExperimentalCoroutinesApi::class)

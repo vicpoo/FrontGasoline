@@ -10,18 +10,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.common.LastRefreshStore
+import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
 import org.vicpoo.gasolineproject.domain.triprecording.AssignedVehicle
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveAssignedVehiclesUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveReleaseBlocksUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RefreshAssignedVehiclesUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RefreshCostCentersUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ReleaseVehicleUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.SyncPendingTripsUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveAssignedVehiclesUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveReleaseBlocksUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RefreshAssignedVehiclesUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RefreshCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ReleaseVehicleUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.SyncPendingTripsUseCase
 
 /**
  * Pestaña "Registrar": carros con reserva aprobada + acceso al viaje en curso.

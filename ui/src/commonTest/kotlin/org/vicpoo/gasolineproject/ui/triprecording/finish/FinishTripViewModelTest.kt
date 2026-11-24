@@ -1,5 +1,11 @@
 package org.vicpoo.gasolineproject.ui.triprecording.finish
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
@@ -9,24 +15,18 @@ import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.triprecording.FinishTripField
-import org.vicpoo.gasolineproject.domain.triprecording.FinishTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.FinishTripValidator
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RetryFinishTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.SendOutcome
 import org.vicpoo.gasolineproject.domain.triprecording.TrackingSession
 import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
-import org.vicpoo.gasolineproject.domain.triprecording.UndoStopTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.FinishTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RetryFinishTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.UndoStopTripUseCase
 import org.vicpoo.gasolineproject.testing.FakeAppClock
 import org.vicpoo.gasolineproject.testing.FakeTripTracker
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testRecordedTrip
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 /** "Registrar Viaje": kilometraje final, foto del odómetro y resultado del envío. */
 class FinishTripViewModelTest : MainDispatcherTest() {

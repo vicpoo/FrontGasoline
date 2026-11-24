@@ -7,15 +7,15 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import org.vicpoo.gasolineproject.domain.sync.ObservePendingSummaryUseCase
-import org.vicpoo.gasolineproject.domain.sync.PendingSyncKind
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveSyncStatusUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.SyncNowUseCase
+import org.vicpoo.gasolineproject.domain.sync.PendingSyncKind
+import org.vicpoo.gasolineproject.domain.sync.usecase.ObservePendingSummaryUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveSyncStatusUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.SyncNowUseCase
 
 /**
  * "Envíos pendientes": qué viajes y recargas siguen en el teléfono, por qué, y la bitácora de los

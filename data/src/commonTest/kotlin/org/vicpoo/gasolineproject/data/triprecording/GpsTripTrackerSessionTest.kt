@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.data.triprecording
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -38,6 +39,7 @@ import kotlin.test.assertTrue
  * Cerrar sesión con un viaje abierto: el viaje NO se borra, queda en pausa y solo lo retoma su dueño.
  * (Antes se borraba del teléfono y en la API quedaba "en curso" para siempre.)
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class GpsTripTrackerSessionTest {
 
     private val storage = TestStorage()

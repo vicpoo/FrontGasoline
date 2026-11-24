@@ -1,15 +1,11 @@
-package org.vicpoo.gasolineproject.domain.license
+package org.vicpoo.gasolineproject.domain.license.usecase
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import org.vicpoo.gasolineproject.domain.auth.repository.AuthRepository
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
-import org.vicpoo.gasolineproject.domain.session.SessionReader
-import org.vicpoo.gasolineproject.domain.auth.repository.AuthRepository
 
 /** Sube la licencia de conducir validando tipo y tamaño (mismas reglas que la API: jpg/png/webp/pdf, 5 MB). */
 class UploadLicenseUseCase(
@@ -40,9 +36,4 @@ class UploadLicenseUseCase(
         val ALLOWED_MIME_TYPES = listOf("image/jpeg", "image/png", "image/webp", "application/pdf")
         const val MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5 MB
     }
-}
-
-/** true si el usuario maneja (viaje.registrar) y aún no sube su licencia (cambia si le dan el privilegio). */
-class ObserveMustUploadLicenseUseCase(private val sessionReader: SessionReader) {
-    operator fun invoke(): Flow<Boolean> = sessionReader.session.map { it?.mustUploadLicense == true }.distinctUntilChanged()
 }

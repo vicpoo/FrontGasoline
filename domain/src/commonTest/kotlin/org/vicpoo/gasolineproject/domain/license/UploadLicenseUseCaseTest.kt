@@ -1,5 +1,9 @@
 package org.vicpoo.gasolineproject.domain.license
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.auth.repository.AuthRepository
 import org.vicpoo.gasolineproject.domain.common.AppError
@@ -7,11 +11,8 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
+import org.vicpoo.gasolineproject.domain.license.usecase.UploadLicenseUseCase
 import org.vicpoo.gasolineproject.domain.session.Session
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 /** Subir la licencia: nunca se manda la foto original (EXIF con ubicación), solo la recodificada. */
 class UploadLicenseUseCaseTest {

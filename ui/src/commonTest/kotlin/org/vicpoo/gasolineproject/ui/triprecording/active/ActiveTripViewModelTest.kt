@@ -4,20 +4,25 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.TestResult
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
-import org.vicpoo.gasolineproject.domain.triprecording.DeleteFuelRecordUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.LocationPermissionChangedUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveFuelRecordsUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.PauseTripUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ResumeTripUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.StopTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.TrackingSession
 import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.DeleteFuelRecordUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.LocationPermissionChangedUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveFuelRecordsUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.PauseTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ResumeTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.StopTripUseCase
 import org.vicpoo.gasolineproject.testing.FakeAppClock
 import org.vicpoo.gasolineproject.testing.FakeFuelRecordRepository
 import org.vicpoo.gasolineproject.testing.FakePermissionChecker
@@ -26,11 +31,6 @@ import org.vicpoo.gasolineproject.testing.FakeTripTracker
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testFuelRecord
 import org.vicpoo.gasolineproject.testing.testRecordedTrip
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Viaje en curso: pausa / reanudar, terminar, recargas del viaje y privilegios. */
 class ActiveTripViewModelTest : MainDispatcherTest() {

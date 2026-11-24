@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.vicpoo.gasolineproject.domain.trips.LoadTripDetailsUseCase
-import org.vicpoo.gasolineproject.domain.trips.ObserveTripUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.LoadTripDetailsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.ObserveTripUseCase
 
 data class TripDetailArgs(val tripId: String)
 

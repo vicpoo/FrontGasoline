@@ -1,16 +1,16 @@
 package org.vicpoo.gasolineproject.ui.common.theme
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.domain.settings.ObserveThemeModeUseCase
-import org.vicpoo.gasolineproject.domain.settings.SetThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.settings.ThemeMode
+import org.vicpoo.gasolineproject.domain.settings.usecase.ObserveThemeModeUseCase
+import org.vicpoo.gasolineproject.domain.settings.usecase.SetThemeModeUseCase
 import org.vicpoo.gasolineproject.testing.FakeThemePreferenceStore
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
 
 /** Apariencia: lo que el usuario elige en Perfil llega a toda la app. */
 @OptIn(ExperimentalCoroutinesApi::class)

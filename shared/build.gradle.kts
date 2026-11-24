@@ -41,7 +41,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             // shared es el ensamblador de la app: App.kt, navegación raíz, KoinInit y el framework de iOS.
-            // Todo lo demás vive en :core:* y :feature:*.
+            // Todo lo demás vive en :domain, :data, :database, :platform y :ui.
             implementation(project(":domain"))
             implementation(project(":data"))
             implementation(project(":platform"))
@@ -69,6 +69,7 @@ kotlin {
             // Imágenes: el ImageLoader global se configura en App.kt
             implementation(libs.coil.compose)
             implementation(libs.coil.network.ktor)
+            implementation(libs.okio) // ImageCache y LocalImageFetcher (data ya no expone okio)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

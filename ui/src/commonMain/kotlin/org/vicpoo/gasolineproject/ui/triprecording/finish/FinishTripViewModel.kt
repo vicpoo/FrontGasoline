@@ -11,12 +11,12 @@ import org.vicpoo.gasolineproject.domain.common.AppClock
 import org.vicpoo.gasolineproject.domain.common.AppScope
 import org.vicpoo.gasolineproject.domain.triprecording.FinishTripField
 import org.vicpoo.gasolineproject.domain.triprecording.FinishTripResult
-import org.vicpoo.gasolineproject.domain.triprecording.FinishTripUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RetryFinishTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.SendOutcome
 import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
-import org.vicpoo.gasolineproject.domain.triprecording.UndoStopTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.FinishTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RetryFinishTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.UndoStopTripUseCase
 import org.vicpoo.gasolineproject.ui.triprecording.common.TripFormat
 
 /**

@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.ui.reservations.assignmentdetail
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -8,17 +13,12 @@ import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
-import org.vicpoo.gasolineproject.domain.reservations.GetAssignmentsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveAssignmentDetailUseCase
-import org.vicpoo.gasolineproject.domain.reservations.UnlinkAssignmentUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.GetAssignmentsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveAssignmentDetailUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.UnlinkAssignmentUseCase
 import org.vicpoo.gasolineproject.testing.FakeAssignmentsRepository
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Detalle de Asignaciones: por carro o por empleado, y "Desvincular" con motivo obligatorio. */
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -1,25 +1,25 @@
 package org.vicpoo.gasolineproject.ui.reservations.company
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushTarget
 import org.vicpoo.gasolineproject.domain.push.PushType
-import org.vicpoo.gasolineproject.domain.reservations.LoadMoreCompanyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveCompanyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RefreshCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
+import org.vicpoo.gasolineproject.domain.reservations.usecase.LoadMoreCompanyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveCompanyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RefreshCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.FakeLastRefreshStore
 import org.vicpoo.gasolineproject.testing.FakeReservationRepository
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testReservation
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Pestaña llave: filtro de pendientes, paginación, sin conexión y push de solicitud nueva. */
 class CompanyReservationsViewModelTest : MainDispatcherTest() {

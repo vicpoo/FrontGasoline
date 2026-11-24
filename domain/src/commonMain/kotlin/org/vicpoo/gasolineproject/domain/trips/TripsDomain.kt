@@ -60,24 +60,3 @@ interface TripsRepository {
     suspend fun loadDetails(tripIds: List<String>): AppResult<Unit>
 }
 
-class ObserveTripsUseCase(private val repository: TripsRepository) {
-    operator fun invoke(): Flow<List<Trip>> = repository.observeTrips()
-}
-
-class ObserveTripUseCase(private val repository: TripsRepository) {
-    operator fun invoke(id: String): Flow<Trip?> = repository.observeTrip(id)
-}
-
-class RefreshTripsUseCase(private val repository: TripsRepository) {
-    suspend operator fun invoke(): AppResult<Unit> = repository.refresh()
-}
-
-/** Historial: al bajar al final se piden los 10 viajes siguientes. */
-class LoadMoreTripsUseCase(private val repository: TripsRepository) {
-    fun hasMore(): Flow<Boolean> = repository.observeHasMore()
-    suspend operator fun invoke(): AppResult<Unit> = repository.loadMore()
-}
-
-class LoadTripDetailsUseCase(private val repository: TripsRepository) {
-    suspend operator fun invoke(tripIds: List<String>): AppResult<Unit> = repository.loadDetails(tripIds)
-}

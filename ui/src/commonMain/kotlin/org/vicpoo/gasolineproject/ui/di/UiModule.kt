@@ -30,7 +30,10 @@ import org.vicpoo.gasolineproject.ui.vehicles.form.VehicleFormViewModel
 import org.vicpoo.gasolineproject.ui.vehicles.list.VehicleListViewModel
 
 /*
- * Capa ui: pantallas (Compose) y sus ViewModels. Los ViewModels solo usan casos de uso de domain.
+ * Capa ui: pantallas (Compose) y sus ViewModels. Los ViewModels hacen el trabajo del negocio con casos de
+ * uso de domain. Además pueden leer cuatro interfaces de domain que solo informan y no tienen reglas
+ * (punto 3.2.6): ConnectivityMonitor (hay red), LastRefreshStore ("actualizado hace"), PermissionChecker
+ * (privilegios) y AppClock (hora). Nunca reciben nada de data ni repositorios.
  * Los Args (VehicleListArgs, StartTripArgs, ...) llegan con parametersOf(...) y Koin los toma por tipo.
  */
 

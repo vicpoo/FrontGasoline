@@ -1,10 +1,7 @@
 package org.vicpoo.gasolineproject.domain.reservations
 
-import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
 /** Estado del carro tal como lo manda la API. */
 enum class VehicleState {
@@ -164,26 +161,3 @@ interface AssignmentsRepository {
     suspend fun unlink(reservationId: String, reason: String): AppResult<Unit>
 }
 
-class GetAssignmentsUseCase(private val repository: AssignmentsRepository) {
-    suspend operator fun invoke(): AppResult<AssignmentsOverview> = repository.load()
-}
-
-/** Detalle de una asignación o de un empleado, sobre lo último que se cargó (null si ya no existe). */
-class ObserveAssignmentDetailUseCase(private val repository: AssignmentsRepository) {
-    operator fun invoke(key: AssignmentKey): Flow<AssignmentDetail?> =
-        repository.observe().map { overview -> overview?.detail(key) }
-}
-
-/** Desvincular: el motivo es obligatorio (le llega al empleado en la notificación). */
-class UnlinkAssignmentUseCase(private val repository: AssignmentsRepository) {
-    suspend operator fun invoke(reservationId: String, reason: String): AppResult<Unit> {
-        val clean = reason.trim()
-        if (clean.isEmpty()) return AppResult.Failure(AppError.Validation(ValidationReason.REQUIRED))
-        if (clean.length > MAX_REASON) return AppResult.Failure(AppError.Validation(ValidationReason.OUT_OF_RANGE))
-        return repository.unlink(reservationId, clean)
-    }
-
-    companion object {
-        const val MAX_REASON = 255
-    }
-}

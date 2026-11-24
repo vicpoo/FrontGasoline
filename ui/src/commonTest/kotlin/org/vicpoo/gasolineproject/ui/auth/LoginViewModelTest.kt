@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.ui.auth
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -16,17 +21,12 @@ import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
 import org.vicpoo.gasolineproject.domain.session.LocalDataOwner
 import org.vicpoo.gasolineproject.domain.session.Session
-import org.vicpoo.gasolineproject.domain.sync.CountLostOnLogoutUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncKind
+import org.vicpoo.gasolineproject.domain.sync.usecase.CountLostOnLogoutUseCase
 import org.vicpoo.gasolineproject.testing.FakeLocalDataOwnerStore
 import org.vicpoo.gasolineproject.testing.FakePendingSyncTask
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testSession
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Login: validación, a dónde entra (licencia o inicio), errores y datos sin enviar de otra cuenta. */
 @OptIn(ExperimentalCoroutinesApi::class)

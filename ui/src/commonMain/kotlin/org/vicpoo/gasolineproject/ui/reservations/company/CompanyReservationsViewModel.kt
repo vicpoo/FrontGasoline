@@ -15,10 +15,10 @@ import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushType
-import org.vicpoo.gasolineproject.domain.reservations.LoadMoreCompanyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveCompanyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RefreshCompanyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
+import org.vicpoo.gasolineproject.domain.reservations.usecase.LoadMoreCompanyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveCompanyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RefreshCompanyReservationsUseCase
 
 /**
  * Pestaña llave: las solicitudes de toda la empresa ("Solicitud de {empleado}").

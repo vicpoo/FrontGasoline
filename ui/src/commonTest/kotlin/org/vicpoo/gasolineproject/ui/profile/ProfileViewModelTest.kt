@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.ui.profile
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -10,25 +15,20 @@ import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
-import org.vicpoo.gasolineproject.domain.profile.ObserveProfileUseCase
-import org.vicpoo.gasolineproject.domain.profile.RefreshProfileUseCase
-import org.vicpoo.gasolineproject.domain.profile.UpdateProfilePhotoUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.ObserveProfileUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.RefreshProfileUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.UpdateProfilePhotoUseCase
 import org.vicpoo.gasolineproject.domain.session.LogoutAction
 import org.vicpoo.gasolineproject.domain.session.OpenTripCheck
 import org.vicpoo.gasolineproject.domain.session.OpenTripSummary
-import org.vicpoo.gasolineproject.domain.settings.SetThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.settings.ThemeMode
-import org.vicpoo.gasolineproject.domain.sync.PendingBeforeLogoutUseCase
+import org.vicpoo.gasolineproject.domain.settings.usecase.SetThemeModeUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncKind
+import org.vicpoo.gasolineproject.domain.sync.usecase.PendingBeforeLogoutUseCase
 import org.vicpoo.gasolineproject.testing.FakePendingSyncTask
 import org.vicpoo.gasolineproject.testing.FakeProfileRepository
 import org.vicpoo.gasolineproject.testing.FakeThemePreferenceStore
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Perfil: foto (subir, error y reintentar), tema claro / oscuro y "Salir" con avisos. */
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -23,9 +23,10 @@ kotlin {
         commonMain.dependencies {
             api(project(":domain"))
             api(libs.koin.core)
-            api(libs.ktor.client.core)
-            api(libs.datastore.preferences.core)
-            api(libs.okio)
+            // implementation (3.5.1): ningún otro módulo debe usar Ktor, DataStore ni okio a través de data
+            implementation(libs.ktor.client.core)
+            implementation(libs.datastore.preferences.core)
+            implementation(libs.okio)
             api(project(":database"))
             implementation(libs.sqldelight.coroutines)
 

@@ -1,10 +1,11 @@
 package org.vicpoo.gasolineproject.domain.sync
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import org.vicpoo.gasolineproject.domain.sync.usecase.PendingBeforeLogoutUseCase
 
 /** Antes de "Salir": se intenta mandar lo pendiente y se avisa si algo se perdería. */
 class PendingBeforeLogoutTest {

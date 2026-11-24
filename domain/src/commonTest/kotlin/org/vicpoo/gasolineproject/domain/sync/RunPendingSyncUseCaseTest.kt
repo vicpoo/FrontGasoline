@@ -1,15 +1,17 @@
 package org.vicpoo.gasolineproject.domain.sync
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import org.vicpoo.gasolineproject.domain.sync.usecase.RunPendingSyncUseCase
+import org.vicpoo.gasolineproject.domain.sync.usecase.SyncAllPendingUseCase
 
 /** Política de reintentos en segundo plano: sin red, errores temporales, Retry-After y sesión terminada. */
 class RunPendingSyncUseCaseTest {

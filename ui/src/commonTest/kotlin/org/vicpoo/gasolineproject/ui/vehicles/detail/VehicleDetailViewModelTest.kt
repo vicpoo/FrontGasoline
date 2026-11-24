@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.ui.vehicles.detail
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -11,7 +16,7 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
 import org.vicpoo.gasolineproject.domain.reservations.RequestOutcome
-import org.vicpoo.gasolineproject.domain.reservations.RequestVehicleUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RequestVehicleUseCase
 import org.vicpoo.gasolineproject.domain.vehicles.model.VehicleStatus
 import org.vicpoo.gasolineproject.domain.vehicles.usecase.DeleteVehicleUseCase
 import org.vicpoo.gasolineproject.domain.vehicles.usecase.ObserveVehicleUseCase
@@ -21,11 +26,6 @@ import org.vicpoo.gasolineproject.testing.FakeVehicleRepository
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testVehicle
 import org.vicpoo.gasolineproject.ui.vehicles.list.VehiclesMode
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Detalle de vehículo: RBAC por modo (flota / catálogo), eliminar y solicitar el carro. */
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -12,12 +12,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.triprecording.CheckLocationPermissionUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.GetAssignedVehicleUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.LocationPermissionChangedUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveCostCentersUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RefreshCostCentersUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.StartTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.CheckLocationPermissionUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.GetAssignedVehicleUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.LocationPermissionChangedUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RefreshCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.StartTripUseCase
 
 data class StartTripArgs(val reservationId: String)
 

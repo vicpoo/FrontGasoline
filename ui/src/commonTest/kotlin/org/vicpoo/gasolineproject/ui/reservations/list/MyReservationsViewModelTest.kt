@@ -1,26 +1,26 @@
 package org.vicpoo.gasolineproject.ui.reservations.list
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushTarget
 import org.vicpoo.gasolineproject.domain.push.PushType
-import org.vicpoo.gasolineproject.domain.reservations.LoadMoreMyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.MarkReservationUpdatesSeenUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveMyReservationsUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RefreshMyReservationsUseCase
 import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
+import org.vicpoo.gasolineproject.domain.reservations.usecase.LoadMoreMyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.MarkReservationUpdatesSeenUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveMyReservationsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RefreshMyReservationsUseCase
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.FakeLastRefreshStore
 import org.vicpoo.gasolineproject.testing.FakeReservationRepository
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testReservation
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** "Mis solicitudes" (campana): filtros con conteo, grupos por mes, vistas, paginación y push. */
 class MyReservationsViewModelTest : MainDispatcherTest() {

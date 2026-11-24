@@ -1,21 +1,28 @@
 package org.vicpoo.gasolineproject.ui.triprecording.fuel
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
-import org.vicpoo.gasolineproject.domain.triprecording.CaptureFuelLocationUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.FuelField
 import org.vicpoo.gasolineproject.domain.triprecording.FuelRecordValidator
-import org.vicpoo.gasolineproject.domain.triprecording.GetFuelRecordUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveCostCentersUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveTrackingUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.RecordSyncState
-import org.vicpoo.gasolineproject.domain.triprecording.RetryFuelRecordUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.SaveFuelRecordUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.SendOutcome
 import org.vicpoo.gasolineproject.domain.triprecording.TrackingSession
 import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.CaptureFuelLocationUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.GetFuelRecordUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RetryFuelRecordUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.SaveFuelRecordUseCase
 import org.vicpoo.gasolineproject.testing.FakeAppClock
 import org.vicpoo.gasolineproject.testing.FakeCostCenterRepository
 import org.vicpoo.gasolineproject.testing.FakeFuelRecordRepository
@@ -26,13 +33,6 @@ import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testCostCenter
 import org.vicpoo.gasolineproject.testing.testFuelRecord
 import org.vicpoo.gasolineproject.testing.testRecordedTrip
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
 
 /** Agregar / editar recarga: validación, foto del recibo, envío y "Reintentar" sin duplicar. */
 class FuelRecordFormViewModelTest : MainDispatcherTest() {

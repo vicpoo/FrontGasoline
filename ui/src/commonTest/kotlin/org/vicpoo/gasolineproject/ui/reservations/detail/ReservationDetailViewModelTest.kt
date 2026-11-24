@@ -1,25 +1,25 @@
 package org.vicpoo.gasolineproject.ui.reservations.detail
 
-import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.domain.common.AppError
-import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.common.ValidationReason
-import org.vicpoo.gasolineproject.domain.rbac.Privileges
-import org.vicpoo.gasolineproject.domain.reservations.ApproveReservationUseCase
-import org.vicpoo.gasolineproject.domain.reservations.GetReservationDetailUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveCompanyReservationUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RejectReservationUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
-import org.vicpoo.gasolineproject.testing.FakePermissionChecker
-import org.vicpoo.gasolineproject.testing.FakeReservationRepository
-import org.vicpoo.gasolineproject.testing.MainDispatcherTest
-import org.vicpoo.gasolineproject.testing.testReservation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.vicpoo.gasolineproject.domain.common.AppError
+import org.vicpoo.gasolineproject.domain.common.AppResult
+import org.vicpoo.gasolineproject.domain.common.ValidationReason
+import org.vicpoo.gasolineproject.domain.rbac.Privileges
+import org.vicpoo.gasolineproject.domain.reservations.ReservationStatus
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ApproveReservationUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.GetReservationDetailUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveCompanyReservationUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RejectReservationUseCase
+import org.vicpoo.gasolineproject.testing.FakePermissionChecker
+import org.vicpoo.gasolineproject.testing.FakeReservationRepository
+import org.vicpoo.gasolineproject.testing.MainDispatcherTest
+import org.vicpoo.gasolineproject.testing.testReservation
 
 /** Detalle de una solicitud: abre sin red con lo guardado, aceptar y rechazar con su privilegio. */
 class ReservationDetailViewModelTest : MainDispatcherTest() {

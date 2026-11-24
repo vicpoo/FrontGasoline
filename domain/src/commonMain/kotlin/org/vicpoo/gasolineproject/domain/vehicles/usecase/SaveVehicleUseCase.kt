@@ -1,31 +1,13 @@
 package org.vicpoo.gasolineproject.domain.vehicles.usecase
 
-import kotlinx.coroutines.flow.Flow
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.vehicles.model.Vehicle
-import org.vicpoo.gasolineproject.domain.vehicles.repository.VehicleReader
 import org.vicpoo.gasolineproject.domain.vehicles.repository.VehicleWriter
 import org.vicpoo.gasolineproject.domain.vehicles.validation.VehicleFormInput
 import org.vicpoo.gasolineproject.domain.vehicles.validation.VehicleFormValidator
-
-class ObserveVehiclesUseCase(private val reader: VehicleReader) {
-    operator fun invoke(): Flow<List<Vehicle>> = reader.observeVehicles()
-}
-
-class ObserveVehicleUseCase(private val reader: VehicleReader) {
-    operator fun invoke(id: String): Flow<Vehicle?> = reader.observeVehicle(id)
-}
-
-class ObservePendingVehicleSyncUseCase(private val reader: VehicleReader) {
-    operator fun invoke(): Flow<Int> = reader.observePendingSyncCount()
-}
-
-class RefreshVehiclesUseCase(private val reader: VehicleReader) {
-    suspend operator fun invoke(): AppResult<Unit> = reader.refresh()
-}
 
 /**
  * Crea (id == null) o edita (id != null) un vehículo después de validar todo el formulario.
@@ -47,8 +29,4 @@ class SaveVehicleUseCase(
         val draft = validator.toDraft(input.copy(newPhoto = photo))
         return if (id == null) writer.create(draft) else writer.update(id, draft)
     }
-}
-
-class DeleteVehicleUseCase(private val writer: VehicleWriter) {
-    suspend operator fun invoke(id: String): AppResult<Unit> = writer.delete(id)
 }

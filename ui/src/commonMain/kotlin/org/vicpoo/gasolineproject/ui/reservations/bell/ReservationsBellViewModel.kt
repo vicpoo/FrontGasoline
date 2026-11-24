@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.push.PushEvents
 import org.vicpoo.gasolineproject.domain.push.PushType
-import org.vicpoo.gasolineproject.domain.reservations.ObserveUnseenReservationUpdatesUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RefreshUnseenReservationUpdatesUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveUnseenReservationUpdatesUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RefreshUnseenReservationUpdatesUseCase
 
 /** Número del badge: respuestas a mis solicitudes que no he visto (sin red, el último guardado). */
 class ReservationsBellViewModel(

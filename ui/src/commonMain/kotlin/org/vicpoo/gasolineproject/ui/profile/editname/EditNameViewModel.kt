@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.profile.ObserveProfileUseCase
-import org.vicpoo.gasolineproject.domain.profile.UpdateNameUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.ObserveProfileUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.UpdateNameUseCase
 
 class EditNameViewModel(
     private val observeProfile: ObserveProfileUseCase,

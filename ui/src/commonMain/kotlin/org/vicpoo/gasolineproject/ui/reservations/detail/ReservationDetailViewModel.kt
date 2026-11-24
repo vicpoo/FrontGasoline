@@ -12,10 +12,10 @@ import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.rbac.PermissionChecker
 import org.vicpoo.gasolineproject.domain.rbac.Privileges
-import org.vicpoo.gasolineproject.domain.reservations.ApproveReservationUseCase
-import org.vicpoo.gasolineproject.domain.reservations.GetReservationDetailUseCase
-import org.vicpoo.gasolineproject.domain.reservations.ObserveCompanyReservationUseCase
-import org.vicpoo.gasolineproject.domain.reservations.RejectReservationUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ApproveReservationUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.GetReservationDetailUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.ObserveCompanyReservationUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.RejectReservationUseCase
 
 /**
  * Detalle de una solicitud (pestaña llave): motivo, quién la pide con su foto y su licencia,

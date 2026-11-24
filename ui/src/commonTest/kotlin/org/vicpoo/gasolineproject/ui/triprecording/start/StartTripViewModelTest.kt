@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.ui.triprecording.start
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -7,12 +12,12 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
-import org.vicpoo.gasolineproject.domain.triprecording.CheckLocationPermissionUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.GetAssignedVehicleUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.LocationPermissionChangedUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveCostCentersUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.RefreshCostCentersUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.StartTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.CheckLocationPermissionUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.GetAssignedVehicleUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.LocationPermissionChangedUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.RefreshCostCentersUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.StartTripUseCase
 import org.vicpoo.gasolineproject.testing.FakeAssignedVehicleRepository
 import org.vicpoo.gasolineproject.testing.FakeCostCenterRepository
 import org.vicpoo.gasolineproject.testing.FakeLocationProvider
@@ -20,11 +25,6 @@ import org.vicpoo.gasolineproject.testing.FakeTripTracker
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testAssignedVehicle
 import org.vicpoo.gasolineproject.testing.testCostCenter
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** "Iniciar Viaje": centro de costos obligatorio, permiso de ubicación y arranque del GPS. */
 @OptIn(ExperimentalCoroutinesApi::class)

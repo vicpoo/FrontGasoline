@@ -31,6 +31,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
+import org.vicpoo.gasolineproject.domain.reservations.AssignmentEmployee
+import org.vicpoo.gasolineproject.domain.reservations.EmployeeVehicle
+import org.vicpoo.gasolineproject.domain.reservations.usecase.UnlinkAssignmentUseCase
 import org.vicpoo.gasolineproject.ui.common.components.AppBackButton
 import org.vicpoo.gasolineproject.ui.common.components.AppButton
 import org.vicpoo.gasolineproject.ui.common.components.AppButtonVariant
@@ -38,25 +41,19 @@ import org.vicpoo.gasolineproject.ui.common.components.AppCard
 import org.vicpoo.gasolineproject.ui.common.components.AppImage
 import org.vicpoo.gasolineproject.ui.common.components.AppScreen
 import org.vicpoo.gasolineproject.ui.common.components.AppTextField
+import org.vicpoo.gasolineproject.ui.common.components.EditSheet
 import org.vicpoo.gasolineproject.ui.common.components.EmptyView
 import org.vicpoo.gasolineproject.ui.common.components.ErrorView
 import org.vicpoo.gasolineproject.ui.common.components.LoadingView
 import org.vicpoo.gasolineproject.ui.common.components.OfflineBanner
 import org.vicpoo.gasolineproject.ui.common.components.ResultDialog
 import org.vicpoo.gasolineproject.ui.common.components.ResultType
-import org.vicpoo.gasolineproject.ui.common.components.UserAvatar
-import org.vicpoo.gasolineproject.ui.common.components.asText
-import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
-import org.vicpoo.gasolineproject.ui.common.components.EditSheet
 import org.vicpoo.gasolineproject.ui.common.components.SheetCharCounter
 import org.vicpoo.gasolineproject.ui.common.components.SheetSubjectCard
+import org.vicpoo.gasolineproject.ui.common.components.UserAvatar
+import org.vicpoo.gasolineproject.ui.common.components.asText
 import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
-import org.vicpoo.gasolineproject.domain.reservations.UnlinkAssignmentUseCase
-import org.vicpoo.gasolineproject.ui.resources.assignments_unlink_sheet_title
-import org.vicpoo.gasolineproject.ui.resources.assignments_holder_value
-import org.vicpoo.gasolineproject.ui.resources.cd_close
-import org.vicpoo.gasolineproject.domain.reservations.AssignmentEmployee
-import org.vicpoo.gasolineproject.domain.reservations.EmployeeVehicle
+import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
 import org.vicpoo.gasolineproject.ui.reservations.assignments.ActiveTripChip
 import org.vicpoo.gasolineproject.ui.reservations.assignments.VehicleStateChip
 import org.vicpoo.gasolineproject.ui.reservations.assignments.icon
@@ -68,6 +65,7 @@ import org.vicpoo.gasolineproject.ui.resources.assignments_detail_holder
 import org.vicpoo.gasolineproject.ui.resources.assignments_detail_not_found
 import org.vicpoo.gasolineproject.ui.resources.assignments_detail_title
 import org.vicpoo.gasolineproject.ui.resources.assignments_detail_vehicle
+import org.vicpoo.gasolineproject.ui.resources.assignments_holder_value
 import org.vicpoo.gasolineproject.ui.resources.assignments_offline
 import org.vicpoo.gasolineproject.ui.resources.assignments_plates_value
 import org.vicpoo.gasolineproject.ui.resources.assignments_since
@@ -78,9 +76,11 @@ import org.vicpoo.gasolineproject.ui.resources.assignments_unlink_info
 import org.vicpoo.gasolineproject.ui.resources.assignments_unlink_question
 import org.vicpoo.gasolineproject.ui.resources.assignments_unlink_reason
 import org.vicpoo.gasolineproject.ui.resources.assignments_unlink_reason_hint
+import org.vicpoo.gasolineproject.ui.resources.assignments_unlink_sheet_title
 import org.vicpoo.gasolineproject.ui.resources.assignments_unlinked_message
 import org.vicpoo.gasolineproject.ui.resources.assignments_unlinked_title
 import org.vicpoo.gasolineproject.ui.resources.assignments_vehicle_count
+import org.vicpoo.gasolineproject.ui.resources.cd_close
 
 /** [key] = AssignmentKey.value ("r:<reserva>" desde Carros, "e:<empleado>" desde Empleados). */
 @Composable
@@ -136,7 +136,7 @@ fun AssignmentDetailScreen(
         when {
             detail == null && state.isLoading -> LoadingView()
             detail == null && state.error != null -> ErrorView(
-                message = state.error?.asText().orEmpty(),
+                message = state.error.asText(),
                 onRetry = { onEvent(AssignmentDetailEvent.Retry) },
             )
             // Ya no existe: se desvinculó (quizá desde otro celular) o el viaje la cerró

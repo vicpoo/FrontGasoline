@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
-import org.vicpoo.gasolineproject.domain.license.ObserveMustUploadLicenseUseCase
+import org.vicpoo.gasolineproject.domain.license.usecase.ObserveMustUploadLicenseUseCase
 
 /**
  * Estado de la puerta de licencia ([RequireLicense]): null mientras se lee la sesión,

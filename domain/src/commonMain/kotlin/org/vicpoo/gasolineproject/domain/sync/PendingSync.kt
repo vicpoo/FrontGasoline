@@ -1,11 +1,9 @@
 package org.vicpoo.gasolineproject.domain.sync
 
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
+import org.vicpoo.gasolineproject.domain.sync.usecase.PendingBeforeLogoutUseCase
+import org.vicpoo.gasolineproject.domain.sync.usecase.SyncAllPendingUseCase
 
 /*
  * Sincronización offline-first compartida por todas las features.
@@ -62,56 +60,8 @@ interface PendingSyncTask {
     suspend fun lostOnLogoutCount(): Int = pendingCount()
 }
 
-/**
- * Antes de "Salir": si hay registros que solo existen en el teléfono, intenta mandarlos una vez y regresa
- * cuántos se BORRARÍAN al salir (0 = se puede cerrar sesión sin perder nada).
- * Los viajes se intentan mandar también (así la API recibe la última ruta), pero no cuentan:
- * se quedan guardados en el teléfono para esa cuenta (ver [PendingSyncTask.lostOnLogoutCount]).
- */
-class PendingBeforeLogoutUseCase(private val tasks: List<PendingSyncTask>) {
-    suspend operator fun invoke(): Int {
-        if (tasks.sumOf { it.pendingCount() } == 0) return 0
-        SyncAllPendingUseCase(tasks)()
-        return tasks.sumOf { it.lostOnLogoutCount() }
-    }
-}
-
-/** Cuántos registros de TODA la app siguen solo en el teléfono. */
-class CountPendingUseCase(private val tasks: List<PendingSyncTask>) {
-    suspend operator fun invoke(): Int = tasks.sumOf { it.pendingCount() }
-}
-
-/** Cuántos registros sin enviar se borrarían si la sesión de esta cuenta se descarta (los viajes no cuentan). */
-class CountLostOnLogoutUseCase(private val tasks: List<PendingSyncTask>) {
-    suspend operator fun invoke(): Int = tasks.sumOf { it.lostOnLogoutCount() }
-}
-
 /** Pendientes de un grupo (ej. 2 vehículos sin enviar). */
 data class PendingSummaryItem(val kind: PendingSyncKind, val count: Int)
-
-/**
- * Pendientes de toda la app agrupados por [PendingSyncKind] (solo los grupos con algo).
- * Cada feature guarda en su propio archivo, así que se vuelve a contar cada [intervalMillis]
- * mientras alguien escucha (contar es leer la copia en memoria: es barato).
- */
-class ObservePendingSummaryUseCase(private val tasks: List<PendingSyncTask>) {
-    operator fun invoke(intervalMillis: Long = DEFAULT_INTERVAL_MS): Flow<List<PendingSummaryItem>> = flow {
-        while (true) {
-            emit(summary())
-            delay(intervalMillis)
-        }
-    }.distinctUntilChanged()
-
-    suspend fun summary(): List<PendingSummaryItem> =
-        tasks.groupBy { it.kind }
-            .map { (kind, group) -> PendingSummaryItem(kind, group.sumOf { it.pendingCount() }) }
-            .filter { it.count > 0 }
-            .sortedBy { it.kind.ordinal }
-
-    private companion object {
-        const val DEFAULT_INTERVAL_MS = 5_000L
-    }
-}
 
 /** Planificador de la sincronización en segundo plano (implementación por plataforma). */
 interface BackgroundSyncScheduler {
@@ -158,16 +108,3 @@ object SyncRejection {
         code != null && code in 400..499 && code != 408 && code != 429
 }
 
-/**
- * Ejecuta todas las [PendingSyncTask] registradas, en el orden de [PendingSyncKind]
- * (viajes y recargas primero). Se detiene en el primer "sin red / sesión vencida".
- */
-class SyncAllPendingUseCase(private val tasks: List<PendingSyncTask>) {
-    suspend operator fun invoke(): AppResult<Unit> {
-        for (task in tasks.sortedBy { it.kind.ordinal }) {
-            val result = task.syncPending()
-            if (result is AppResult.Failure && result.error.stopsSync()) return result
-        }
-        return AppResult.Success(Unit)
-    }
-}

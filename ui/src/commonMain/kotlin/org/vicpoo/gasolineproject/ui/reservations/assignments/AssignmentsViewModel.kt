@@ -12,7 +12,7 @@ import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.connectivity.reconnections
-import org.vicpoo.gasolineproject.domain.reservations.GetAssignmentsUseCase
+import org.vicpoo.gasolineproject.domain.reservations.usecase.GetAssignmentsUseCase
 
 /**
  * Pestaña Asignaciones (asignacion.gestionar): solo los carros vinculados a un empleado, vistos

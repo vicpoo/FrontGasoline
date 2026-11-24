@@ -1,12 +1,13 @@
 package org.vicpoo.gasolineproject.domain.sync
 
-import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.domain.common.AppError
-import org.vicpoo.gasolineproject.domain.common.AppResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.vicpoo.gasolineproject.domain.common.AppError
+import org.vicpoo.gasolineproject.domain.common.AppResult
+import org.vicpoo.gasolineproject.domain.sync.usecase.SyncAllPendingUseCase
 
 class PendingSyncTest {
 

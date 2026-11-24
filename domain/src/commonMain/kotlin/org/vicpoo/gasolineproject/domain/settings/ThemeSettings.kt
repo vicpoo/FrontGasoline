@@ -20,10 +20,3 @@ interface ThemePreferenceStore {
     suspend fun save(mode: ThemeMode)
 }
 
-class ObserveThemeModeUseCase(private val store: ThemePreferenceStore) {
-    operator fun invoke(): Flow<ThemeMode> = store.observe()
-}
-
-class SetThemeModeUseCase(private val store: ThemePreferenceStore) {
-    suspend operator fun invoke(mode: ThemeMode) = store.save(mode)
-}

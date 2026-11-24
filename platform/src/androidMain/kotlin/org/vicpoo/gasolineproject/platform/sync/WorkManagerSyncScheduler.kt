@@ -11,12 +11,12 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import java.util.concurrent.TimeUnit
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.util.concurrent.TimeUnit
 import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
-import org.vicpoo.gasolineproject.domain.sync.RunPendingSyncUseCase
 import org.vicpoo.gasolineproject.domain.sync.SyncRunOutcome
+import org.vicpoo.gasolineproject.domain.sync.usecase.RunPendingSyncUseCase
 
 /**
  * Android: WorkManager. Los trabajos solo corren con red y sobreviven a que se cierre la app

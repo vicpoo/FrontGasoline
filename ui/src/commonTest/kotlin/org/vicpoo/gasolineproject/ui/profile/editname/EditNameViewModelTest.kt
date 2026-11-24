@@ -1,18 +1,18 @@
 package org.vicpoo.gasolineproject.ui.profile.editname
 
-import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.domain.common.AppError
-import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.common.ValidationReason
-import org.vicpoo.gasolineproject.domain.profile.ObserveProfileUseCase
-import org.vicpoo.gasolineproject.domain.profile.UpdateNameUseCase
-import org.vicpoo.gasolineproject.testing.FakeProfileRepository
-import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.vicpoo.gasolineproject.domain.common.AppError
+import org.vicpoo.gasolineproject.domain.common.AppResult
+import org.vicpoo.gasolineproject.domain.common.ValidationReason
+import org.vicpoo.gasolineproject.domain.profile.usecase.ObserveProfileUseCase
+import org.vicpoo.gasolineproject.domain.profile.usecase.UpdateNameUseCase
+import org.vicpoo.gasolineproject.testing.FakeProfileRepository
+import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 
 /** Editar nombre: precarga, obligatorio, límite de 150 y errores al guardar. */
 class EditNameViewModelTest : MainDispatcherTest() {

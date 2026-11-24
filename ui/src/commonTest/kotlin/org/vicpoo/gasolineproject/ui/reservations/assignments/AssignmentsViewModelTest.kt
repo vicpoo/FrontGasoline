@@ -1,16 +1,16 @@
 package org.vicpoo.gasolineproject.ui.reservations.assignments
 
-import kotlinx.coroutines.test.runTest
-import org.vicpoo.gasolineproject.domain.common.AppError
-import org.vicpoo.gasolineproject.domain.reservations.GetAssignmentsUseCase
-import org.vicpoo.gasolineproject.testing.FakeAssignmentsRepository
-import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
-import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.test.runTest
+import org.vicpoo.gasolineproject.domain.common.AppError
+import org.vicpoo.gasolineproject.domain.reservations.usecase.GetAssignmentsUseCase
+import org.vicpoo.gasolineproject.testing.FakeAssignmentsRepository
+import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
+import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 
 /** Asignaciones: carga, sin conexión, "Ver por" y búsqueda. */
 class AssignmentsViewModelTest : MainDispatcherTest() {

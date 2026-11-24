@@ -13,6 +13,9 @@ androidx-testRunner = "1.6.2"
 composeMultiplatform = "1.9.3"
 junit = "4.13.2"
 kotlin = "2.2.20"
+# Va con composeMultiplatform: desde la 1.9 JetBrains publica material3 con su propia versión. Al subir
+# composeMultiplatform, sube material3 a la que indiquen sus notas de versión ("Compose Material3 libraries").
+# 1.9.3 -> material3 1.9.0 (3.5.5).
 material3 = "1.9.0"
 # --- Arquitectura (fase 1) ---
 koin = "4.1.1"

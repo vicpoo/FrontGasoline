@@ -1,5 +1,9 @@
 package org.vicpoo.gasolineproject.domain.auth
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.auth.repository.AuthRepository
 import org.vicpoo.gasolineproject.domain.auth.usecase.LoginResult
@@ -9,14 +13,10 @@ import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.session.LocalDataOwner
 import org.vicpoo.gasolineproject.domain.session.Session
-import org.vicpoo.gasolineproject.domain.sync.CountLostOnLogoutUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
+import org.vicpoo.gasolineproject.domain.sync.usecase.CountLostOnLogoutUseCase
 import org.vicpoo.gasolineproject.testing.FakeLocalDataOwnerStore
 import org.vicpoo.gasolineproject.testing.testSession
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 /** Iniciar sesión sin mezclar los datos del teléfono de otra cuenta. */
 class LoginUseCaseTest {

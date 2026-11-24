@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.ui.triprecording.syncstatus
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -10,25 +15,20 @@ import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
 import org.vicpoo.gasolineproject.domain.common.AppScope
-import org.vicpoo.gasolineproject.domain.sync.ObservePendingSummaryUseCase
 import org.vicpoo.gasolineproject.domain.sync.PendingSummaryItem
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncKind
-import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
-import org.vicpoo.gasolineproject.domain.triprecording.ObserveSyncStatusUseCase
+import org.vicpoo.gasolineproject.domain.sync.usecase.ObservePendingSummaryUseCase
+import org.vicpoo.gasolineproject.domain.sync.usecase.SyncAllPendingUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.PendingFuelStatus
 import org.vicpoo.gasolineproject.domain.triprecording.PendingTripState
 import org.vicpoo.gasolineproject.domain.triprecording.PendingTripStatus
 import org.vicpoo.gasolineproject.domain.triprecording.RecordSyncState
-import org.vicpoo.gasolineproject.domain.triprecording.SyncNowUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.SyncStatus
 import org.vicpoo.gasolineproject.domain.triprecording.SyncStatusRepository
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveSyncStatusUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.SyncNowUseCase
 import org.vicpoo.gasolineproject.testing.FakePendingSyncTask
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /**
  * "Envíos pendientes": resumen de lo que falta, número del aviso y "Enviar ahora".

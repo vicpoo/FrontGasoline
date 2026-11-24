@@ -11,6 +11,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.vicpoo.gasolineproject.domain.license.usecase.UploadLicenseUseCase
 import org.vicpoo.gasolineproject.platform.files.rememberCameraCapture
 import org.vicpoo.gasolineproject.platform.files.rememberDocumentPicker
 import org.vicpoo.gasolineproject.ui.common.components.AppBackButton
@@ -26,7 +27,6 @@ import org.vicpoo.gasolineproject.ui.common.components.TitleText
 import org.vicpoo.gasolineproject.ui.common.components.asText
 import org.vicpoo.gasolineproject.ui.common.icons.AppIcons
 import org.vicpoo.gasolineproject.ui.common.theme.AppTheme
-import org.vicpoo.gasolineproject.domain.license.UploadLicenseUseCase
 import org.vicpoo.gasolineproject.ui.resources.Res
 import org.vicpoo.gasolineproject.ui.resources.action_retry
 import org.vicpoo.gasolineproject.ui.resources.cd_close

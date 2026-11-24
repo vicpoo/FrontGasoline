@@ -1,10 +1,7 @@
 package org.vicpoo.gasolineproject.domain.profile
 
 import kotlinx.coroutines.flow.Flow
-import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.common.ValidationReason
-import org.vicpoo.gasolineproject.domain.files.ImageCompressor
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 
 /** Perfil del usuario (sale de la sesión guardada: se ve aunque no haya red). */
@@ -29,52 +26,3 @@ interface ProfileRepository {
     suspend fun updatePhoto(file: PickedFile): AppResult<Unit>
 }
 
-class ObserveProfileUseCase(private val repository: ProfileRepository) {
-    operator fun invoke(): Flow<Profile?> = repository.observeProfile()
-}
-
-class RefreshProfileUseCase(private val repository: ProfileRepository) {
-    suspend operator fun invoke(): AppResult<Unit> = repository.refresh()
-}
-
-/** Nombre completo: obligatorio, máx. 150 caracteres (igual que la API). */
-class UpdateNameUseCase(private val repository: ProfileRepository) {
-    suspend operator fun invoke(name: String): AppResult<Unit> {
-        val clean = name.trim()
-        if (clean.isEmpty()) return AppResult.Failure(AppError.Validation(ValidationReason.REQUIRED))
-        if (clean.length > MAX_NAME) return AppResult.Failure(AppError.Validation(ValidationReason.OUT_OF_RANGE))
-        return repository.updateName(clean)
-    }
-
-    companion object {
-        const val MAX_NAME = 150
-    }
-}
-
-/**
- * Foto de perfil: jpg, png o webp, máx. 5 MB (igual que la API).
- * Se recodifica antes de validar: pesa menos y pierde el EXIF (ubicación GPS de la galería).
- * Si no se puede leer se rechaza; nunca se sube la original.
- */
-class UpdateProfilePhotoUseCase(
-    private val repository: ProfileRepository,
-    private val imageCompressor: ImageCompressor,
-) {
-    suspend operator fun invoke(original: PickedFile): AppResult<Unit> {
-        if (original.mimeType.lowercase() !in ALLOWED_TYPES) {
-            return AppResult.Failure(AppError.Validation(ValidationReason.INVALID_FILE_TYPE))
-        }
-        val file = imageCompressor.compress(original)
-            ?: return AppResult.Failure(AppError.Validation(ValidationReason.INVALID_FILE_TYPE))
-        if (file.sizeBytes > MAX_BYTES) {
-            return AppResult.Failure(AppError.Validation(ValidationReason.FILE_TOO_LARGE))
-        }
-        return repository.updatePhoto(file)
-    }
-
-    companion object {
-        private val ALLOWED_TYPES = setOf("image/jpeg", "image/jpg", "image/png", "image/webp")
-        val PICKER_MIME_TYPES = listOf("image/jpeg", "image/png", "image/webp")
-        const val MAX_BYTES = 5 * 1024 * 1024
-    }
-}

@@ -1,5 +1,10 @@
 package org.vicpoo.gasolineproject.ui.trips.history
 
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -7,20 +12,15 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.AppResult
-import org.vicpoo.gasolineproject.domain.trips.LoadMoreTripsUseCase
-import org.vicpoo.gasolineproject.domain.trips.LoadTripDetailsUseCase
-import org.vicpoo.gasolineproject.domain.trips.ObserveTripsUseCase
-import org.vicpoo.gasolineproject.domain.trips.RefreshTripsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.LoadMoreTripsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.LoadTripDetailsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.ObserveTripsUseCase
+import org.vicpoo.gasolineproject.domain.trips.usecase.RefreshTripsUseCase
 import org.vicpoo.gasolineproject.testing.FakeConnectivityMonitor
 import org.vicpoo.gasolineproject.testing.FakeLastRefreshStore
 import org.vicpoo.gasolineproject.testing.FakeTripsRepository
 import org.vicpoo.gasolineproject.testing.MainDispatcherTest
 import org.vicpoo.gasolineproject.testing.testTrip
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 /** Historial: se muestran de 10 en 10, detalles por bloque, más viajes de la API y sin conexión. */
 @OptIn(ExperimentalCoroutinesApi::class)
