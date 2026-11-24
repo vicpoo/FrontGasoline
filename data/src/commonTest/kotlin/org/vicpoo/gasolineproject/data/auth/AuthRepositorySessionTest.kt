@@ -1,5 +1,6 @@
 package org.vicpoo.gasolineproject.data.auth
 
+import org.vicpoo.gasolineproject.testing.FakeClientDeviceInfo
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpStatusCode
@@ -60,7 +61,7 @@ class AuthRepositorySessionTest {
         tokenManager = tokenManager,
         sessionApi = sessionApi,
         logoutListeners = listOf(LogoutListener { listenerCalls += "push" }),
-        device = AuthRepositoryImpl.DeviceInfo(platform = "android", name = "Pixel 8"),
+        device = FakeClientDeviceInfo(platform = "android", name = "Pixel 8"),
     )
 
     @Test
@@ -101,6 +102,7 @@ class AuthRepositorySessionTest {
             tokenManager = tokenManager,
             sessionApi = sessionApi,
             logoutListeners = listOf(LogoutListener { sessionWhenCleared += sessions.state.value?.userId }),
+            device = FakeClientDeviceInfo(),
         )
         server.handler = { respondJson(loginOk) }
 
@@ -162,6 +164,7 @@ class AuthRepositorySessionTest {
         tokenManager = tokenManager,
         sessionApi = sessionApi,
         logoutListeners = listOf(listener),
+        device = FakeClientDeviceInfo(),
     )
 
     @Test

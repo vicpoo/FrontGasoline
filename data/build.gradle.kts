@@ -1,6 +1,6 @@
 /*
  * :data — capa de datos: implementa las interfaces de :domain.
- * Red (Ktor + safeApiCall + renovación de la sesión), sesión y tokens (DataStore, Keystore / Keychain),
+ * Red (Ktor + safeApiCall + renovación de la sesión), sesión (DataStore; los tokens los cifra platform),
  * base local (LocalDatabase; el esquema SQLDelight vive en :database), cachés JSON en archivos (okio, se van pasando a la base),
  * colas offline-first y sincronizadores de cada feature.
  * Paquetes: org.vicpoo.gasolineproject.data.<feature> + local, network, session, push, di.
@@ -34,13 +34,7 @@ kotlin {
             implementation(libs.ktor.serialization.json)
             implementation(libs.kotlinx.serialization.json)
         }
-        androidMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.kotlinx.coroutines.android)
-        }
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-        }
+        // Sin androidMain / iosMain: lo de cada plataforma (motor HTTP, tokens, FileSystem) lo pone platformModule
         commonTest.dependencies {
             implementation(project(":testing"))
             implementation(libs.kotlin.test)

@@ -4,8 +4,10 @@ Un módulo de Gradle por capa y, dentro de cada capa, una carpeta (paquete) por 
 
 ```
 domain/    Reglas del negocio: modelos, interfaces y casos de uso. Kotlin puro.
-data/      Implementa domain: API (Ktor), sesión y tokens, cachés JSON, colas offline y sincronización.
-platform/  Lo del sistema operativo: GPS, conectividad, push, WorkManager, cámara, archivos y permisos.
+database/  Esquema de la base local (SQLDelight: .sq, migraciones .sqm). Solo lo usa data.
+data/      Implementa domain: API (Ktor), sesión, base local cifrada, colas offline y sincronización.
+platform/  Lo del sistema operativo: GPS, conectividad, push, WorkManager, cámara, archivos, permisos,
+           base cifrada (SQLCipher), motor HTTP, tokens (Keystore / Keychain) y datos del teléfono.
 ui/        Pantallas (Compose), ViewModels, estados / eventos / efectos, navegación y sistema de diseño.
 testing/   Fakes para las pruebas (sesión, API falsa, archivos, dispatcher Main).
 shared/    Arma la app: App.kt, navegación principal (AppNavHost) e initKoin. Framework de iOS.
@@ -25,7 +27,7 @@ ui ──► domain ◄── data
 ```
 
 - `domain` no conoce a nadie (sin Ktor, DataStore, okio, Android ni Compose).
-- `data` y `platform` solo conocen `domain`.
+- `data` y `platform` solo conocen `domain` (`data` además usa `database`, el esquema generado).
 - `ui` usa casos de uso de `domain` y los lanzadores de Compose de `platform` (cámara, permisos...). Nunca `data`.
 - `shared` junta todo. `ArchitectureTest` (shared, androidHostTest) revisa estas reglas en cada corrida de pruebas.
 
@@ -37,10 +39,31 @@ Cada capa declara sus módulos en su carpeta `di/` y los expone en una lista:
 |---|---|---|
 | domain | `domain/di/DomainModule.kt` | `domainModules` (casos de uso, un módulo por feature) |
 | data | `data/di/*DataModule.kt` | `dataModules` (repositorios, APIs, cachés, sincronizadores) |
-| platform | `platform/di/PlatformModule*.kt` | `platformModule` (expect / actual por plataforma) |
+| platform | `platform/di/PlatformModule*.kt` | `platformModule` (el único `expect val Module` del proyecto) |
 | ui | `ui/di/UiModule.kt` | `uiModules` (ViewModels) |
 
 `shared/di/KoinInit.kt` solo suma las listas. `KoinGraphTest` arma el grafo real y pide cada ViewModel.
+
+### expect / actual (punto 2 del code review)
+
+- Un solo `expect val platformModule: Module`. Todo lo nativo se registra ahí y las otras capas lo reciben por
+  interfaz de `domain`: `FileSystem`, `HttpClientEngine` (OkHttp / Darwin), `TokenStore` (Keystore / Keychain),
+  `ClientDeviceInfo`, `SqlDriverFactory`, `FileCipher`, GPS, conectividad, push, etc.
+- `data` ya no tiene `androidMain` ni `iosMain`.
+- Los tokens en Android: `KeystoreTokenStore` (platform) cifra y guarda el texto cifrado en `KeyValueStore`
+  (interfaz de domain que data implementa con DataStore). Así platform no depende de DataStore; misma clave,
+  llave y formato que antes, por eso actualizar la app no cierra la sesión.
+- Solo quedan `expect fun` para composables: `rememberCameraCapture`, `rememberDocumentPicker`,
+  `rememberFileSharer`, `rememberLocationPermission`, `RequestNotificationPermission` (platform) y
+  `LiveRouteMap` (ui). `ArchitectureTest.expectSoloParaElModuloDePlataformaYComposables` lo revisa.
+- `testing` tiene `expect fun inMemorySqlDriver` (base en memoria para pruebas); no es código de la app.
+
+### `@Serializable` en domain (punto 3.2.7)
+
+Solo `AuthTokens` y `Session` lo llevan (por eso `domain` depende de `kotlinx-serialization`). Se deja así a
+propósito: son exactamente lo que se guarda de la sesión, los guardan dos capas (data: `Session` en DataStore;
+platform: `AuthTokens` en Keystore / Keychain) y un DTO por capa sería duplicar el mismo dato sin ganancia.
+Los demás modelos de domain no se serializan: lo guardado en el teléfono usa `*Entity` de data.
 
 ## Agregar una feature nueva
 

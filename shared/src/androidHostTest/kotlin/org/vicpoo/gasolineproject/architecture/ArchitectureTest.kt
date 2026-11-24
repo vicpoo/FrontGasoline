@@ -11,6 +11,9 @@ import kotlin.test.fail
  * - El esquema de la base (:database, solo código generado por SQLDelight) lo usa únicamente data.
  * - domain es Kotlin puro: sin Ktor, DataStore, okio, Android ni Compose.
  * - En ui, cada UiState / Event / Effect vive en su propio archivo (XUiState.kt, XEvent.kt, XEffect.kt).
+ * - expect/actual solo para el armado de Koin y composables: un único `expect val platformModule` y, fuera
+ *   de eso, solo `@Composable expect fun` en platform (cámara, documentos, permisos...) y en ui (mapa).
+ *   Lo demás se resuelve con una interfaz de domain registrada en platformModule (punto 2 del code review).
  */
 class ArchitectureTest {
 
@@ -58,6 +61,30 @@ class ArchitectureTest {
             .filterNot { it.path.replace('\\', '/').contains("/domain/di/") } // los módulos de Koin
             .flatMap { file -> imports(file).filter { imp -> forbiddenInDomain.any(imp::startsWith) }.map { "${file.relativeTo(root)} -> $it" } }
         if (errors.isNotEmpty()) fail("domain no debe usar infraestructura:\n" + errors.joinToString("\n"))
+    }
+
+    @Test
+    fun expectSoloParaElModuloDePlataformaYComposables() {
+        val expectDeclaration = Regex("""^\s*(?:public |internal )?expect\s+(?:fun|val|var|class|object|interface|annotation|enum)\b""")
+        val errors = mutableListOf<String>()
+        for (layer in listOf("domain", "data", "database", "platform", "ui", "shared")) {
+            for (file in sources(layer)) {
+                val lines = file.readLines()
+                lines.forEachIndexed { index, line ->
+                    if (!expectDeclaration.containsMatchIn(line)) return@forEachIndexed
+                    val composable = lines.subList(maxOf(0, index - 3), index).any { it.trim() == "@Composable" }
+                    val ok = when (layer) {
+                        "platform" -> composable || line.trim() == "expect val platformModule: Module"
+                        "ui" -> composable
+                        else -> false
+                    }
+                    if (!ok) errors += "${file.relativeTo(root)}:${index + 1}: ${line.trim()}"
+                }
+            }
+        }
+        if (errors.isNotEmpty()) {
+            fail("expect solo para platformModule y composables; lo demás va por interfaz en platformModule:\n" + errors.joinToString("\n"))
+        }
     }
 
     @Test

@@ -8,9 +8,9 @@ import org.vicpoo.gasolineproject.domain.common.onSuccess
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 import org.vicpoo.gasolineproject.data.network.AuthTokenManager
-import org.vicpoo.gasolineproject.data.network.ClientDevice
 import org.vicpoo.gasolineproject.data.network.SessionApi
 import org.vicpoo.gasolineproject.data.network.safeApiCall
+import org.vicpoo.gasolineproject.domain.device.ClientDeviceInfo
 import org.vicpoo.gasolineproject.domain.files.PickedFile
 import org.vicpoo.gasolineproject.domain.session.AuthTokens
 import org.vicpoo.gasolineproject.domain.session.LogoutListener
@@ -32,11 +32,9 @@ class AuthRepositoryImpl(
     private val sessionApi: SessionApi,
     /** Features que borran sus datos offline al cerrar sesión. */
     private val logoutListeners: List<LogoutListener> = emptyList(),
-    private val device: DeviceInfo = DeviceInfo(ClientDevice.platform, ClientDevice.name),
-) : AuthRepository {
-
     /** Plataforma y modelo que se mandan al iniciar sesión (informativo, para la lista de sesiones). */
-    data class DeviceInfo(val platform: String?, val name: String?)
+    private val device: ClientDeviceInfo,
+) : AuthRepository {
 
     override suspend fun login(email: String, password: String, clearLocalData: Boolean): AppResult<Session> =
         safeApiCall {

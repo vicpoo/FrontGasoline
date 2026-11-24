@@ -23,9 +23,6 @@ import org.vicpoo.gasolineproject.domain.common.AppLogger
 import org.vicpoo.gasolineproject.domain.common.SilentAppLogger
 import org.vicpoo.gasolineproject.domain.common.d
 
-/** Motor HTTP de cada plataforma (OkHttp en Android, Darwin en iOS). */
-expect fun httpEngine(): HttpClientEngine
-
 /** Quién da el token actual. Lo implementa la sesión; el cliente HTTP no sabe de dónde viene. */
 fun interface TokenProvider {
     suspend fun token(): String?

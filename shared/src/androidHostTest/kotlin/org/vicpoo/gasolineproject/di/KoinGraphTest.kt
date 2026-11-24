@@ -26,7 +26,13 @@ import org.vicpoo.gasolineproject.domain.location.LocationFix
 import org.vicpoo.gasolineproject.domain.location.LocationProvider
 import org.vicpoo.gasolineproject.domain.location.TrackingServiceController
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respondError
+import io.ktor.http.HttpStatusCode
 import org.vicpoo.gasolineproject.domain.database.SqlDriverFactory
+import org.vicpoo.gasolineproject.domain.device.ClientDeviceInfo
+import org.vicpoo.gasolineproject.testing.FakeClientDeviceInfo
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.FileCipher
 import org.vicpoo.gasolineproject.domain.files.ImageCompressor
@@ -41,7 +47,6 @@ import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
 import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
 import org.vicpoo.gasolineproject.data.di.apiConfigModule
-import org.vicpoo.gasolineproject.data.di.dataPlatformModule
 import org.vicpoo.gasolineproject.platform.di.platformModule
 import org.vicpoo.gasolineproject.ui.license.LicenseGateViewModel
 import org.vicpoo.gasolineproject.ui.license.LicenseViewModel
@@ -94,7 +99,7 @@ import kotlin.test.assertTrue
  * cada ViewModel. Si al mover un módulo se pierde una definición, esta prueba falla con el
  * nombre de la clase que falta.
  *
- * Solo se reemplaza lo que depende del teléfono (platformModule y dataPlatformModule) y lo que haría trabajo real:
+ * Solo se reemplaza lo que depende del teléfono (platformModule) y lo que haría trabajo real:
  * - AppScope: un scope que nunca avanza (nada corre en segundo plano).
  * - HttpClient: API falsa (ninguna petición sale a internet).
  * - Dispatchers.Main: dispatcher de pruebas que no avanza (los init de los ViewModels no corren).
@@ -117,6 +122,9 @@ class KoinGraphTest {
         single<AppLogger> { SilentAppLogger }
         single<SqlDriverFactory> { InMemorySqlDriverFactory() }
         single<FileCipher> { TestFileCipher() }
+        // Motor HTTP que nunca sale a internet (lo usa el cliente de renovar sesión)
+        single<HttpClientEngine> { MockEngine { respondError(HttpStatusCode.ServiceUnavailable) } }
+        single<ClientDeviceInfo> { FakeClientDeviceInfo() }
     }
 
     private val noRealWorkModule = module {
@@ -125,7 +133,7 @@ class KoinGraphTest {
     }
 
     private fun testModules(): List<Module> =
-        appModules.filterNot { it === platformModule || it === dataPlatformModule } +
+        appModules.filterNot { it === platformModule } +
             testPlatformModule + noRealWorkModule + apiConfigModule(TEST_API_BASE_URL)
 
     @BeforeTest

@@ -1,14 +1,9 @@
-package org.vicpoo.gasolineproject.data.session
+package org.vicpoo.gasolineproject.platform.session
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.security.KeyStore
@@ -16,45 +11,46 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import org.vicpoo.gasolineproject.domain.common.KeyValueStore
 import org.vicpoo.gasolineproject.domain.session.AuthTokens
 import org.vicpoo.gasolineproject.domain.session.TokenStore
 
 /**
  * Android: los tokens se cifran con AES-256-GCM usando una llave que vive en el Android Keystore
  * (hardware seguro cuando el teléfono lo tiene; la llave nunca sale del Keystore).
- * En el DataStore solo queda el texto cifrado (IV + datos + etiqueta GCM) en Base64.
+ * En el DataStore (a través de [KeyValueStore], que pone data) solo queda el texto cifrado
+ * (IV + datos + etiqueta GCM) en Base64. Misma clave, llave y formato que cuando vivía en data:
+ * al actualizar la app la sesión sigue abierta.
  *
  * No se usa EncryptedSharedPreferences (androidx.security-crypto está deprecado).
  * Si el respaldo de Android restaura el DataStore en otro teléfono, la llave no viaja con él:
  * el descifrado falla, se borra el dato y la app pide iniciar sesión (comportamiento correcto).
  */
 class KeystoreTokenStore(
-    private val dataStore: DataStore<Preferences>,
+    private val store: KeyValueStore,
     private val json: Json,
 ) : TokenStore {
 
-    private val encryptedKey = stringPreferencesKey("auth_tokens_enc")
+    private val encryptedKey = "auth_tokens_enc"
 
     override suspend fun read(): AuthTokens? = withContext(Dispatchers.IO) {
-        val encoded = dataStore.data.first()[encryptedKey] ?: return@withContext null
+        val encoded = store.get(encryptedKey) ?: return@withContext null
         val tokens = runCatching {
             json.decodeFromString(AuthTokens.serializer(), decrypt(encoded))
         }.getOrNull()
 
         // Llave perdida o dato dañado: no sirve, se borra
-        if (tokens == null) dataStore.edit { it.remove(encryptedKey) }
+        if (tokens == null) store.remove(encryptedKey)
         tokens
     }
 
     override suspend fun write(tokens: AuthTokens) = withContext(Dispatchers.IO) {
         val encrypted = encrypt(json.encodeToString(AuthTokens.serializer(), tokens))
-        dataStore.edit { it[encryptedKey] = encrypted }
-        Unit
+        store.put(encryptedKey, encrypted)
     }
 
     override suspend fun clear() = withContext(Dispatchers.IO) {
-        dataStore.edit { it.remove(encryptedKey) }
-        Unit
+        store.remove(encryptedKey)
     }
 
     private fun encrypt(plainText: String): String {

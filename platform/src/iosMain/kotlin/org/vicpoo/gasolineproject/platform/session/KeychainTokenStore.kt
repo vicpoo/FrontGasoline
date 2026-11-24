@@ -1,4 +1,4 @@
-package org.vicpoo.gasolineproject.data.session
+package org.vicpoo.gasolineproject.platform.session
 
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.UByteVar

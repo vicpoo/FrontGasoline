@@ -30,6 +30,11 @@ kotlin {
             api(project(":domain"))
             implementation(libs.compose.runtime)
             implementation(libs.koin.core)
+
+            // Lo que antes ponía data por plataforma (dataPlatformModule): archivos, motor HTTP y tokens
+            implementation(libs.okio)
+            implementation(libs.ktor.client.core)
+            implementation(libs.kotlinx.serialization.json)
         }
         androidMain.dependencies {
             implementation(libs.koin.android) // androidContext() en el platformModule
@@ -42,6 +47,8 @@ kotlin {
             implementation(project.dependencies.platform(libs.firebase.bom))
             implementation(libs.firebase.messaging)
 
+            implementation(libs.ktor.client.okhttp) // motor HTTP
+
             // Base local cifrada: SQLDelight sobre SQLCipher
             implementation(libs.sqldelight.androidDriver)
             implementation(libs.sqlcipher.android)
@@ -50,6 +57,7 @@ kotlin {
         iosMain.dependencies {
             // TODO(iOS): sin cifrado por ahora (iOS fuera del alcance de la revisión); ver docs/ARQUITECTURA.md
             implementation(libs.sqldelight.nativeDriver)
+            implementation(libs.ktor.client.darwin) // motor HTTP
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

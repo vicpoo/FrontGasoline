@@ -1,11 +1,13 @@
-package org.vicpoo.gasolineproject.data.network
+package org.vicpoo.gasolineproject.platform.device
 
 import android.os.Build
+import org.vicpoo.gasolineproject.domain.device.ClientDeviceInfo
 
-actual object ClientDevice {
-    actual val platform: String = "android"
+/** Android: "android" y la marca y modelo del teléfono ("Samsung SM-A245M"). */
+class AndroidClientDeviceInfo : ClientDeviceInfo {
+    override val platform: String = "android"
 
-    actual val name: String?
+    override val name: String?
         get() = runCatching {
             val manufacturer = Build.MANUFACTURER.orEmpty().replaceFirstChar { it.uppercase() }
             val model = Build.MODEL.orEmpty()

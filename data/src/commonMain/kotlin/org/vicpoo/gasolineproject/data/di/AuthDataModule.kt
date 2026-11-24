@@ -20,6 +20,7 @@ val authDataModule = module {
             tokenManager = get(),
             sessionApi = get(),
             logoutListeners = getAll<LogoutListener>(),
+            device = get(),
         )
     }
 }

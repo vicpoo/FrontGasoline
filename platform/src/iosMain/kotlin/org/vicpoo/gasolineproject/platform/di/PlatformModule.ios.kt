@@ -1,6 +1,9 @@
 package org.vicpoo.gasolineproject.platform.di
 
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.darwin.Darwin
 import kotlinx.cinterop.ExperimentalForeignApi
+import okio.FileSystem
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.domain.common.AppBuildInfo
@@ -8,6 +11,9 @@ import org.vicpoo.gasolineproject.domain.common.AppLogger
 import org.vicpoo.gasolineproject.domain.common.minLogLevel
 import org.vicpoo.gasolineproject.domain.connectivity.ConnectivityMonitor
 import org.vicpoo.gasolineproject.domain.database.SqlDriverFactory
+import org.vicpoo.gasolineproject.domain.device.ClientDeviceInfo
+import org.vicpoo.gasolineproject.domain.session.CachedTokenStore
+import org.vicpoo.gasolineproject.domain.session.TokenStore
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.files.FileCipher
 import org.vicpoo.gasolineproject.domain.files.PlainFileCipher
@@ -19,6 +25,8 @@ import org.vicpoo.gasolineproject.domain.sync.BackgroundSyncScheduler
 import org.vicpoo.gasolineproject.domain.sync.SyncAllPendingUseCase
 import org.vicpoo.gasolineproject.platform.connectivity.IosConnectivityMonitor
 import org.vicpoo.gasolineproject.platform.database.IosSqlDriverFactory
+import org.vicpoo.gasolineproject.platform.device.IosClientDeviceInfo
+import org.vicpoo.gasolineproject.platform.session.KeychainTokenStore
 import org.vicpoo.gasolineproject.platform.files.IosImageCompressor
 import org.vicpoo.gasolineproject.platform.location.IosLocationProvider
 import org.vicpoo.gasolineproject.platform.location.IosTrackingServiceController
@@ -37,7 +45,14 @@ actual val platformModule: Module = module {
 
     // TODO(iOS, punto 4.9): filesDir debería ir en Application Support y excluirse del respaldo de iCloud
     single { AppDirectories(filesDir = iosDirectoryPath(NSDocumentDirectory), cacheDir = iosDirectoryPath(NSCachesDirectory)) }
+    single<FileSystem> { FileSystem.SYSTEM }
     single<ConnectivityMonitor> { IosConnectivityMonitor() }
+
+    single<HttpClientEngine> { Darwin.create() }
+    single<ClientDeviceInfo> { IosClientDeviceInfo() }
+
+    // Tokens de la sesión en el Keychain (solo este dispositivo)
+    single<TokenStore> { CachedTokenStore(KeychainTokenStore(json = get())) }
 
     // Base local (TODO iOS: sin cifrar por ahora)
     single<SqlDriverFactory> { IosSqlDriverFactory() }

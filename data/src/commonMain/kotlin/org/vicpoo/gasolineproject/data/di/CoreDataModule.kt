@@ -7,6 +7,7 @@ import org.koin.dsl.bind
 import org.koin.dsl.binds
 import org.koin.dsl.module
 import org.vicpoo.gasolineproject.data.database.LocalDatabase
+import org.vicpoo.gasolineproject.data.local.DataStoreKeyValueStore
 import org.vicpoo.gasolineproject.data.local.DataStoreLastRefreshStore
 import org.vicpoo.gasolineproject.data.local.LegacyDataMigration
 import org.vicpoo.gasolineproject.data.local.LocalDocumentCache
@@ -15,7 +16,6 @@ import org.vicpoo.gasolineproject.data.network.KtorSessionApi
 import org.vicpoo.gasolineproject.data.network.SessionApi
 import org.vicpoo.gasolineproject.data.network.createHttpClient
 import org.vicpoo.gasolineproject.data.network.createSessionHttpClient
-import org.vicpoo.gasolineproject.data.network.httpEngine
 import org.vicpoo.gasolineproject.data.push.DevicePushSyncTask
 import org.vicpoo.gasolineproject.data.push.DeviceRegistrar
 import org.vicpoo.gasolineproject.data.session.DATASTORE_FILE_NAME
@@ -24,6 +24,7 @@ import org.vicpoo.gasolineproject.data.session.DataStoreSessionStore
 import org.vicpoo.gasolineproject.data.session.createDataStore
 import org.vicpoo.gasolineproject.data.settings.DataStoreThemePreferenceStore
 import org.vicpoo.gasolineproject.domain.common.AppClock
+import org.vicpoo.gasolineproject.domain.common.KeyValueStore
 import org.vicpoo.gasolineproject.domain.common.LastRefreshStore
 import org.vicpoo.gasolineproject.domain.files.AppDirectories
 import org.vicpoo.gasolineproject.domain.push.PushDeviceRegistrar
@@ -40,7 +41,8 @@ import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
  * - coreDataModule:    JSON, base local, sesión guardada, "Actualizado hace X".
  * - networkDataModule: cliente Ktor con token y renovación automática de la sesión (refresh token).
  * - pushDataModule:    registro del celular en la API para recibir push.
- * - dataPlatformModule (por plataforma): archivos, DataStore y tokens cifrados (Keystore / Keychain).
+ * Lo que depende del sistema (FileSystem, motor HTTP, tokens en Keystore / Keychain, datos del teléfono)
+ * lo pone platformModule: data no tiene expect/actual (punto 2 del code review).
  * Más un módulo por feature (AuthDataModule.kt, VehiclesDataModule.kt, ...).
  */
 
@@ -56,9 +58,6 @@ fun apiConfigModule(baseUrl: String): Module {
     require(baseUrl.endsWith("/")) { "La URL de la API debe terminar en \"/\": $baseUrl" }
     return module { single(API_BASE_URL) { baseUrl } }
 }
-
-/** Archivos, DataStore y tokens cifrados: cambian entre Android e iOS. */
-expect val dataPlatformModule: Module
 
 val coreDataModule = module {
     single {
@@ -87,6 +86,9 @@ val coreDataModule = module {
         ).also { it.start() }
     }
 
+    // Textos sueltos en DataStore: ahí guarda platform los tokens ya cifrados con el Keystore
+    single<KeyValueStore> { DataStoreKeyValueStore(dataStore = get()) }
+
     // Una sola instancia expuesta por sus interfaces
     single { DataStoreSessionStore(dataStore = get(), json = get()) } binds arrayOf(
         SessionStore::class,
@@ -110,7 +112,8 @@ val coreDataModule = module {
 
 val networkDataModule = module {
     // Renovar / cerrar sesión con el refresh token: cliente propio, sin AuthPlugin
-    single<SessionApi> { KtorSessionApi(createSessionHttpClient(engine = httpEngine(), baseUrl = get(API_BASE_URL), json = get())) }
+    // El motor (OkHttp / Darwin) lo pone platformModule; los dos clientes lo comparten
+    single<SessionApi> { KtorSessionApi(createSessionHttpClient(engine = get(), baseUrl = get(API_BASE_URL), json = get())) }
 
     // Dueño de los tokens (TokenStore cifrado): da el JWT, lo renueva y cierra la sesión si la API lo rechaza
     single {
@@ -125,7 +128,7 @@ val networkDataModule = module {
     single {
         val tokens = get<AuthTokenManager>()
         createHttpClient(
-            engine = httpEngine(),
+            engine = get(),
             baseUrl = get(API_BASE_URL),
             tokenProvider = tokens,
             tokenRefresher = tokens,
@@ -151,7 +154,6 @@ val pushDataModule = module {
 
 /** Todos los módulos de la capa data (los junta shared al iniciar Koin). */
 val dataModules = listOf(
-    dataPlatformModule,
     coreDataModule,
     networkDataModule,
     pushDataModule,
