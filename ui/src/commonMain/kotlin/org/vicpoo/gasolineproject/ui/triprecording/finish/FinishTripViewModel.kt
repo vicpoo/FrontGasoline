@@ -16,31 +16,62 @@ import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.FinishTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.RetryFinishTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.StopTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.UndoStopTripUseCase
 import org.vicpoo.gasolineproject.ui.triprecording.common.TripFormat
+
+/**
+ * @param forLogout true = se abrió desde "Salir" en Perfil: para cerrar sesión hay que cerrar el viaje
+ *   con el kilometraje final y la foto. Se guarda como interrumpido por cierre de sesión.
+ */
+data class FinishTripArgs(val forLogout: Boolean = false)
 
 /**
  * Figma "Registrar Viaje": kilometraje final + foto del odómetro + la ruta que se hizo.
  * Offline-first: al guardar, todo queda en el teléfono y después se intenta enviar.
  * Si se sale sin guardar (flecha o atrás del sistema), el viaje continúa como estaba.
+ *
+ * Modo salir ([FinishTripArgs.forLogout]): el viaje puede venir en curso o en pausa, así que primero
+ * se detiene (como el botón ■). Sin red queda guardado en el teléfono y se envía cuando su dueño
+ * vuelva a entrar en este teléfono.
  */
 class FinishTripViewModel(
+    private val args: FinishTripArgs,
     private val observeTracking: ObserveTrackingUseCase,
     private val finishTrip: FinishTripUseCase,
     private val retryFinish: RetryFinishTripUseCase,
+    private val stopTrip: StopTripUseCase,
     private val undoStop: UndoStopTripUseCase,
     private val clock: AppClock,
     private val appScope: AppScope,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(FinishTripUiState())
+    private val _state = MutableStateFlow(FinishTripUiState(forLogout = args.forLogout))
     val state: StateFlow<FinishTripUiState> = _state.asStateFlow()
 
     /** true cuando el viaje ya se guardó en el teléfono (enviado o pendiente). */
     private var saved = false
 
+    /**
+     * Al salir sin guardar se regresa el viaje a como estaba. En modo salir, si ya estaba detenido
+     * (esperando el kilometraje) se queda detenido.
+     */
+    private var undoOnExit = true
+
     init {
-        load()
+        if (args.forLogout) {
+            viewModelScope.launch {
+                val phase = observeTracking().value.trip?.phase
+                if (phase == TripPhase.STOPPED) {
+                    undoOnExit = false
+                } else if (phase != null) {
+                    stopTrip()
+                }
+                load()
+            }
+        } else {
+            load()
+        }
     }
 
     private fun load() {
@@ -92,7 +123,7 @@ class FinishTripViewModel(
         if (current.isSaving) return
         _state.update { it.copy(isSaving = true, failure = null) }
         viewModelScope.launch {
-            when (val result = finishTrip(current.finalMileage, current.photo)) {
+            when (val result = finishTrip(current.finalMileage, current.photo, closedByLogout = args.forLogout)) {
                 is FinishTripResult.Invalid -> _state.update { it.copy(isSaving = false, errors = result.errors) }
                 is FinishTripResult.Failed -> _state.update { it.copy(isSaving = false, failure = result.error) }
                 is FinishTripResult.Saved -> {
@@ -114,7 +145,7 @@ class FinishTripViewModel(
 
     override fun onCleared() {
         // Se salió sin guardar: el viaje sigue (se vuelve a encender el GPS si no estaba en pausa)
-        if (!saved) appScope.scope.launch { undoStop() }
+        if (!saved && undoOnExit) appScope.scope.launch { undoStop() }
         super.onCleared()
     }
 

@@ -59,8 +59,11 @@ interface TripTracker {
     /**
      * Guarda "Registrar Viaje" en el teléfono (kilometraje final + foto del odómetro) y lo envía.
      * Si el servidor lo rechaza, el viaje vuelve a quedar detenido para corregir el kilometraje.
+     * @param closedByLogout true = se cierra para poder salir de la cuenta: la API lo guarda como
+     *   "interrumpido" (con su motivo). Sin red queda en el teléfono y se envía cuando su dueño
+     *   vuelva a entrar.
      */
-    suspend fun finish(finalMileage: Double, odometerPhoto: PickedFile): AppResult<SendOutcome>
+    suspend fun finish(finalMileage: Double, odometerPhoto: PickedFile, closedByLogout: Boolean = false): AppResult<SendOutcome>
 
     /** "Reintentar" después de guardar sin conexión. */
     suspend fun retryFinishSend(): SendOutcome

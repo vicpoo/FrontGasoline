@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import kotlinx.serialization.Serializable
+import org.vicpoo.gasolineproject.ui.common.navigation.NavResults
 import org.vicpoo.gasolineproject.ui.common.navigation.privilegedComposable
 import org.vicpoo.gasolineproject.domain.rbac.AppAccess
 import org.vicpoo.gasolineproject.ui.triprecording.active.ActiveTripRoute
@@ -30,9 +31,12 @@ sealed interface TripRecordingDestination {
     @Serializable
     data object ActiveTrip : TripRecordingDestination
 
-    /** "Registrar Viaje": kilometraje final, foto del odómetro y la ruta. */
+    /**
+     * "Registrar Viaje": kilometraje final, foto del odómetro y la ruta.
+     * forLogout = true: se abre desde "Salir" en Perfil y al guardar regresa a Perfil para cerrar sesión.
+     */
     @Serializable
-    data object FinishTrip : TripRecordingDestination
+    data class FinishTrip(val forLogout: Boolean = false) : TripRecordingDestination
 
     /** recordId == null -> Agregar; != null -> Editar. */
     @Serializable
@@ -116,7 +120,7 @@ fun NavGraphBuilder.tripRecordingGraph(
                 onAddFuel = { navController.navigate(TripRecordingDestination.FuelRecordForm()) },
                 onEditFuel = { id -> navController.navigate(TripRecordingDestination.FuelRecordForm(id)) },
                 onOpenFinish = {
-                    navController.navigate(TripRecordingDestination.FinishTrip) { launchSingleTop = true }
+                    navController.navigate(TripRecordingDestination.FinishTrip()) { launchSingleTop = true }
                 },
             )
         }
@@ -124,13 +128,21 @@ fun NavGraphBuilder.tripRecordingGraph(
         privilegedComposable<TripRecordingDestination.FinishTrip>(
             access = AppAccess.TRIP_RECORDING,
             onDenied = { navController.popBackStack() },
-        ) {
+        ) { entry ->
+            val route = entry.toRoute<TripRecordingDestination.FinishTrip>()
             FinishTripRoute(
-                // Atrás sin guardar: regresa al mapa y el viaje continúa
+                forLogout = route.forLogout,
+                // Atrás sin guardar: regresa al mapa (o a Perfil) y el viaje continúa
                 onBack = { navController.popBackStack() },
-                // Guardado: regresa a la lista de carros (sin el mapa del viaje en el historial)
                 onDone = {
-                    navController.popBackStack<TripRecordingDestination.AssignedVehicles>(inclusive = false)
+                    if (route.forLogout) {
+                        // Cerrado para salir: regresa a Perfil y Perfil termina de cerrar la sesión
+                        navController.previousBackStackEntry?.savedStateHandle?.set(NavResults.TRIP_CLOSED_FOR_LOGOUT, true)
+                        navController.popBackStack()
+                    } else {
+                        // Guardado: regresa a la lista de carros (sin el mapa del viaje en el historial)
+                        navController.popBackStack<TripRecordingDestination.AssignedVehicles>(inclusive = false)
+                    }
                 },
             )
         }
@@ -143,4 +155,9 @@ fun NavGraphBuilder.tripRecordingGraph(
             FuelRecordFormRoute(recordId = route.recordId, onBack = { navController.popBackStack() })
         }
     }
+}
+
+/** "Salir" con un viaje abierto: "Registrar Viaje" en modo salir (lo conecta la app desde Perfil). */
+fun NavHostController.navigateToCloseTripForLogout() {
+    navigate(TripRecordingDestination.FinishTrip(forLogout = true)) { launchSingleTop = true }
 }

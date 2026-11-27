@@ -10,17 +10,17 @@
     </style>
 
     <!--
-        Pantalla de inicio (splash) de Octrak. Usa el modo de la app: el del teléfono, o el que el
+        Pantalla de inicio (splash) de Gaspot. Usa el modo de la app: el del teléfono, o el que el
         usuario eligió en Perfil (Android 12+, ver MainActivity.applyThemeMode):
-        - Claro: fondo blanco, medidor azul (#476D9E) y nombre Navy (drawable/).
-        - Oscuro: fondo negro, medidor blanco y nombre blanco (drawable-night/).
+        - Claro: fondo blanco, pin azul (#476D9E) con nivel y bomba Navy, y nombre Navy (drawable/).
+        - Oscuro: fondo negro, pin blanco con nivel azul, bomba blanca y nombre blanco (drawable-night/).
         El fondo usa @color/window_background (values-night/colors.xml para el oscuro).
-        En Android 12+ además se muestra el nombre "Octrak" abajo (values-v31/themes.xml).
+        En Android 12+ además se muestra el nombre "Gaspot" abajo (values-v31/themes.xml).
         Al terminar de arrancar cambia a Theme.Gasoline.
     -->
     <style name="Theme.Gasoline.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/window_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/octrak_splash</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/gaspot_splash</item>
         <item name="postSplashScreenTheme">@style/Theme.Gasoline</item>
     </style>
 </resources>

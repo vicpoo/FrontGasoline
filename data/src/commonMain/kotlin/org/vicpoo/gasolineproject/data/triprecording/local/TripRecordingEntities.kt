@@ -77,6 +77,11 @@ data class TripEntity(
     val odometerPhotoSent: Boolean = false,
     /** true cuando la API ya lo tiene como finalizado (finalizar o sincronizar). */
     val closedOnServer: Boolean = false,
+    /**
+     * Motivo cuando el viaje se cerró al salir de la cuenta: se manda a la API como "interrumpido"
+     * (con el kilometraje y la foto que capturó el usuario). null = viaje terminado normal.
+     */
+    val interruptReason: String? = null,
     /** Cuántos puntos GPS del archivo ya se procesaron (enviados o descartados). */
     val pointsSent: Int = 0,
     /** Puntos que la API rechazó de forma definitiva (400): se saltan para no reintentarlos siempre. */

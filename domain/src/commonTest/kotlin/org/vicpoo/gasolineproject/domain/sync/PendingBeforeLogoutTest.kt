@@ -61,11 +61,11 @@ class PendingBeforeLogoutTest {
     }
 
     @Test
-    fun viajeEnCurso_seIntentaMandar_peroNoCuentaComoPerdido() = runTest {
+    fun viajeEnCurso_noSeManda_niCuentaComoPerdido() = runTest {
         val trips = KeptTask(pending = 1)
 
         assertEquals(0, PendingBeforeLogoutUseCase(listOf(trips))())
-        assertEquals(1, trips.syncCalls)
+        assertEquals(0, trips.syncCalls, "Los viajes no se borran al salir: no se hace esperar al usuario")
     }
 
     @Test
@@ -74,5 +74,7 @@ class PendingBeforeLogoutTest {
         val reservations = FakeTask(pending = 1, sendsOk = false)
 
         assertEquals(1, PendingBeforeLogoutUseCase(listOf(trips, reservations))())
+        assertEquals(0, trips.syncCalls)
+        assertEquals(1, reservations.syncCalls)
     }
 }

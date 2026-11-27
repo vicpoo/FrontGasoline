@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 import org.vicpoo.gasolineproject.domain.common.AppError
 import org.vicpoo.gasolineproject.domain.common.ValidationReason
 import org.vicpoo.gasolineproject.platform.files.rememberCameraCapture
@@ -66,6 +67,8 @@ import org.vicpoo.gasolineproject.ui.resources.finish_trip_change_photo
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_error_title
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_final_mileage
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_final_mileage_hint
+import org.vicpoo.gasolineproject.ui.resources.finish_trip_logout_notice
+import org.vicpoo.gasolineproject.ui.resources.finish_trip_logout_saved_offline_message
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_map_hidden
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_mileage_helper
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_mileage_too_low
@@ -75,6 +78,7 @@ import org.vicpoo.gasolineproject.ui.resources.finish_trip_photo
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_photo_sheet_title
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_rejected_message
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_route
+import org.vicpoo.gasolineproject.ui.resources.finish_trip_save_and_logout
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_saved_offline_message
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_saved_server_error_message
 import org.vicpoo.gasolineproject.ui.resources.finish_trip_saved_offline_title
@@ -88,9 +92,13 @@ import org.vicpoo.gasolineproject.ui.resources.profile_option_gallery
 @Composable
 fun FinishTripRoute(
     onBack: () -> Unit,
-    /** El viaje ya quedó guardado: regresar a la lista de carros. */
+    /** El viaje ya quedó guardado: regresar a la lista de carros (o a Perfil en modo salir). */
     onDone: () -> Unit,
-    viewModel: FinishTripViewModel = koinViewModel(),
+    /** true = abierto desde "Salir" en Perfil (ver [FinishTripArgs]). */
+    forLogout: Boolean = false,
+    viewModel: FinishTripViewModel = koinViewModel(key = "finish-trip-$forLogout") {
+        parametersOf(FinishTripArgs(forLogout))
+    },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val gallery = rememberDocumentPicker(
@@ -125,6 +133,10 @@ fun FinishTripScreen(
         AppBackButton(onClick = onBack)
         Spacer(Modifier.height(dimens.spaceM))
         TitleText(stringResource(Res.string.finish_trip_title))
+        if (state.forLogout) {
+            Spacer(Modifier.height(dimens.spaceS))
+            SecondaryText(stringResource(Res.string.finish_trip_logout_notice))
+        }
         Spacer(Modifier.height(dimens.spaceL))
 
         when {
@@ -157,7 +169,7 @@ fun FinishTripScreen(
                 Spacer(Modifier.height(dimens.spaceL))
 
                 PrimaryButton(
-                    text = stringResource(Res.string.action_save),
+                    text = stringResource(if (state.forLogout) Res.string.finish_trip_save_and_logout else Res.string.action_save),
                     onClick = { onEvent(FinishTripEvent.Save) },
                     modifier = Modifier.fillMaxWidth(),
                     isLoading = state.isSaving,
@@ -298,7 +310,9 @@ private fun SaveResultDialog(state: FinishTripUiState, onEvent: (FinishTripEvent
         SendOutcome.SavedOffline -> ResultDialog(
             type = ResultType.Success,
             title = stringResource(Res.string.finish_trip_saved_offline_title),
-            message = stringResource(Res.string.finish_trip_saved_offline_message),
+            message = stringResource(
+                if (state.forLogout) Res.string.finish_trip_logout_saved_offline_message else Res.string.finish_trip_saved_offline_message,
+            ),
             buttonText = stringResource(Res.string.action_understood),
             onButtonClick = dismiss,
             onDismiss = dismiss,

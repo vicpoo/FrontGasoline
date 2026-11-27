@@ -14,13 +14,13 @@ data class ProfileUiState(
     val pendingPhoto: PickedFile? = null,
     /** "Salir": se está intentando mandar lo pendiente antes de cerrar sesión. */
     val isCheckingLogout: Boolean = false,
-    /** Aviso antes de "Salir" (viaje abierto que queda en pausa y/o registros que se borrarían). */
+    /** Aviso antes de "Salir" (viaje abierto que hay que cerrar y/o registros que se borrarían). */
     val logoutWarning: LogoutWarning? = null,
 )
 
 /**
  * Lo que se le dice al usuario antes de cerrar sesión.
- * @param openTrip viaje abierto: NO se borra, queda en pausa y se retoma al volver a entrar.
+ * @param openTrip viaje abierto: antes de salir se cierra con kilometraje final y foto (queda interrumpido).
  * @param lostCount registros sin enviar (solicitudes, vehículos...) que SÍ se borran del teléfono.
  */
 data class LogoutWarning(

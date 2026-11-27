@@ -219,6 +219,50 @@ class TripRecordingSyncerTest {
         assertTrue(store.current().trips.isEmpty(), "Ya cerrado en la API, se borra del teléfono")
     }
 
+    // --- Cerrado al salir de la cuenta (interrumpido) ---
+
+    @Test
+    fun cerradoAlSalir_sinRed_seMandaCompletoComoInterrumpido() = runTest {
+        seed(trip(running = false).copy(interruptReason = "Cierre de sesión en la app"))
+        var body = ""
+        api.handler = { request ->
+            body = request.body.toByteArray().decodeToString()
+            respondJson("""{"viajeId":"v-1","estado":"interrumpido"}""", HttpStatusCode.Created)
+        }
+
+        val result = syncer.sync()
+
+        assertEquals(AppResult.Success(Unit), result)
+        assertEquals(listOf("POST viajes/sincronizar"), api.requests)
+        assertTrue(body.contains("\"estado\":\"interrumpido\""), body)
+        assertTrue(body.contains("\"motivoInterrupcion\":\"Cierre de sesión en la app\""), body)
+        assertTrue(body.contains("\"kilometrajeFinal\":1050"), body)
+        assertTrue(store.current().trips.isEmpty())
+    }
+
+    @Test
+    fun cerradoAlSalir_yaEnLaApi_seInterrumpeConSuKilometraje() = runTest {
+        seed(trip(running = false).copy(serverId = "v-1", interruptReason = "Cierre de sesión en la app"))
+        var body = ""
+        api.handler = { request ->
+            when (request.url.encodedPath.removePrefix("/api/")) {
+                "viajes/v-1/interrumpir" -> {
+                    body = request.body.toByteArray().decodeToString()
+                    respondJson("""{"viajeId":"v-1","estado":"interrumpido"}""")
+                }
+                else -> error("Petición inesperada: ${request.url.encodedPath}")
+            }
+        }
+
+        val result = syncer.sync()
+
+        assertEquals(AppResult.Success(Unit), result)
+        assertEquals(listOf("POST viajes/v-1/interrumpir"), api.requests)
+        assertTrue(body.contains("\"motivo\":\"Cierre de sesión en la app\""), body)
+        assertTrue(body.contains("\"kilometrajeFinal\":1050"), body)
+        assertTrue(store.current().trips.isEmpty())
+    }
+
     @Test
     fun viajeEnCurso409_esElMismoViaje_seLigaAEseIdYYaNoQuedaError() = runTest {
         // Viaje creado por una versión anterior de la app (sin UUID) cuya respuesta se perdió

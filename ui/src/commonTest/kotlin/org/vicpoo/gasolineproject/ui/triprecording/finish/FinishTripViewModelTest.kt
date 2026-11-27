@@ -22,6 +22,7 @@ import org.vicpoo.gasolineproject.domain.triprecording.TripPhase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.FinishTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.ObserveTrackingUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.RetryFinishTripUseCase
+import org.vicpoo.gasolineproject.domain.triprecording.usecase.StopTripUseCase
 import org.vicpoo.gasolineproject.domain.triprecording.usecase.UndoStopTripUseCase
 import org.vicpoo.gasolineproject.testing.FakeAppClock
 import org.vicpoo.gasolineproject.testing.FakeTripTracker
@@ -36,10 +37,12 @@ class FinishTripViewModelTest : MainDispatcherTest() {
     private val recoded = PickedFile(name = "odometro.jpg", mimeType = "image/jpeg", bytes = ByteArray(5) { 2 })
     private var compressor = ImageCompressor { recoded }
 
-    private fun TestScope.viewModel() = FinishTripViewModel(
+    private fun TestScope.viewModel(forLogout: Boolean = false) = FinishTripViewModel(
+        args = FinishTripArgs(forLogout),
         observeTracking = ObserveTrackingUseCase(tracker),
         finishTrip = FinishTripUseCase(tracker, FinishTripValidator(), ImageCompressor { compressor.compress(it) }),
         retryFinish = RetryFinishTripUseCase(tracker),
+        stopTrip = StopTripUseCase(tracker),
         undoStop = UndoStopTripUseCase(tracker),
         clock = FakeAppClock(now = 60_000L),
         appScope = AppScope(backgroundScope),
@@ -100,6 +103,76 @@ class FinishTripViewModelTest : MainDispatcherTest() {
         assertSame(recoded, tracker.finishedWith?.second)
         assertEquals(SendOutcome.Sent, vm.state.value.outcome)
         assertFalse(vm.state.value.isSaving)
+    }
+
+    @Test
+    fun guardarNormal_noSeMarcaComoCierreDeSesion() = runTest {
+        val vm = viewModel()
+        vm.fill()
+
+        vm.onEvent(FinishTripEvent.Save)
+
+        assertEquals(false, tracker.finishedByLogout)
+    }
+
+    // --- Modo salir (abierto desde "Salir" en Perfil) ---
+
+    @Test
+    fun modoSalir_conViajeEnCurso_loDetieneYCargaLosDatos() = runTest {
+        tracker.state.value = TrackingSession(trip = testRecordedTrip(TripPhase.RUNNING))
+
+        val vm = viewModel(forLogout = true)
+
+        assertTrue("stop" in tracker.calls)
+        assertTrue(vm.state.value.forLogout)
+        assertFalse(vm.state.value.notFound)
+        assertFalse(vm.state.value.isLoading)
+    }
+
+    @Test
+    fun modoSalir_conViajeEnPausa_loDetiene() = runTest {
+        tracker.state.value = TrackingSession(trip = testRecordedTrip(TripPhase.PAUSED))
+
+        val vm = viewModel(forLogout = true)
+
+        assertTrue("stop" in tracker.calls)
+        assertFalse(vm.state.value.notFound)
+    }
+
+    @Test
+    fun modoSalir_yaDetenido_noLoVuelveADetener() = runTest {
+        val vm = viewModel(forLogout = true)
+
+        assertFalse("stop" in tracker.calls)
+        assertFalse(vm.state.value.notFound)
+    }
+
+    @Test
+    fun modoSalir_guardar_cierraElViajePorCierreDeSesion() = runTest {
+        tracker.state.value = TrackingSession(trip = testRecordedTrip(TripPhase.RUNNING))
+        tracker.finishResult = AppResult.Success(SendOutcome.SavedOffline)
+        val vm = viewModel(forLogout = true)
+        vm.fill()
+
+        vm.onEvent(FinishTripEvent.Save)
+        vm.onEvent(FinishTripEvent.ResultDismissed)
+
+        assertEquals(true, tracker.finishedByLogout)
+        assertEquals(1_500.0, tracker.finishedWith?.first)
+        assertTrue(vm.state.value.done)
+    }
+
+    @Test
+    fun modoSalir_sinKilometrajeNiFoto_noSeGuarda() = runTest {
+        tracker.state.value = TrackingSession(trip = testRecordedTrip(TripPhase.RUNNING))
+        val vm = viewModel(forLogout = true)
+
+        vm.onEvent(FinishTripEvent.Save)
+
+        assertNull(tracker.finishedWith)
+        assertTrue(FinishTripField.FINAL_MILEAGE in vm.state.value.errors)
+        assertTrue(FinishTripField.ODOMETER_PHOTO in vm.state.value.errors)
+        assertFalse(vm.state.value.done)
     }
 
     @Test

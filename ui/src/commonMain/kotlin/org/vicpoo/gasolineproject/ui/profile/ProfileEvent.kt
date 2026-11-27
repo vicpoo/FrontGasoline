@@ -14,6 +14,12 @@ sealed interface ProfileEvent {
     data object LogoutAnyway : ProfileEvent
     data object DismissLogoutWarning : ProfileEvent
 
+    /** En el aviso de viaje abierto: "Cerrar viaje" (abre "Registrar Viaje" en modo salir). */
+    data object CloseTripToLogout : ProfileEvent
+
+    /** Regresó de "Registrar Viaje" con el viaje ya guardado: se sigue con el cierre de sesión. */
+    data object TripClosedForLogout : ProfileEvent
+
     /** Botón sol / luna: cambia a oscuro si ahora se ve claro, y al revés. */
     data class ToggleTheme(val currentlyDark: Boolean, val systemDark: Boolean) : ProfileEvent
 }

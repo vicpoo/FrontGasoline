@@ -3,15 +3,19 @@ package org.vicpoo.gasolineproject.domain.sync.usecase
 import org.vicpoo.gasolineproject.domain.sync.PendingSyncTask
 
 /**
- * Antes de "Salir": si hay registros que solo existen en el teléfono, intenta mandarlos una vez y regresa
- * cuántos se BORRARÍAN al salir (0 = se puede cerrar sesión sin perder nada).
- * Los viajes se intentan mandar también (así la API recibe la última ruta), pero no cuentan:
- * se quedan guardados en el teléfono para esa cuenta (ver [PendingSyncTask.lostOnLogoutCount]).
+ * Antes de "Salir": si hay registros que solo existen en el teléfono y que se BORRAN al salir
+ * (solicitudes, vehículos...), intenta mandarlos una vez y regresa cuántos se perderían
+ * (0 = se puede cerrar sesión sin perder nada).
+ *
+ * Los viajes NO se mandan aquí: no se borran al salir (se guardan para esa cuenta y se envían al volver
+ * a entrar, ver [PendingSyncTask.lostOnLogoutCount]) y ya se intentan mandar al guardarlos. Mandarlos
+ * aquí hacía esperar al usuario todo el envío de puntos GPS y fotos (o sus timeouts) antes de salir.
  */
 class PendingBeforeLogoutUseCase(private val tasks: List<PendingSyncTask>) {
     suspend operator fun invoke(): Int {
-        if (tasks.sumOf { it.pendingCount() } == 0) return 0
-        SyncAllPendingUseCase(tasks)()
-        return tasks.sumOf { it.lostOnLogoutCount() }
+        val atRisk = tasks.filter { it.lostOnLogoutCount() > 0 }
+        if (atRisk.isEmpty()) return 0
+        SyncAllPendingUseCase(atRisk)()
+        return atRisk.sumOf { it.lostOnLogoutCount() }
     }
 }

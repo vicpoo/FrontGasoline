@@ -77,6 +77,7 @@ import org.vicpoo.gasolineproject.ui.reservations.detail.ReservationDetailViewMo
 import org.vicpoo.gasolineproject.ui.reservations.list.MyReservationsViewModel
 import org.vicpoo.gasolineproject.ui.triprecording.active.ActiveTripViewModel
 import org.vicpoo.gasolineproject.ui.triprecording.assigned.AssignedVehiclesViewModel
+import org.vicpoo.gasolineproject.ui.triprecording.finish.FinishTripArgs
 import org.vicpoo.gasolineproject.ui.triprecording.finish.FinishTripViewModel
 import org.vicpoo.gasolineproject.ui.triprecording.fuel.FuelRecordFormArgs
 import org.vicpoo.gasolineproject.ui.triprecording.fuel.FuelRecordFormViewModel
@@ -253,7 +254,7 @@ class KoinGraphTest {
         // triprecording
         koin.track<AssignedVehiclesViewModel>()
         koin.track<ActiveTripViewModel>()
-        koin.track<FinishTripViewModel>()
+        koin.track<FinishTripViewModel> { parametersOf(FinishTripArgs()) }
         koin.track<StartTripViewModel> { parametersOf(StartTripArgs(reservationId = "res-1")) }
         koin.track<FuelRecordFormViewModel> { parametersOf(FuelRecordFormArgs(recordId = null)) }
         koin.track<SyncStatusViewModel>()

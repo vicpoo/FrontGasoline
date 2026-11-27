@@ -86,12 +86,14 @@ data class SincronizarViajeRequestDto(
     val ubicacionInicioLat: Double?,
     val ubicacionInicioLng: Double?,
     val kilometrajeInicial: Double,
-    /** "finalizado" */
+    /** "finalizado" o "interrumpido" (cerrado al salir de la cuenta). */
     val estado: String,
     val fechaFin: String?,
     val ubicacionFinLat: Double?,
     val ubicacionFinLng: Double?,
     val kilometrajeFinal: Double?,
+    /** Obligatorio cuando estado = "interrumpido". */
+    val motivoInterrupcion: String? = null,
     val centroCostoId: String? = null,
     /** Pausas hechas sin conexión (fechaFin null = sigue abierta). */
     val pausas: List<PausaSincronizadaDto>? = null,
@@ -129,6 +131,16 @@ data class FinalizarViajeRequestDto(
     val ubicacionFinLat: Double?,
     val ubicacionFinLng: Double?,
     val kilometrajeFinal: Double,
+)
+
+/** InterrumpirViajeRequest (POST /api/viajes/{id}/interrumpir). El motivo es obligatorio. */
+@Serializable
+data class InterrumpirViajeRequestDto(
+    val motivo: String,
+    val fechaFin: String,
+    val ubicacionFinLat: Double?,
+    val ubicacionFinLng: Double?,
+    val kilometrajeFinal: Double?,
 )
 
 @Serializable
@@ -208,6 +220,7 @@ interface TripRecordingApi {
     suspend fun startTrip(request: IniciarViajeRequestDto): ViajeCreadoDto
     suspend fun syncFinishedTrip(request: SincronizarViajeRequestDto): ViajeCreadoDto
     suspend fun finishTrip(tripId: String, request: FinalizarViajeRequestDto): ViajeCreadoDto
+    suspend fun interruptTrip(tripId: String, request: InterrumpirViajeRequestDto): ViajeCreadoDto
     suspend fun sendRoutePoints(tripId: String, points: List<PuntoRutaRequestDto>): LotePuntosRutaResultadoDto
 
     suspend fun pauseTrip(tripId: String, request: PausarViajeRequestDto): ViajeCreadoDto
@@ -253,6 +266,12 @@ class KtorTripRecordingApi(private val client: HttpClient) : TripRecordingApi {
 
     override suspend fun finishTrip(tripId: String, request: FinalizarViajeRequestDto): ViajeCreadoDto =
         client.post(ApiRoutes.tripFinish(tripId)) {
+            contentType(ContentType.Application.Json)
+            setBody(request)
+        }.body()
+
+    override suspend fun interruptTrip(tripId: String, request: InterrumpirViajeRequestDto): ViajeCreadoDto =
+        client.post(ApiRoutes.tripInterrupt(tripId)) {
             contentType(ContentType.Application.Json)
             setBody(request)
         }.body()

@@ -22,6 +22,7 @@ import org.vicpoo.gasolineproject.data.triprecording.local.TripRecordingLocalSto
 import org.vicpoo.gasolineproject.data.triprecording.remote.CargaFormData
 import org.vicpoo.gasolineproject.data.triprecording.remote.FinalizarViajeRequestDto
 import org.vicpoo.gasolineproject.data.triprecording.remote.IniciarViajeRequestDto
+import org.vicpoo.gasolineproject.data.triprecording.remote.InterrumpirViajeRequestDto
 import org.vicpoo.gasolineproject.data.triprecording.remote.PausaSincronizadaDto
 import org.vicpoo.gasolineproject.data.triprecording.remote.PausarViajeRequestDto
 import org.vicpoo.gasolineproject.data.triprecording.remote.ReanudarViajeRequestDto
@@ -77,11 +78,12 @@ internal class TripUploader(
                         ubicacionInicioLat = trip.startLat?.round7(),
                         ubicacionInicioLng = trip.startLng?.round7(),
                         kilometrajeInicial = trip.initialMileage.round2(),
-                        estado = "finalizado",
+                        estado = if (trip.interruptReason != null) ESTADO_INTERRUMPIDO else ESTADO_FINALIZADO,
                         fechaFin = trip.endedAt,
                         ubicacionFinLat = trip.endLat?.round7(),
                         ubicacionFinLng = trip.endLng?.round7(),
                         kilometrajeFinal = trip.finalMileage(),
+                        motivoInterrupcion = trip.interruptReason,
                         centroCostoId = trip.costCenter?.id,
                         pausas = trip.pauses.map { it.toSyncDto() }.ifEmpty { null },
                         viajeId = clientId,
@@ -135,20 +137,48 @@ internal class TripUploader(
     }
 
 
+    /**
+     * Cierra el viaje en la API: /finalizar si se terminó normal, /interrumpir si se cerró al salir
+     * de la cuenta ([TripEntity.interruptReason]). Los dos llevan el kilometraje que capturó el usuario.
+     */
     suspend fun finish(trip: TripEntity, serverId: String): Step {
-        val request = FinalizarViajeRequestDto(
-            fechaFin = trip.endedAt ?: trip.startedAt,
-            ubicacionFinLat = trip.endLat?.round7(),
-            ubicacionFinLng = trip.endLng?.round7(),
-            kilometrajeFinal = trip.finalMileage(),
-        )
-        return when (val result = safeApiCall { api.finishTrip(serverId, request) }) {
+        val fechaFin = trip.endedAt ?: trip.startedAt
+        val endLat = trip.endLat?.round7()
+        val endLng = trip.endLng?.round7()
+        val reason = trip.interruptReason
+        val result = if (reason != null) {
+            safeApiCall {
+                api.interruptTrip(
+                    serverId,
+                    InterrumpirViajeRequestDto(
+                        motivo = reason,
+                        fechaFin = fechaFin,
+                        ubicacionFinLat = endLat,
+                        ubicacionFinLng = endLng,
+                        kilometrajeFinal = trip.finalMileage(),
+                    ),
+                )
+            }
+        } else {
+            safeApiCall {
+                api.finishTrip(
+                    serverId,
+                    FinalizarViajeRequestDto(
+                        fechaFin = fechaFin,
+                        ubicacionFinLat = endLat,
+                        ubicacionFinLng = endLng,
+                        kilometrajeFinal = trip.finalMileage(),
+                    ),
+                )
+            }
+        }
+        return when (result) {
             is AppResult.Success -> {
                 store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null, syncErrorCode = null) }
                 Step.Done
             }
             is AppResult.Failure -> {
-                // 409 "solo se puede finalizar un viaje en curso": ya estaba cerrado en la API
+                // 409 "solo se puede finalizar/interrumpir un viaje en curso": ya estaba cerrado en la API
                 // AppError vive en :domain (otro módulo): no se puede hacer smart cast de result.error
                 if ((result.error as? AppError.Server)?.code == 409) {
                     store.updateTrip(trip.localId) { it.copy(closedOnServer = true, syncErrorMessage = null, syncErrorCode = null) }
@@ -198,5 +228,7 @@ internal class TripUploader(
 
     private companion object {
         const val MOMENTO_FINAL = "final"
+        const val ESTADO_FINALIZADO = "finalizado"
+        const val ESTADO_INTERRUMPIDO = "interrumpido"
     }
 }

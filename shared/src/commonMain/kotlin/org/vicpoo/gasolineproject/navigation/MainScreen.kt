@@ -37,6 +37,7 @@ import org.vicpoo.gasolineproject.ui.reservations.navigation.assignmentsGraph
 import org.vicpoo.gasolineproject.ui.reservations.navigation.companyReservationsGraph
 import org.vicpoo.gasolineproject.ui.reservations.navigation.myReservationsDestination
 import org.vicpoo.gasolineproject.ui.triprecording.navigation.tripRecordingGraph
+import org.vicpoo.gasolineproject.ui.triprecording.navigation.navigateToCloseTripForLogout
 import org.vicpoo.gasolineproject.ui.trips.navigation.tripHistoryGraph
 import org.vicpoo.gasolineproject.ui.vehicles.navigation.catalogGraph
 import org.vicpoo.gasolineproject.ui.vehicles.navigation.vehiclesGraph
@@ -113,6 +114,8 @@ fun MainScreen(
             profileGraph(
                 navController = navController,
                 onLoggedOut = onLoggedOut,
+                // "Salir" con un viaje abierto: cerrarlo en "Registrar Viaje" (Perfil → triprecording)
+                onCloseTripToLogout = { navController.navigateToCloseTripForLogout() },
                 updateLicenseScreen = { onClose -> UpdateLicenseRoute(onClose) },
             )
         }

@@ -28,10 +28,14 @@ class FinishTripUseCase(
      * NonCancellable: si el usuario sale de la pantalla mientras se comprime la foto o se guarda,
      * el viaje igual queda guardado (antes se podía perder el cierre al salir a medio guardar).
      */
-    suspend operator fun invoke(finalMileageText: String, odometerPhoto: PickedFile?): FinishTripResult =
-        withContext(NonCancellable) { finish(finalMileageText, odometerPhoto) }
+    suspend operator fun invoke(
+        finalMileageText: String,
+        odometerPhoto: PickedFile?,
+        closedByLogout: Boolean = false,
+    ): FinishTripResult =
+        withContext(NonCancellable) { finish(finalMileageText, odometerPhoto, closedByLogout) }
 
-    private suspend fun finish(finalMileageText: String, odometerPhoto: PickedFile?): FinishTripResult {
+    private suspend fun finish(finalMileageText: String, odometerPhoto: PickedFile?, closedByLogout: Boolean): FinishTripResult {
         val trip = tracker.session.value.trip ?: return FinishTripResult.Failed(AppError.NotFound)
 
         val photo = odometerPhoto?.let { imageCompressor.compress(it) }
@@ -49,7 +53,7 @@ class FinishTripUseCase(
         // El validador ya exige la foto; si aun así faltara, se marca el campo en lugar de fallar
         val validPhoto = photo
             ?: return FinishTripResult.Invalid(mapOf(FinishTripField.ODOMETER_PHOTO to ValidationReason.REQUIRED))
-        return when (val result = tracker.finish(mileage, validPhoto)) {
+        return when (val result = tracker.finish(mileage, validPhoto, closedByLogout)) {
             is AppResult.Success -> FinishTripResult.Saved(result.data)
             is AppResult.Failure -> FinishTripResult.Failed(result.error)
         }

@@ -80,6 +80,12 @@ fun ProfileRoute(
     onEditName: () -> Unit,
     onUpdateLicense: () -> Unit,
     onLoggedOut: () -> Unit,
+    /** Abre "Registrar Viaje" en modo salir (lo conecta la app: Perfil no conoce esa feature). */
+    onCloseTripToLogout: () -> Unit = {},
+    /** true cuando "Registrar Viaje" en modo salir regresó con el viaje guardado. */
+    tripClosedForLogout: Boolean = false,
+    /** Marca el resultado como atendido (para no volver a salir al regresar a Perfil). */
+    onTripClosedHandled: () -> Unit = {},
     viewModel: ProfileViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -88,7 +94,15 @@ fun ProfileRoute(
         viewModel.effects.collect { effect ->
             when (effect) {
                 ProfileEffect.LoggedOut -> onLoggedOut()
+                ProfileEffect.OpenCloseTrip -> onCloseTripToLogout()
             }
+        }
+    }
+
+    LaunchedEffect(tripClosedForLogout) {
+        if (tripClosedForLogout) {
+            onTripClosedHandled()
+            viewModel.onEvent(ProfileEvent.TripClosedForLogout)
         }
     }
 
@@ -252,16 +266,18 @@ fun ProfileScreen(
             message = listOfNotNull(tripText, lostText).joinToString("\n\n"),
             // Mismo patrón que "¿Está seguro de eliminar?": confirmar = la acción, cancelar = quedarse.
             // Tocar fuera o deslizar también cancela, así que nunca se pierde nada por accidente.
+            // Con viaje abierto primero se cierra el viaje (kilometraje y foto); al regresar se vuelve a
+            // revisar lo pendiente antes de salir.
             confirmText = stringResource(
-                if (warning.lostCount > 0) Res.string.logout_pending_confirm else Res.string.logout_open_trip_confirm,
+                if (trip == null && warning.lostCount > 0) Res.string.logout_pending_confirm else Res.string.logout_open_trip_confirm,
             ),
             dismissText = stringResource(
-                if (warning.lostCount > 0) Res.string.logout_pending_cancel else Res.string.logout_open_trip_cancel,
+                if (trip == null && warning.lostCount > 0) Res.string.logout_pending_cancel else Res.string.logout_open_trip_cancel,
             ),
-            onConfirm = { onEvent(ProfileEvent.LogoutAnyway) },
+            onConfirm = { onEvent(if (trip != null) ProfileEvent.CloseTripToLogout else ProfileEvent.LogoutAnyway) },
             onDismiss = { onEvent(ProfileEvent.DismissLogoutWarning) },
             icon = AppIcons.Warning,
-            iconTint = if (warning.lostCount > 0) AppTheme.colors.danger else AppTheme.colors.secondary,
+            iconTint = if (trip == null && warning.lostCount > 0) AppTheme.colors.danger else AppTheme.colors.secondary,
         )
     }
 

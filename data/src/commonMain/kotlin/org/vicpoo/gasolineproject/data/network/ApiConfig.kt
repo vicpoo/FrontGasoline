@@ -45,6 +45,7 @@ object ApiRoutes {
     const val TRIPS = "viajes"
     const val TRIPS_SYNC = "viajes/sincronizar"
     fun tripFinish(tripId: String) = "viajes/$tripId/finalizar"
+    fun tripInterrupt(tripId: String) = "viajes/$tripId/interrumpir"
     fun tripPause(tripId: String) = "viajes/$tripId/pausar"
     fun tripResume(tripId: String) = "viajes/$tripId/reanudar"
     /** momento = "inicial" | "final" (foto del odómetro). */

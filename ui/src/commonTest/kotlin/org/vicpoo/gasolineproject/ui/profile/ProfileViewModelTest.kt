@@ -132,7 +132,7 @@ class ProfileViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun salirConViajeAbierto_avisaQueQuedaEnPausa_ySalirDeTodosModos() = runTest {
+    fun salirConViajeAbierto_pideCerrarloPrimero_sinCerrarSesion() = runTest {
         openTrip = OpenTripSummary(vehicleTitle = "Nissan Versa", plates = "ABC-123", waitingForFinish = false)
         val vm = viewModel()
         val effects = effectsOf(vm)
@@ -140,11 +140,39 @@ class ProfileViewModelTest : MainDispatcherTest() {
         vm.onEvent(ProfileEvent.Logout)
         assertEquals(openTrip, vm.state.value.logoutWarning?.openTrip)
 
-        vm.onEvent(ProfileEvent.LogoutAnyway)
+        vm.onEvent(ProfileEvent.CloseTripToLogout)
 
         assertNull(vm.state.value.logoutWarning)
+        assertEquals(0, logoutCalls, "Con el viaje abierto no se sale: primero se cierra en Registrar Viaje")
+        assertEquals(listOf<ProfileEffect>(ProfileEffect.OpenCloseTrip), effects)
+    }
+
+    @Test
+    fun salirConViajeAbierto_avisaSinEsperarAMandarLoPendiente() = runTest {
+        openTrip = OpenTripSummary(vehicleTitle = "Nissan Versa", plates = "ABC-123", waitingForFinish = false)
+        pending.count = 2
+        val vm = viewModel()
+
+        vm.onEvent(ProfileEvent.Logout)
+
+        assertEquals(LogoutWarning(openTrip = openTrip, lostCount = 0), vm.state.value.logoutWarning)
+        assertEquals(0, pending.syncCalls, "Con un viaje abierto el aviso sale de inmediato, sin enviar nada")
+    }
+
+    @Test
+    fun alRegresarConElViajeCerrado_cierraSesion() = runTest {
+        openTrip = OpenTripSummary(vehicleTitle = "Nissan Versa", plates = "ABC-123", waitingForFinish = false)
+        val vm = viewModel()
+        val effects = effectsOf(vm)
+        vm.onEvent(ProfileEvent.Logout)
+        vm.onEvent(ProfileEvent.CloseTripToLogout)
+
+        // "Registrar Viaje" en modo salir ya lo guardó (enviado o pendiente en el teléfono)
+        openTrip = null
+        vm.onEvent(ProfileEvent.TripClosedForLogout)
+
         assertEquals(1, logoutCalls)
-        assertEquals(listOf<ProfileEffect>(ProfileEffect.LoggedOut), effects)
+        assertEquals(listOf(ProfileEffect.OpenCloseTrip, ProfileEffect.LoggedOut), effects)
     }
 
     @Test

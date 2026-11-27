@@ -53,9 +53,9 @@
     <!-- ===== Perfil (feature/profile) ===== -->
     <string name="action_logout">Salir</string>
     <string name="logout_pending_message">Tienes %1$d registro(s) que todavía no llegan al servidor (solicitudes o vehículos). Si sales ahora se borrarán del teléfono. ¿Salir de todos modos?</string>
-    <string name="logout_open_trip_message">Tienes un viaje en curso con %1$s. Quedará en pausa y guardado en este teléfono: al volver a entrar podrás reanudarlo o terminarlo. No podrás iniciar otro viaje hasta terminarlo.</string>
-    <string name="logout_open_trip_finish_message">Tu viaje con %1$s está esperando el kilometraje final. Quedará guardado en este teléfono: al volver a entrar podrás terminarlo. No podrás iniciar otro viaje hasta terminarlo.</string>
-    <string name="logout_open_trip_confirm">Salir</string>
+    <string name="logout_open_trip_message">Tienes un viaje en curso con %1$s. Para salir primero tienes que cerrarlo con el kilometraje final y la foto del odómetro. Se guardará como interrumpido por cierre de sesión.</string>
+    <string name="logout_open_trip_finish_message">Tu viaje con %1$s está esperando el kilometraje final. Para salir primero tienes que cerrarlo con el kilometraje final y la foto del odómetro. Se guardará como interrumpido por cierre de sesión.</string>
+    <string name="logout_open_trip_confirm">Cerrar viaje</string>
     <string name="logout_open_trip_cancel">Cancelar</string>
     <string name="logout_pending_cancel">No, esperar a tener internet</string>
     <string name="logout_pending_confirm">Sí, salir y borrarlos</string>
@@ -385,6 +385,9 @@
     <string name="finish_trip_saved_server_error_message">El servidor no pudo recibir tu viaje en este momento (%1$s). Quedó guardado en el teléfono y se volverá a enviar automáticamente.</string>
     <string name="finish_trip_saved_offline_message">No hay conexión con el servidor en este momento. Tu viaje quedó guardado en el teléfono y se enviará automáticamente cuando vuelva la conexión.</string>
     <string name="finish_trip_title">Registrar Viaje</string>
+    <string name="finish_trip_logout_notice">Para salir de tu cuenta cierra el viaje con el kilometraje final y la foto del odómetro. Se guardará como interrumpido por cierre de sesión.</string>
+    <string name="finish_trip_save_and_logout">Guardar y salir</string>
+    <string name="finish_trip_logout_saved_offline_message">No hay conexión con el servidor en este momento. Tu viaje quedó cerrado y guardado en este teléfono: se enviará cuando vuelvas a entrar con tu cuenta en este teléfono.</string>
     <string name="finish_trip_upload_photo">Tomar foto del odómetro</string>
     <string name="fuel_add_title">Agregar Registro de gasolina</string>
     <string name="fuel_amount">Monto</string>

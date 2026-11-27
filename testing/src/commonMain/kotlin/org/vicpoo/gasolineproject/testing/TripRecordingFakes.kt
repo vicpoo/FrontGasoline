@@ -110,6 +110,8 @@ class FakeTripTracker(initial: TrackingSession = TrackingSession()) : TripTracke
     var finishResult: AppResult<SendOutcome> = AppResult.Success(SendOutcome.Sent)
     var retryOutcome: SendOutcome = SendOutcome.Sent
     var finishedWith: Pair<Double, PickedFile>? = null
+    /** closedByLogout del último finish (cerrar el viaje para salir de la cuenta). */
+    var finishedByLogout: Boolean? = null
     var startedWith: Pair<AssignedVehicle, CostCenter?>? = null
     var permissionChanges = 0
 
@@ -127,9 +129,10 @@ class FakeTripTracker(initial: TrackingSession = TrackingSession()) : TripTracke
     override suspend fun stop(): AppResult<RecordedTrip> = changePhase("stop", TripPhase.STOPPED)
     override suspend fun undoStop(): AppResult<RecordedTrip> = changePhase("undoStop", TripPhase.RUNNING)
 
-    override suspend fun finish(finalMileage: Double, odometerPhoto: PickedFile): AppResult<SendOutcome> {
+    override suspend fun finish(finalMileage: Double, odometerPhoto: PickedFile, closedByLogout: Boolean): AppResult<SendOutcome> {
         calls += "finish"
         finishedWith = finalMileage to odometerPhoto
+        finishedByLogout = closedByLogout
         return finishResult
     }
 

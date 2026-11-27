@@ -63,6 +63,12 @@ class ProfileViewModel(
                 doLogout()
             }
             ProfileEvent.DismissLogoutWarning -> local.update { it.copy(logoutWarning = null) }
+            ProfileEvent.CloseTripToLogout -> {
+                local.update { it.copy(logoutWarning = null) }
+                viewModelScope.launch { _effects.send(ProfileEffect.OpenCloseTrip) }
+            }
+            // El viaje ya quedó guardado (enviado o pendiente): se revisa otra vez lo pendiente y se sale
+            ProfileEvent.TripClosedForLogout -> checkPendingAndLogout()
             // Se guarda en el teléfono; App() lo escucha y los colores cambian con una transición suave.
             // Si el modo elegido es el mismo que el del teléfono se guarda SYSTEM: la app vuelve a seguir al teléfono.
             is ProfileEvent.ToggleTheme -> viewModelScope.launch {
@@ -79,17 +85,21 @@ class ProfileViewModel(
     }
 
     /**
-     * Antes de cerrar sesión se intenta mandar lo pendiente y se avisa si:
-     * - Hay un viaje abierto: NO se borra; queda en pausa y se retoma al volver a entrar.
-     * - Quedan registros sin enviar que SÍ se borran (solicitudes, vehículos...).
+     * Antes de cerrar sesión se avisa si:
+     * - Hay un viaje abierto: para salir hay que cerrarlo con el kilometraje final y la foto
+     *   ("Registrar Viaje" en modo salir). Se guarda como interrumpido por cierre de sesión.
+     *   Se revisa PRIMERO y sin red (está en memoria): antes se esperaba a mandar todo lo pendiente
+     *   (puntos GPS, fotos...) y el aviso tardaba lo que tardaran esos envíos o sus timeouts.
+     *   El viaje se manda al guardarlo en "Registrar Viaje" y, al regresar, se revisa lo demás.
+     * - Quedan registros sin enviar que SÍ se borran (solicitudes, vehículos...): se intenta mandarlos.
      * Sin nada de eso se sale directo.
      */
     private fun checkPendingAndLogout() {
         if (local.value.isCheckingLogout) return
         viewModelScope.launch {
             local.update { it.copy(isCheckingLogout = true) }
-            val lost = pendingBeforeLogout()
             val trip = openTrip()
+            val lost = if (trip == null) pendingBeforeLogout() else 0
             local.update { it.copy(isCheckingLogout = false) }
             if (lost == 0 && trip == null) {
                 doLogout()

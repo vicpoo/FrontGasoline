@@ -8,6 +8,8 @@ import org.vicpoo.gasolineproject.domain.triprecording.FinishTripField
 import org.vicpoo.gasolineproject.domain.triprecording.SendOutcome
 
 data class FinishTripUiState(
+    /** Se abrió desde "Salir": al guardar el viaje se cierra como interrumpido y se cierra la sesión. */
+    val forLogout: Boolean = false,
     val isLoading: Boolean = true,
     /** No hay viaje detenido esperando el kilometraje (ej. ya se guardó). */
     val notFound: Boolean = false,
@@ -22,6 +24,6 @@ data class FinishTripUiState(
     val isSaving: Boolean = false,
     val outcome: SendOutcome? = null,
     val failure: AppError? = null,
-    /** true → regresar a la lista de carros (el viaje ya quedó guardado). */
+    /** true → regresar a la lista de carros, o a Perfil en modo salir (el viaje ya quedó guardado). */
     val done: Boolean = false,
 )

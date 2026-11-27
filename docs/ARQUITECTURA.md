@@ -144,7 +144,7 @@ Los demás modelos de domain no se serializan: lo guardado en el teléfono usa `
   vehículos, reportes, temporales de cámara y reportes, caché de imágenes, registro para push). Si uno falla se
   reintenta y queda ERROR en la bitácora. Los viajes en curso o sin enviar NO se borran: quedan en pausa y su
   dueño los retoma.
-- Antes de cerrar sesión la app avisa si hay algo sin enviar (`PendingBeforeLogoutUseCase`).
+- Antes de cerrar sesión la app avisa si hay algo sin enviar (`PendingBeforeLogoutUseCase`). Primero revisa, sin red, si hay un viaje abierto: si lo hay, pide cerrarlo de inmediato (no espera a mandar nada). Solo intenta mandar lo que se borraría al salir (solicitudes, vehículos...); los viajes no, porque se guardan para esa cuenta y ya se mandan al guardarlos.
 
 ## Seguridad de red
 

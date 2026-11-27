@@ -91,7 +91,9 @@ val tripRecordingDataModule = module {
         bind<TripTracker>()
     }
 
-    // Al cerrar sesión (o al entrar otra cuenta): el viaje abierto queda en pausa y se apaga el GPS.
+    // "Salir" en Perfil ya no deja viajes abiertos: antes se cierran en "Registrar Viaje" (modo salir) y
+    // quedan interrumpidos. Esto queda para cuando la sesión termina sola (token vencido) o entra otra cuenta:
+    // el viaje abierto queda en pausa y se apaga el GPS.
     // Los viajes NO se borran (en curso o sin enviar): se guardan por cuenta y su dueño los retoma
     // al volver a entrar. Antes se borraban y en la API se quedaban "en curso" para siempre.
     // Lo demás (carros asignados, centros de costo, bitácora) se vuelve a descargar al entrar.

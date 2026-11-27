@@ -246,7 +246,7 @@ class GpsTripTracker(
         AppResult.Success(updated.toDomain())
     }
 
-    override suspend fun finish(finalMileage: Double, odometerPhoto: PickedFile): AppResult<SendOutcome> {
+    override suspend fun finish(finalMileage: Double, odometerPhoto: PickedFile, closedByLogout: Boolean): AppResult<SendOutcome> {
         val saved = mutex.withLock {
             val trip = state.value.trip ?: return AppResult.Failure(AppError.NotFound)
             if (trip.phase != TripPhase.STOPPED) return AppResult.Failure(AppError.NotFound)
@@ -263,6 +263,8 @@ class GpsTripTracker(
                     odometerPhotoPath = photoPath,
                     odometerPhotoMimeType = odometerPhoto.mimeType,
                     odometerPhotoSent = false,
+                    // Cerrado para salir de la cuenta: la API lo guarda como interrumpido con este motivo
+                    interruptReason = if (closedByLogout) LOGOUT_INTERRUPT_REASON else null,
                     syncErrorMessage = null,
                     syncErrorCode = null,
                 )
@@ -414,5 +416,8 @@ class GpsTripTracker(
 
         /** Motivo de la pausa automática (la API lo guarda con la pausa). */
         const val LOGOUT_PAUSE_REASON = "Cierre de sesión en la app"
+
+        /** Motivo con el que la API guarda el viaje interrumpido al salir de la cuenta. */
+        const val LOGOUT_INTERRUPT_REASON = "Cierre de sesión en la app"
     }
 }
